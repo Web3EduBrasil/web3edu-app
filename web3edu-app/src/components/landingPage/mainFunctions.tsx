@@ -20,7 +20,7 @@ function MainFunctions({
         </div>
       </div>
       <div className="flex flex-col justify-center items-center h-3/5 w-full">
-        <p className="text-wrap px-5 h-4/5">{content}</p>
+        <p className="text-wrap px-5 h-4/5 overflow-x-hidden">{content}</p>
         <div className="bg-black w-4/5 h-px"></div>
       </div>
     </div>

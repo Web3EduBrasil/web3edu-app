@@ -8,7 +8,7 @@ import TrailCard from "./trails";
 
 const MainContent = () => {
   return (
-    <div className="h-full pt-12 flex flex-col justify-center items-center">
+    <div className="h-full w-full pt-[10vh] flex flex-col justify-center items-center">
       <div className="flex h-5/6 justify-center items-center">
         <section className="flex flex-col text-center py-20 px-20 w-3/5 text-black h-full z-0 overflow-auto justify-center items-center relative">
           <h1 className="text-5xl font-bold text-justify">
@@ -21,11 +21,11 @@ const MainContent = () => {
           </p>
         </section>
         <div className="flex w-2/5 h-full justify-center items-center">
-          <Image src={web3EduLogo} alt="" className="w-4/6" />
+          <Image src={web3EduLogo} alt="" className="w-60" />
         </div>
       </div>
-      <div>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+      <div className="overflow-x-hidden w-full">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320 ">
           <path
             fill="#fcedb2"
             fill-opacity="1"
@@ -45,14 +45,14 @@ const MainContent = () => {
             <MainFunctions
               functionName={"Fórum Colaborativo"}
               content={
-                "Nós oferecemos um fórum para que nossos usuários possam compartilhar experiências e relatos relacionados a investimentos, criptomoedas e tecnologia blockchain."
+                "Nós oferecemos um fórum para que nossos usuários possam compartilhar experiências e relatos sobre blockchain"
               }
               image={ForumIcon}
             />
             <MainFunctions
               functionName={"Trilhas de Aprendizagem"}
               content={
-                "Texto Trilhas de Aprendizagem Texto Trilhas de Aprendizagem Texto Trilhas de Aprendizagem Texto Trilhas de Aprendizagem Texto Trilhas de Aprendizagem Texto Trilhas de Aprendizagem "
+                "Texto Trilhas de Aprendizagem Texto Trilhas de Aprendizagem Texto Trilhas de Aprendizagem Texto Trilhas de Aprendizagem "
               }
               image={TrailIcon}
             />
