@@ -4,7 +4,7 @@ import { CgProfile } from "react-icons/cg";
 import { IoWalletOutline } from "react-icons/io5";
 
 export const UserMenu = () => {
-  const { googleUserInfo, logout, isLoggedIn, WalletUi } = useWeb3AuthContext();
+  const { googleUserInfo, logout, isLoggedIn } = useWeb3AuthContext();
   const router = useRouter();
 
   return (
@@ -13,7 +13,7 @@ export const UserMenu = () => {
         tabIndex={0}
         role="button"
         className="btn btn-ghost btn-circle avatar flex items-center justify-center"
-        onClick={WalletUi}
+        onClick={undefined} //remove wallet or it should pop the wallet extension
       >
         {isLoggedIn ? (
           <IoWalletOutline
@@ -30,7 +30,7 @@ export const UserMenu = () => {
         >
           <div className="w-10 rounded-full">
             {isLoggedIn ? (
-              <img alt="User Image" src={googleUserInfo?.photoURL} />
+              <img alt="User Image" src={googleUserInfo?.photoURL} fetchPriority="high" />
             ) : (
               <CgProfile className="w-10 h-10" />
             )}
