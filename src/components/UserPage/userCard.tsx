@@ -1,12 +1,9 @@
 "use client";
 
-import Image from "next/image";
-import { MdEdit } from "react-icons/md";
-import { FaSave } from "react-icons/fa";
+import { FaSave, FaWallet } from "react-icons/fa";
 import { MotionButton } from "../ui/Button";
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 import { useEffect, useState } from "react";
-import { getDisplayName } from "next/dist/shared/lib/utils";
 import { Bounce, toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 
@@ -92,7 +89,7 @@ export const UserSection = () => {
 
   return (
     <div className="flex w-full h-full justify-center items-center">
-      <div className=" w-4/5 h-[26rem] md:w-2/5 md:h-[30rem] bg-cgray shadow-xl flex flex-col border-2 border-gray rounded-[2rem] pt-2 md:pt-7 p-7">
+      <div className=" w-4/5 h-[33rem] md:w-3/5 md:h-[33rem] bg-cgray shadow-xl flex flex-col border-2 border-gray rounded-[2rem] pt-2 md:pt-7 p-7">
         <div className="flex w-full h-12 flex-row justify-center">
           <div
             role="tablist"
@@ -106,27 +103,37 @@ export const UserSection = () => {
             </a>
           </div>
         </div>
-        <div className="flex flex-col flex flex-col gap-6 ">
+        <div className="flex flex-col gap-6 ">
           <div className="flex h-full md:justify-start justify-center">
             <p className="text-dgray text-md md:text-xl mt-5 font-medium">
               Dados Pessoais
             </p>
           </div>
-          <div className="md:flex-row flex-col flex gap-4 justify-between">
-            <div className="flex flex-row justify-center items-center">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 bg-white rounded-xl shadow-md">
+            <div className="flex items-center gap-4">
               <img
                 src={googleUserInfo?.photoURL}
-                alt=""
-                className=" w-10 h-10 md:w-16 md:h-16 rounded-full"
-              ></img>
-              <div className="flex flex-col items-left ml-4">
-                <p className="text-dgray font-medium text-sm md:text-lg">
+                alt="Foto do usuário"
+                className="w-14 h-14 md:w-20 md:h-20 rounded-full border-2 border-green"
+              />
+              <div>
+                <p className="text-dgray font-semibold text-base md:text-lg">
                   {userDbInfo.displayName}
                 </p>
               </div>
             </div>
-          </div>
 
+            <div className="w-full md:w-1/2 flex justify-center">
+              {/* adicionar um operador ternário verificando `isWalletConnected`, falta implementação */}
+              <MotionButton
+                Icon={FaWallet}
+                label="Conectar Carteira"
+                func={() => Submit()}
+                className="flex justify-center items-center gap-3 text-base md:text-lg h-11 w-full md:w-64 bg-green text-ddblue rounded-full shadow-lg hover:bg-green/90 transition-all"
+                type="button"
+              />
+            </div>
+          </div>
           <label className="flex flex-row h-full w-full gap-8 justify-center">
             <div className="flex flex-col justify-center w-full">
               <div className="label text-dgray">
@@ -168,7 +175,7 @@ export const UserSection = () => {
                 value={linkedin}
                 onChange={(e) => setLinkedin(e.target.value)}
                 type="text"
-                placeholder=""
+                placeholder="www.linkedin.com/in/username"
                 className="input input-bordered w-full md:h-10 h-8 bg-white md:text-base text-xs md:rounded-box border-2 border-gray text-dgray"
               />
             </div>

@@ -2,19 +2,15 @@
 
 import React, { createContext, useContext, ReactNode } from "react";
 import useWeb3Auth from "./web3auth";
-// import { web3authConfig } from "./web3auth.config";
 
 interface Web3AuthContextProps {
   login: () => Promise<void>;
   logout: () => Promise<void>;
-  WalletUi: () => Promise<void>;
   isLoggedIn: boolean;
   isLoggingIn: boolean;
-  userInfo: Partial<any> | null;
   userDbInfo: any;
   fetchUserDbData: (uid: string) => void;
   setUserDbInfo: React.Dispatch<React.SetStateAction<boolean>>;
-  userAccount: string[];
   googleUserInfo: any | null;
 }
 
@@ -26,14 +22,11 @@ export const Web3AuthProvider = ({ children }: { children: ReactNode }) => {
   const {
     login,
     logout,
-    WalletUi,
     isLoggedIn,
     isLoggingIn,
-    userInfo,
     userDbInfo,
     fetchUserDbData,
     setUserDbInfo,
-    userAccount,
     googleUserInfo,
   } = useWeb3Auth();
 
@@ -42,14 +35,11 @@ export const Web3AuthProvider = ({ children }: { children: ReactNode }) => {
       value={{
         login,
         logout,
-        WalletUi,
         isLoggedIn,
         isLoggingIn,
-        userInfo,
         userDbInfo,
         fetchUserDbData,
         setUserDbInfo,
-        userAccount,
         googleUserInfo,
       }}
     >

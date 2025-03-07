@@ -1,6 +1,7 @@
 import { collection, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
 import { db } from "@/firebase/config";
 import { NextRequest, NextResponse } from "next/server";
+import { create } from "domain";
 
 export const GET = async (req: NextRequest) => {
   try {
@@ -36,7 +37,7 @@ export const GET = async (req: NextRequest) => {
 
 export const POST = async (req: NextRequest, res: NextResponse) => {
   try {
-    const data = await req.json();
+    let data = await req.json();
     console.log(data);
     const userDocRef = doc(db, "users", data.uid);
     const docSnap = await getDoc(userDocRef);
@@ -47,11 +48,15 @@ export const POST = async (req: NextRequest, res: NextResponse) => {
         status: 200,
       });
     } else {
+      data = {
+        ...data,
+        createdAt: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
+      };
       const user = await setDoc(userDocRef, data);
 
       return new NextResponse(
         JSON.stringify({
-          message: "UsuÃ¡rio adicionado com sucesso",
+          message: "Usuario adicionado com sucesso",
           user: user,
         }),
         { status: 200 }
