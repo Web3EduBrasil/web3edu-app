@@ -14,7 +14,7 @@ import { useState } from "react";
 
 export const Section3 = () => {
   const [videoLink, setVideoLink] = useState(
-    "https://www.youtube.com/embed/LDWxrrl21AM"
+    "https://www.youtube.com/embed/s3KJbAth36U"
   );
 
   function teste() {
@@ -50,9 +50,9 @@ export const Section3 = () => {
             className="bg-cgreen w-full min-w-[10rem] text-neutral rounded-full"
             type="button"
             func={() =>
-              setVideoLink("https://www.youtube.com/embed/LDWxrrl21AM")
+              setVideoLink("https://www.youtube.com/embed/s3KJbAth36U")
             }
-            label="Recompensas"
+            label="Plataforma"
             Icon={() => (
               <Image src={GiftIcon} alt="Trail Icon" className="w-4 h-4" />
             )}
@@ -78,6 +78,9 @@ export const Section3 = () => {
           frameBorder="0"
           allowFullScreen
           className="aspect-video md:h-full w-full h-auto rounded-box"
+          title="YouTube video player" 
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+          referrerPolicy="strict-origin-when-cross-origin"
         />
       </div>
     </div>
