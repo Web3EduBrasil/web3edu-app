@@ -3,14 +3,12 @@
   "SkipIntrodution": "Pular Introdução",
   "NextSetp": "Próximo Passo",
   "AcessPlataform": "Acessar Plataforma",
-
   "WelCome": {
     "h1": "Seja bem vindo a Web3EduBrasil!",
     "BeforeStart": "Antes de começarmos, vamos entender as funcionalidades da plataforma Web3EduBrasil"
   },
-
   "communities": {
-    "h1": "Particide das nossas comunidades",
+    "h1": "Participe das nossas comunidades",
     "CommunitiesText": "Junte-se às nossas comunidades Web3 e fique por dentro de tudo! Siga-nos nas redes sociais, compartilhe experiências e aprenda junto com a gente. Não perca as novidades!",
     "server": "Servidor do",
     "discord": "Discord",
@@ -18,43 +16,36 @@
     "telegram": "Telegram",
     "network": "E acompanhe as nossas redes!"
   },
-
   "home": {
     "h1": "Tela Home",
     "IntroText": "Nesta tela você encontrará alguns dados de seu perfil, um preview de suas NFT's conquistadas, a jornada de usuário e suas três últimas trilhas de aprendizagem realizadas.",
     "acess": "Acesse através da barra de navegação ao topo da tela"
   },
-
   "profile": {
     "h1": "Seu Perfil",
     "FormText": "Aqui, você pode personalizar seu perfil, adicionando o Discord ou o LinkedIn. Não esqueça de atualizar seu nome, pois ele aparecerá no seu certificado!",
     "acess": "Acesse (Perfil) no canto superior direito da sua tela, clicando no ícone do seu perfil."
   },
-
   "UserConfig": {
     "h1": "Configurar perfil de usuário",
     "FormText": "Complete nosso breve formulário para recomendarmos trilhas de aprendizagem do seu interesse.",
     "acess": "Acesse na tela home em Jornada do usuário"
   },
-
   "TrailsScreen": {
     "h1": "Tela de trilhas",
     "TrailsText": "Nesta tela você encontrará todas as trilhas de aprendizagem, podendo buscá-las por nome ou categoria e acessá-las.",
     "acess": "Acesse através da barra de navegação ao topo da tela"
   },
-
   "LearningTrails": {
     "h1": "Trilha de aprendizagem",
     "LearningText": "Aprenda sobre Web3 acessando e completando as tarefas de nossas trilhas!",
     "acess": "Acesse através da tela de trilhas ou pelo acesso rápido na tela home"
   },
-
   "reward": {
     "h1": "Resgate sua recompensa!",
     "conclusionText": "Ao concluir uma trilha de aprendizagem, resgate sua NFT clicando em Resgatar Agora",
     "acess": "Disponível ao marcar a última tarefa de uma trilha como concluída."
   },
-
   "done": {
     "h1": "Tudo pronto!",
     "DoneText": "Ótimo! Você está pronto para começar a explorar nossa plataforma e colecionar NFT's",

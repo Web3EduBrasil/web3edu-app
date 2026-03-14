@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { MotionButton } from "../ui/Button";
-import { MotionDiv } from "../ui/MotionDiv";
 import { Bounce, toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import { TextArea } from "../ui/TextArea";
@@ -30,12 +29,15 @@ export const RenderQuestionV = ({
   const [answer, setAnswer] = useState("");
   const [aiExplanation, setAiExplanation] = useState("");
   const [isCorrect, setIsCorrect] = useState(false);
-  const { fetchAiAnswerCheck } = useContent();
+  const { fetchAiAnswerCheck, trailSections } = useContent();
   const router = useRouter();
 
-  useEffect(() => {
-    console.log(aiExplanation);
-  }, [aiExplanation]);
+  const getNextSectionId = (): string | null => {
+    const sorted = [...trailSections].sort((a, b) => Number(a.id) - Number(b.id));
+    const currentIndex = sorted.findIndex((s) => String(s.id) === String(id));
+    if (currentIndex === -1 || currentIndex >= sorted.length - 1) return null;
+    return String(sorted[currentIndex + 1].id);
+  };
 
   async function HandleSubmit() {
     if (answer.length === 0) {
@@ -82,7 +84,6 @@ export const RenderQuestionV = ({
           pending: "Verificando...",
         }
       );
-      console.log(aiAnswer);
       setAiExplanation(aiAnswer.explicacao);
       if (aiAnswer.valido === true) {
         setIsCorrect(true);
@@ -140,16 +141,18 @@ export const RenderQuestionV = ({
             type="button"
             label="Avançar"
             className="w-fit bg-blue text-white"
-            func={() => router.push(`/learn/${trailId}/${Number(id) + 1}`)}
+            func={() => {
+              const nextId = getNextSectionId();
+              if (nextId) router.push(`/learn/${trailId}/${nextId}`);
+            }}
           />
         ) : (
           <MotionButton
             rightIcon={true}
             label={isCorrect === true ? "Marcar como concluído" : "Verificar"}
             type="button"
-            className={`text-neutral w-fit h-12 self-end ${
-              isCorrect ? "bg-green" : "bg-transparent border-2"
-            }`}
+            className={`text-neutral w-fit h-12 self-end ${isCorrect ? "bg-green" : "bg-transparent border-2"
+              }`}
             func={() => {
               HandleSubmit();
             }}

@@ -6,6 +6,7 @@ import { MotionButton } from "../ui/Button";
 import { useRouter } from "next/navigation";
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 import { Bounce, toast } from "react-toastify";
+import { authHeaders } from "@/lib/getIdToken";
 
 export const ObIntro = ({ handleTabClick }: OnboardingProps<void>) => {
   const router = useRouter();
@@ -15,10 +16,8 @@ export const ObIntro = ({ handleTabClick }: OnboardingProps<void>) => {
     try {
       const response = await fetch("/api/user/onboarding", {
         method: "POST",
-        headers: { "Content-Type": "aplication/json" },
-        body: JSON.stringify({
-          uid: googleUserInfo?.uid,
-        }),
+        headers: await authHeaders(),
+        body: JSON.stringify({}),
       });
       if (response.ok) {
         const response = await fetch(`/api/user?uid=${googleUserInfo?.uid}`, {

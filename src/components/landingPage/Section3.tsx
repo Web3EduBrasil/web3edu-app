@@ -3,7 +3,6 @@
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import GiftIcon from "../../../public/assets/icons/gift.svg";
-import ForumIcon from "../../../public/assets/icons/forum-icon.svg";
 import TrailIcon from "../../../public/assets/icons/trail-icon.svg";
 import { MotionButton } from "../ui/Button";
 import AnimationFuture from "../../../public/assets/animations/FuturoAnimado.json";
@@ -17,9 +16,6 @@ export const Section3 = () => {
     "https://www.youtube.com/embed/LDWxrrl21AM"
   );
 
-  function teste() {
-    console.log("teste");
-  }
   return (
     <div className="h-fit w-full flex md:flex-row flex-col bg-neutralbg md:p-20 p-10 md:gap-28 gap-4">
       <div className="flex flex-col md:w-2/5 w-full min-h-full justify-start  gap-4 py-8">

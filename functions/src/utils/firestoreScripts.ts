@@ -23,10 +23,29 @@ export async function updateAirdropStatus(
   txHash: string | ""
 ): Promise<void> {
   const userRef = db.collection("whitelist").doc(uid);
-
-  // Atualiza os campos de minted e txHash para a categoria especificada
   await userRef.update({
     [`status.${category}.minted`]: status,
     [`status.${category}.txHash`]: txHash,
+  });
+}
+
+/**
+ * Atualiza o status do NFT de programa no Firestore.
+ *
+ * @param uid - ID do usuário.
+ * @param programId - ID do programa.
+ * @param status - Status do minting.
+ * @param txHash - Hash da transação.
+ */
+export async function updateProgramAirdropStatus(
+  uid: string,
+  programId: string,
+  status: boolean,
+  txHash: string | ""
+): Promise<void> {
+  const userRef = db.collection("programWhitelist").doc(uid);
+  await userRef.update({
+    [`status.${programId}.minted`]: status,
+    [`status.${programId}.txHash`]: txHash,
   });
 }

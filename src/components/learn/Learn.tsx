@@ -1,30 +1,30 @@
-import { useEffect, useState, useRef } from "react";
-import { TrailContainer } from "./TrailContainer";
+import { useEffect, useRef } from "react";
 import { TaskList } from "./TaskList";
 import { useContent } from "@/providers/content-context";
 import { Task } from "../Task/Task";
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
+import { useOnboardingGuard } from "@/lib/useOnboardingGuard";
 
 export const Learn = ({ trailIdRt, sectionId }: LearnProps) => {
+  useOnboardingGuard();
   const { googleUserInfo } = useWeb3AuthContext();
   const router = useRouter();
   const hasRedirectedRef = useRef(false);
 
-  const { fetchTrail, trail, trailsList } = useContent();
+  const { fetchTrail, trail, trailsList, fetchTrailsList } = useContent();
 
   useEffect(() => {
+    if (!googleUserInfo) return;
+
+    // Garante que trailsList está carregada (ex: refresh direto na página)
     if (!trailsList || trailsList.length === 0) {
+      fetchTrailsList(googleUserInfo.uid);
       return;
     }
 
-    if (Object.keys(trail).length === 0) {
-      fetchTrail(trailIdRt);
-    } else if (
-      trailIdRt !== trail?.trailId &&
-      trailsList.some((t: { id: string }) => t.id === trailIdRt)
-    ) {
+    if (Object.keys(trail).length === 0 || trailIdRt !== trail?.trailId) {
       fetchTrail(trailIdRt);
     }
 
@@ -37,7 +37,7 @@ export const Learn = ({ trailIdRt, sectionId }: LearnProps) => {
       toast.error("Trilha não encontrada");
       router.push("/trailsPage");
     }
-  }, [trail, trailIdRt, trailsList]);
+  }, [trail, trailIdRt, trailsList, googleUserInfo]);
 
   return (
     <div className="md:h-full w-full justify-center items-center flex flex-col md:flex-row sm:px-10 sm:pb-6 md:gap-10 ">

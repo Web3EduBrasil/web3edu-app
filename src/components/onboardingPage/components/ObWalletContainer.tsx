@@ -12,6 +12,7 @@ import { useState } from "react";
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 import { Bounce, toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import { authHeaders } from "@/lib/getIdToken";
 
 const steps = [
   {
@@ -67,10 +68,8 @@ export const ObWalletContainer = () => {
     try {
       const response = await fetch("/api/user/onboarding", {
         method: "POST",
-        headers: { "Content-Type": "aplication/json" },
-        body: JSON.stringify({
-          uid: googleUserInfo?.uid,
-        }),
+        headers: await authHeaders(),
+        body: JSON.stringify({}),
       });
       if (response.ok) {
         const response = await fetch(`/api/user?uid=${googleUserInfo?.uid}`, {
@@ -101,8 +100,6 @@ export const ObWalletContainer = () => {
   const handleNextStep = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
-    } else {
-      console.log("Finalizado");
     }
   };
 

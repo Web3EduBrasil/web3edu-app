@@ -1,4 +1,3 @@
-import { SEPOLIA_CHAIN_ID } from "@toruslabs/ethereum-controllers";
 import { CHAIN_NAMESPACES } from "@web3auth/base";
 
 //talvez trocar para mainnet
@@ -14,7 +13,8 @@ const chainConfig = {
 
 export const web3authConfig = {
   clientId:
+    process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID ||
     "BKT4xfkIAQ8aIFm-f2mh_HgXQt0NpVJJRL1ivU2JUK7lNXY6uHVahZRbKsOWz6Eo1e8h3LxT7LNenJj2ArpVXTA",
-  web3AuthNetwork: "sapphire_devnet",
+  web3AuthNetwork: (process.env.NEXT_PUBLIC_WEB3AUTH_NETWORK as any) || "sapphire_devnet",
   chainConfig,
 };

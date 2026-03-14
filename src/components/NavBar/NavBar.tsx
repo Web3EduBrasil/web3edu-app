@@ -2,7 +2,6 @@
 
 import web3EduLogo from "../../../public/assets/images/Web3EduBrasil_logo.png";
 import Image from "next/image";
-import { useEffect, useState } from "react";
 import { UserMenu } from "./UserMenu";
 import { LoginButton } from "./LoginButton";
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
@@ -13,10 +12,6 @@ import { toast } from "react-toastify";
 export default function NavBar({ }) {
   const router = useRouter();
   const { userInfo } = useWeb3AuthContext();
-
-  useEffect(() => {
-    console.log(userInfo);
-  });
 
   return (
     <div className="flex w-full bg-neutralbg justify-between items-center sm:px-10 h-fit p-[0.5rem]">

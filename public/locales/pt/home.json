@@ -1,9 +1,9 @@
 {
   "UserJorney": "Jornada do Usuário",
-  "PefilData": "Preencher dados do perfil",
-  "search": "Pesquisa de pefil",
+  "PerfilData": "Preencher dados do perfil",
+  "search": "Pesquisa de perfil",
   "ClaimNFT": "Resgatar NFT de boas-vindas",
-  "StartTrail": "Cemece uma trilha",
+  "StartTrail": "Comece uma trilha",
   "nfts": "NFTs",
   "SeeMore": "Veja Mais",
   "certification": "Você não possui certificações"

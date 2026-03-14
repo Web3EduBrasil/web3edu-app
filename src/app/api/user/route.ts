@@ -37,7 +37,7 @@ export const GET = async (req: NextRequest) => {
       return postResponse;
     }
   } catch (error: any) {
-    console.log(error.message);
+    console.error(error.message);
     return new NextResponse(
       JSON.stringify({ message: "Erro ao buscar documento" }),
       {
@@ -50,7 +50,6 @@ export const GET = async (req: NextRequest) => {
 export const POST = async (req: NextRequest, res: NextResponse) => {
   try {
     let data = await req.json();
-    console.log(data);
     const userDocRef = doc(db, "users", data.uid);
     const docSnap = await getDoc(userDocRef);
 
@@ -62,6 +61,10 @@ export const POST = async (req: NextRequest, res: NextResponse) => {
     } else {
       data = {
         ...data,
+        xp: 0,
+        level: 1,
+        streak: 0,
+        lastActiveAt: new Date().toISOString().split("T")[0],
         createdAt: new Date().toLocaleString("pt-BR", {
           timeZone: "America/Sao_Paulo",
         }),
@@ -76,7 +79,7 @@ export const POST = async (req: NextRequest, res: NextResponse) => {
       );
     }
   } catch (error: any) {
-    console.log(error.message);
+    console.error(error.message);
     return new NextResponse(
       JSON.stringify({ message: "Internal Server Error" }),
       { status: 500 }

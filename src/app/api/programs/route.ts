@@ -24,7 +24,7 @@ export const GET = async (req: NextRequest) => {
       status: 200,
     });
   } catch (error: any) {
-    console.log(error.message);
+    console.error(error.message);
     return new NextResponse("Erro ao buscar programas", { status: 500 });
   }
 };

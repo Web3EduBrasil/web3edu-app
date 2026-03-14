@@ -21,6 +21,7 @@ export const GET = async (req: NextRequest) => {
       return new NextResponse(
         JSON.stringify({
           trailId,
+          banner: trailData.banner,
           categories: trailData.categories,
           createdAt: trailData.createdAt,
           description: trailData.description,

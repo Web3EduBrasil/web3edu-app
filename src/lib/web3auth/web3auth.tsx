@@ -18,18 +18,20 @@ import {
   GoogleAuthProvider,
   onAuthStateChanged,
   signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut,
   User,
   UserCredential,
 } from "firebase/auth";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { WalletServicesPlugin } from "@web3auth/wallet-services-plugin";
 import Web3 from "web3";
 import { useRouter, usePathname } from "next/navigation";
 import { app } from "@/firebase/config";
 import { useLoading } from "../loading-context";
 import { toast } from "react-toastify";
-import { logEvent } from "firebase/analytics";
 
 // Configuração do Web3Auth e da Chain
 const chainConfig = {
@@ -161,13 +163,23 @@ export default function useWeb3Auth() {
     };
   }, [web3auth]);
 
-  const fetchUserDbData = async (uid: string, email?: string | null, googleName?: string |  null) => {
+  const fetchUserDbData = async (uid: string, email?: string | null, googleName?: string | null) => {
     const response = await fetch(`/api/user?uid=${uid}&email=${email || ''}&googleName=${googleName || ''}`, {
       method: "GET",
     });
     const data = await response.json();
     setUserDbInfo(data.user);
-    console.log(data);
+    // Atualizar streak silenciosamente (token pode ainda não estar pronto, ignora erro)
+    import("@/lib/getIdToken")
+      .then(({ authHeaders: ah }) => ah())
+      .then((headers) =>
+        fetch("/api/user/streak", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({}),
+        })
+      )
+      .catch(() => { });
   };
 
   useEffect(() => {
@@ -201,6 +213,62 @@ export default function useWeb3Auth() {
     const res = await signInWithPopup(auth, googleProvider);
     localStorage.setItem("googleUserInfo", JSON.stringify(res.user));
     return res;
+  };
+
+  /**
+   * Autentica via email/senha no Firebase e conecta ao Web3Auth.
+   * Se a conta não existir, cria automaticamente.
+   */
+  const loginWithEmail = async (email: string, password: string) => {
+    try {
+      setIsLoading(true);
+      const auth = getAuth(app);
+      let loginRes: UserCredential;
+      try {
+        loginRes = await signInWithEmailAndPassword(auth, email, password);
+      } catch (err: any) {
+        if (
+          err.code === "auth/user-not-found" ||
+          err.code === "auth/invalid-credential"
+        ) {
+          loginRes = await createUserWithEmailAndPassword(auth, email, password);
+        } else {
+          throw err;
+        }
+      }
+      localStorage.setItem("googleUserInfo", JSON.stringify(loginRes.user));
+      const idToken = await loginRes.user.getIdToken(true);
+
+      const web3authProvider = await web3auth.connectTo(
+        WALLET_ADAPTERS.OPENLOGIN,
+        {
+          loginProvider: "jwt",
+          extraLoginOptions: {
+            id_token: idToken,
+            verifierIdField: "email",
+          },
+        }
+      );
+
+      if (web3authProvider) {
+        setProvider(web3authProvider);
+        const web3 = new Web3(web3authProvider as any);
+        const addresses = await web3.eth.getAccounts();
+        setAccounts(addresses.length > 0 ? addresses : []);
+        const userInfo = await web3auth.getUserInfo();
+        setUserInfo(userInfo);
+      }
+    } catch (error) {
+      console.error("Erro no login com email:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    const auth = getAuth(app);
+    await sendPasswordResetEmail(auth, email);
   };
 
   const login = async () => {
@@ -268,6 +336,8 @@ export default function useWeb3Auth() {
   return {
     logout,
     login,
+    loginWithEmail,
+    resetPassword,
     user,
     WalletUi,
     userInfo,

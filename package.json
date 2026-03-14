@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "NODE_ENV=production node server.js",
-    "lint": "next lint"
+    "lint": "next lint",
+    "seed": "node scripts/seed-firestore.js",
+    "seed:force": "node scripts/seed-firestore.js --force"
   },
   "dependencies": {
     "@mdx-js/loader": "^3.1.0",
@@ -21,6 +23,7 @@
     "@web3auth/openlogin-adapter": "^8.12.4",
     "@web3auth/wallet-services-plugin": "^8.12.5",
     "firebase": "^11.6.0",
+    "firebase-admin": "^13.7.0",
     "framer-motion": "^11.5.4",
     "gray-matter": "^4.0.3",
     "lottie-react": "^2.4.1",

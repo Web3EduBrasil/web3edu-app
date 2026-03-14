@@ -1,13 +1,14 @@
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/firebase/config";
 import { NextRequest, NextResponse } from "next/server";
+import { verifyAuth } from "@/lib/auth-helper";
 
 export const POST = async (req: NextRequest, res: NextResponse) => {
+  let verifiedUid: string;
+  try { verifiedUid = await verifyAuth(req); }
+  catch { return new NextResponse(JSON.stringify({ message: "Não autorizado" }), { status: 401 }); }
   try {
-    const data = await req.json();
-    console.log(data);
-
-    const userDocRef = doc(db, "users", data.uid);
+    const userDocRef = doc(db, "users", verifiedUid);
     const docSnap = await getDoc(userDocRef);
 
     if (docSnap.exists()) {
@@ -24,7 +25,7 @@ export const POST = async (req: NextRequest, res: NextResponse) => {
       );
     }
   } catch (error: any) {
-    console.log(error.message);
+    console.error(error.message);
     return new NextResponse(
       JSON.stringify({
         message: "Internal Server Error",

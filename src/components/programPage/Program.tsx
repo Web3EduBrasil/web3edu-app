@@ -1,7 +1,6 @@
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
-import { ContentProvider, useContent } from "@/providers/content-context";
-import { Task } from "../Task/Task";
+import { useContent } from "@/providers/content-context";
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 import { useRouter } from "next/navigation";
 import { ProgramContainer } from "../programsPage/ProgramContainer";
@@ -17,10 +16,6 @@ export const Program = ({ programId }: ProgramProps) => {
     requirements: {},
     title: "",
   });
-
-  useEffect(() => {
-    console.log(program);
-  }, [program]);
 
   const router = useRouter();
 
