@@ -1,3 +1,5 @@
+"use client";
+
 import UserCard from "./UserCard";
 import { NftsCard } from "./NftsCard";
 import { JourneysCard } from "./JourneysCard";
@@ -19,13 +21,13 @@ export const Home = () => {
         router.push(`/onboarding`);
       }
     }
-  }, [userDbInfo]);
+  }, [userDbInfo, router]);
 
   useEffect(() => {
     if (userDbInfo && achievedNfts.length === 0) {
       fetchAchievedNfts(userAccount[0]);
     }
-  }, [userDbInfo]);
+  }, [userDbInfo, achievedNfts.length, fetchAchievedNfts, userAccount]);
 
   return (
     <div className="h-full w-full grid items-center grid-cols-1 lg:grid-rows-5 pb-6 lg:grid-cols-5 lg:px-40 px-10 justify-center gap-10">

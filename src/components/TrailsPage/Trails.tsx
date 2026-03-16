@@ -19,7 +19,7 @@ export const Trails = () => {
     if (userDbInfo !== null && trailsList.length === 0) {
       fetchTrailsList(userDbInfo?.uid);
     }
-  }, [userDbInfo, trailsList]);
+  }, [userDbInfo, trailsList, fetchTrailsList]);
 
   useEffect(() => {
     if (trailsList.length > 0) {

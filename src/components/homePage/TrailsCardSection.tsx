@@ -11,7 +11,7 @@ export const TrailsCardSection = () => {
     if (Object.keys(trailsList).length === 0 && googleUserInfo !== null) {
       fetchTrailsList(googleUserInfo?.uid);
     }
-  }, [trailsList, googleUserInfo]);
+  }, [trailsList, googleUserInfo, fetchTrailsList]);
 
   return (
     <div className="flex flex-col lg:h-full h-80 w-full lg:col-span-3 lg:row-span-3 gap-3">

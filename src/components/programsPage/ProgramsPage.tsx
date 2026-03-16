@@ -16,7 +16,7 @@ export const Programs = () => {
     if (programsList.length <= 0) {
       fetchProgramsList();
     }
-  }, [programsList]);
+  }, [programsList, fetchProgramsList]);
 
   useEffect(() => {
     if (programsList.length > 0) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { CiStar } from "react-icons/ci";
+import Image from "next/image";
 
 import { useRouter } from "next/navigation";
 import { MotionDiv } from "../ui/MotionDiv";
@@ -19,12 +20,16 @@ export const ProgramCard = ({
       func={() => router.push(`/programPage/${id}`)}
     >
       <div className="card bg-cgray w-full h-full shadow-xl border-2 border-gray overflow-hidden text-left">
-        <img
-          src={image}
-          className="min-h-[40%]"
-          style={{ objectFit: "cover" }}
-          alt=""
-        />
+        <div className="relative min-h-[40%] w-full">
+          <Image
+            src={image || ""}
+            alt={title || "program image"}
+            fill
+            sizes="100%"
+            style={{ objectFit: "cover" }}
+            priority={false}
+          />
+        </div>
         <div className="card-body p-4 min-h-[60%]">
           <div className="flex flex-row items-center justify-start relative gap-2 w-full">
             <h2 className="card-title text-dgray w-[90%]">{title}</h2>

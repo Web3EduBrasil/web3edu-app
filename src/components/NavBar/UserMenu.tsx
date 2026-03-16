@@ -1,5 +1,6 @@
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { CgProfile } from "react-icons/cg";
 import { IoWalletOutline } from "react-icons/io5";
 
@@ -28,9 +29,16 @@ export const UserMenu = () => {
           role="button"
           className="btn btn-ghost btn-circle avatar"
         >
-          <div className="w-9 rounded-full">
+          <div className="w-9 rounded-full relative overflow-hidden">
             {userInfo ? (
-              <img alt="User Image" src={userInfo?.profileImage} fetchPriority="high"/>
+              <Image
+                src={userInfo?.profileImage || ""}
+                alt="User Image"
+                fill
+                sizes="36px"
+                style={{ objectFit: "cover" }}
+                priority
+              />
             ) : (
               <CgProfile className="w-9 h-9" />
             )}

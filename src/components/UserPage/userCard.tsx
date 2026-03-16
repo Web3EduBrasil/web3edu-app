@@ -1,6 +1,7 @@
 "use client";
 
 import { FaSave } from "react-icons/fa";
+import Image from "next/image";
 import { MotionButton } from "../ui/Button";
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 import { useEffect, useState } from "react";
@@ -46,7 +47,7 @@ export const UserSection = () => {
     if (activeTab === "certificados" && userAccount[0]) {
       fetchAchievedNfts(userAccount[0]);
     }
-  }, [activeTab, userAccount]);
+  }, [activeTab, userAccount, fetchAchievedNfts]);
 
   const linkedinRegex =
     /((https?:\/\/)?((www|\w\w)\.)?linkedin\.com\/)((([\w]{2,3})?)|([^\/]+\/(([\w|\d-&#?=])+\/?){1,}))$/;
@@ -130,11 +131,15 @@ export const UserSection = () => {
         {activeTab === "dados" && (
           <div className="flex flex-col gap-5">
             <div className="flex flex-row justify-start items-center gap-4">
-              <img
-                src={googleUserInfo?.photoURL || ""}
-                alt={userDbInfo?.displayName || "Avatar"}
-                className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover"
-              />
+              <div className="relative w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden">
+                <Image
+                  src={googleUserInfo?.photoURL || ""}
+                  alt={userDbInfo?.displayName || "Avatar"}
+                  fill
+                  sizes="64px"
+                  style={{ objectFit: "cover" }}
+                />
+              </div>
               <p className="text-dgray font-medium text-sm md:text-lg">
                 {userDbInfo?.displayName || ""}
               </p>
@@ -210,14 +215,20 @@ export const UserSection = () => {
                     rel="noopener noreferrer"
                     className="flex flex-col rounded-xl overflow-hidden border-2 border-gray bg-white hover:shadow-lg transition-shadow group"
                   >
-                    <img
-                      src={nft.ipfs}
-                      alt={`NFT ${nft.trailId}`}
-                      className="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = "/assets/icons/nft-placeholder.png";
-                      }}
-                    />
+                    <div className="w-full aspect-square relative">
+                      <Image
+                        src={nft.ipfs || "/assets/icons/nft-placeholder.png"}
+                        alt={`NFT ${nft.trailId}`}
+                        fill
+                        sizes="200px"
+                        style={{ objectFit: "cover" }}
+                        onError={(e) => {
+                          try {
+                            (e.target as HTMLImageElement).src = "/assets/icons/nft-placeholder.png";
+                          } catch {}
+                        }}
+                      />
+                    </div>
                     <div className="p-2">
                       <p className="text-xs font-semibold text-dgray truncate">{nft.trailId}</p>
                       <p className="text-xs text-dgray/60 flex items-center gap-1 mt-0.5">

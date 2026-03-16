@@ -1,5 +1,6 @@
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 import { IconButton } from "../ui/IconButton";
+import Image from "next/image";
 import { FaDiscord, FaLinkedin } from "react-icons/fa6";
 import { MotionDiv } from "../ui/MotionDiv";
 import { levelFromXp, xpProgressPercent } from "@/lib/xp";
@@ -23,13 +24,15 @@ export default function UserCard() {
       <div className="h-1/4 bg-ddblue rounded-t-box"></div>
       {/* Avatar com badge de nível */}
       <div className="absolute z-10 top-[12.5%] left-8">
-        <div className="border border-gray rounded-full h-20 w-20 overflow-hidden bg-white">
+        <div className="border border-gray rounded-full h-20 w-20 overflow-hidden bg-white relative">
           {googleUserInfo !== null ? (
-            <img
-              src={googleUserInfo?.photoURL}
-              alt=""
-              className="w-full h-full"
-              fetchPriority="high"
+            <Image
+              src={googleUserInfo?.photoURL || ""}
+              alt="user avatar"
+              fill
+              sizes="80px"
+              style={{ objectFit: "cover" }}
+              priority
             />
           ) : (
             <div className="skeleton h-full w-full"></div>

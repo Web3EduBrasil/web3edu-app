@@ -37,7 +37,7 @@ export const Learn = ({ trailIdRt, sectionId }: LearnProps) => {
       toast.error("Trilha não encontrada");
       router.push("/trailsPage");
     }
-  }, [trail, trailIdRt, trailsList, googleUserInfo]);
+  }, [trail, trailIdRt, trailsList, googleUserInfo, fetchTrail, fetchTrailsList, router]);
 
   return (
     <div className="md:h-full w-full justify-center items-center flex flex-col md:flex-row sm:px-10 sm:pb-6 md:gap-10 ">

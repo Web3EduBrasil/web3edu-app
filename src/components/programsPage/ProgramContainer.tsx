@@ -1,4 +1,5 @@
 import { FaClock } from "react-icons/fa6";
+import Image from "next/image";
 import { MotionButton } from "../ui/Button";
 import { toast } from "react-toastify";
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
@@ -31,12 +32,14 @@ export const ProgramContainer = ({
       {/* RewardContainer sobreposto ao card do programa */}
       <RewardContainer />
 
-      <div className="flex flex-col w-full h-2/5 justify-start items-start overflow-hidden">
-        <img
-          src={program?.banner}
-          className="w-full"
+      <div className="flex flex-col w-full h-2/5 justify-start items-start overflow-hidden relative">
+        <Image
+          src={program?.banner || ""}
+          alt={program?.title || "program banner"}
+          fill
+          sizes="100%"
           style={{ objectFit: "fill" }}
-          alt=""
+          priority={false}
         />
       </div>
       <div className="w-full h-full px-6 py-4 flex flex-col justify-between items-end">
