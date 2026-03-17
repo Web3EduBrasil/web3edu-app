@@ -1,7 +1,6 @@
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "@/firebase/config";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth-helper";
+import { adminDb } from "@/lib/firebase-admin";
 
 const todayStr = (): string => new Date().toISOString().split("T")[0];
 
@@ -13,8 +12,15 @@ const yesterdayStr = (): string => {
 
 export const POST = async (req: NextRequest) => {
   let verifiedUid: string;
-  try { verifiedUid = await verifyAuth(req); }
-  catch { return new NextResponse(JSON.stringify({ message: "Não autorizado" }), { status: 401 }); }
+  try {
+    verifiedUid = await verifyAuth(req);
+  } catch {
+    return new NextResponse(
+      JSON.stringify({ message: "Não autorizado" }),
+      { status: 401 },
+    );
+  }
+
   try {
     const uid = verifiedUid;
     if (!uid) {
@@ -23,16 +29,16 @@ export const POST = async (req: NextRequest) => {
       });
     }
 
-    const userDocRef = doc(db, "users", uid);
-    const snap = await getDoc(userDocRef);
-    if (!snap.exists()) {
+    const userDocRef = adminDb.collection("users").doc(uid);
+    const snap = await userDocRef.get();
+    if (!snap.exists) {
       return new NextResponse(
         JSON.stringify({ error: "Usuário não encontrado" }),
-        { status: 404 }
+        { status: 404 },
       );
     }
 
-    const data = snap.data();
+    const data = snap.data() as any;
     const today = todayStr();
     const yesterday = yesterdayStr();
     const lastActive: string = data.lastActiveAt || "";
@@ -41,19 +47,21 @@ export const POST = async (req: NextRequest) => {
     if (lastActive === today) {
       // Já registrado hoje — sem alteração
       return new NextResponse(JSON.stringify({ streak }), { status: 200 });
-    } else if (lastActive === yesterday) {
+    }
+
+    if (lastActive === yesterday) {
       streak += 1;
     } else {
       streak = 1;
     }
 
-    await updateDoc(userDocRef, { streak, lastActiveAt: today });
+    await userDocRef.update({ streak, lastActiveAt: today });
     return new NextResponse(JSON.stringify({ streak }), { status: 200 });
   } catch (error: any) {
-    console.error("streak error:", error.message);
+    console.error("streak error:", error.message || error);
     return new NextResponse(
       JSON.stringify({ message: "Internal Server Error" }),
-      { status: 500 }
+      { status: 500 },
     );
   }
 };

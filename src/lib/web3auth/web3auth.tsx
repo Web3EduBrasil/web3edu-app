@@ -47,9 +47,30 @@ const chainConfig = {
 
 const web3authConfig = {
   clientId: process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID || "",
-  web3AuthNetwork: "sapphire_devnet",
+  // Usa a env para escolher o network (devnet/mainnet)
+  web3AuthNetwork:
+    process.env.NEXT_PUBLIC_WEB3AUTH_NETWORK || "sapphire_devnet",
   chainConfig,
 };
+
+const resolveWeb3AuthNetwork = () => {
+  const env = (process.env.NEXT_PUBLIC_WEB3AUTH_NETWORK || "sapphire_devnet")
+    .toString()
+    .toLowerCase();
+
+  switch (env) {
+    case "mainnet":
+      return WEB3AUTH_NETWORK.MAINNET;
+    case "sapphire_mainnet":
+      return WEB3AUTH_NETWORK.SAPPHIRE_MAINNET;
+    case "cyan":
+      return WEB3AUTH_NETWORK.CYAN;
+    default:
+      return WEB3AUTH_NETWORK.SAPPHIRE_DEVNET;
+  }
+};
+
+const web3AuthNetworkEnum = resolveWeb3AuthNetwork();
 
 const openloginAdapter = new OpenloginAdapter({
   adapterSettings: {
@@ -78,7 +99,7 @@ const openloginAdapter = new OpenloginAdapter({
 if (!(globalThis as any).__web3authInstance) {
   const instance = new Web3AuthNoModal({
     clientId: web3authConfig.clientId,
-    web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
+    web3AuthNetwork: web3AuthNetworkEnum,
     chainConfig: web3authConfig.chainConfig,
     uiConfig: {
       logoLight:
@@ -102,7 +123,7 @@ function ensureWeb3Auth(): Web3AuthNoModal {
   if (!(globalThis as any).__web3authInstance) {
     const instance = new Web3AuthNoModal({
       clientId: web3authConfig.clientId,
-      web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
+      web3AuthNetwork: web3AuthNetworkEnum,
       chainConfig: web3authConfig.chainConfig,
       uiConfig: {
         logoLight:
@@ -181,20 +202,31 @@ export default function useWeb3Auth() {
           w3.addPlugin(wp);
         }
 
-        try {
-          console.debug("Initializing Web3Auth instance:", w3);
-          if (typeof w3.init === "function") {
-            await w3.init();
-          } else {
-            console.error("Web3Auth init not a function", w3);
+        // Só chama init se ainda não estiver pronto/conectado
+        if (w3.status === "not_ready" || w3.status === "errored") {
+          try {
+            console.debug("Initializing Web3Auth instance:", w3);
+            if (typeof w3.init === "function") {
+              await w3.init();
+            } else {
+              console.error("Web3Auth init not a function", w3);
+            }
+          } catch (initErr: any) {
+            const msg = String(initErr?.message || initErr);
+            if (
+              msg.includes("Adapter is already initialized") ||
+              msg.includes("Wallet is not ready yet")
+            ) {
+              console.warn(
+                "Web3Auth init skipped: already initialized or wallet not ready.",
+                msg,
+              );
+            } else {
+              throw initErr;
+            }
           }
-        } catch (initErr: any) {
-          const msg = String(initErr?.message || initErr);
-          if (msg.includes("Adapter is already initialized") || msg.includes("Wallet is not ready yet")) {
-            console.warn("Web3Auth init skipped: already initialized or wallet not ready.", msg);
-          } else {
-            throw initErr;
-          }
+        } else {
+          console.debug("Skipping Web3Auth init, status:", w3.status);
         }
 
         setProvider(w3.provider);
@@ -323,11 +355,13 @@ export default function useWeb3Auth() {
         const wp = ensureWalletPlugin();
         if (w3.getPlugin("wallet-services") === null) w3.addPlugin(wp);
 
-        if (typeof w3.init === "function") {
-          try {
-            await w3.init();
-          } catch (e) {
-            console.warn("w3.init() warning (can be ignored):", e);
+        if (w3.status === "not_ready" || w3.status === "errored") {
+          if (typeof w3.init === "function") {
+            try {
+              await w3.init();
+            } catch (e) {
+              console.warn("w3.init() warning (can be ignored):", e);
+            }
           }
         }
 
@@ -385,11 +419,13 @@ export default function useWeb3Auth() {
         const wp = ensureWalletPlugin();
         if (w3.getPlugin("wallet-services") === null) w3.addPlugin(wp);
 
-        if (typeof w3.init === "function") {
-          try {
-            await w3.init();
-          } catch (e) {
-            console.warn("w3.init() warning (can be ignored):", e);
+        if (w3.status === "not_ready" || w3.status === "errored") {
+          if (typeof w3.init === "function") {
+            try {
+              await w3.init();
+            } catch (e) {
+              console.warn("w3.init() warning (can be ignored):", e);
+            }
           }
         }
 
