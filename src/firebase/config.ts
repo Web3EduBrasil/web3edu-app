@@ -1,5 +1,4 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 import { getFirestore } from "firebase/firestore";
@@ -15,9 +14,9 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Validate required env vars early to provide a clearer error during development
-if (!firebaseConfig.apiKey) {
-  throw new Error(
+// Validate required env vars — apenas no browser (evita falhar durante next build)
+if (typeof window !== "undefined" && !firebaseConfig.apiKey) {
+  console.error(
     'Missing NEXT_PUBLIC_FIREBASE_API_KEY environment variable. Copy .env.example to .env.local and set your Firebase keys, then restart the dev server.'
   );
 }
