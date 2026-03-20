@@ -1,5 +1,9 @@
 import createMDX from "@next/mdx";
 import createNextIntlPlugin from "next-intl/plugin";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
@@ -43,6 +47,16 @@ const nextConfig = {
       "pino-pretty": false,
       "encoding": false,
     };
+
+    // No servidor (SSR), idb-keyval usa indexedDB que não existe no Node.js.
+    // O WalletConnect tenta inicializá-lo durante setup(), quebrando o SSR.
+    // Redirecionamos para um stub no-op que não acessa indexedDB.
+    if (isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        "idb-keyval": path.resolve(__dirname, "src/stubs/idb-keyval.js"),
+      };
+    }
 
     return config;
   }
