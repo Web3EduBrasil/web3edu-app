@@ -1,10 +1,10 @@
-import {ethers} from "ethers";
-import {contractABI} from "./SmartContractABI";
+import { ethers } from "ethers";
+import { contractABI } from "./SmartContractABI";
 
 function getWallet(privKey: string, rpc: string): ethers.Wallet {
   return new ethers.Wallet(
     privKey,
-    ethers.getDefaultProvider("sepolia", {alchemy: rpc})
+    new ethers.JsonRpcProvider(rpc)
   );
 }
 

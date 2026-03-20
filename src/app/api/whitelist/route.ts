@@ -1,29 +1,34 @@
-import { collection, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { db } from "@/firebase/config";
+import { adminDb } from "@/lib/firebase-admin";
 import { NextRequest, NextResponse } from "next/server";
+import { verifyAuth } from "@/lib/auth-helper";
 
 export const POST = async (req: NextRequest, res: NextResponse) => {
+  let verifiedUid: string;
+  try { verifiedUid = await verifyAuth(req); }
+  catch { return new NextResponse(JSON.stringify({ message: "Não autorizado" }), { status: 401 }); }
   try {
-    const { uid, walletAddress, trailId, ipfsHash } = await req.json();
-    if (!trailId || !walletAddress || !uid || !ipfsHash) {
+    const { walletAddress, trailId, ipfsHash } = await req.json();
+    const uid = verifiedUid;
+    if (!trailId || !walletAddress || !ipfsHash) {
       return new NextResponse(
         JSON.stringify({
-          error: `Parâmetros trailId, walletAddres, ipfsHash e uid são obrigatórios ${uid}, ${walletAddress}, ${trailId}, ${ipfsHash}`,
+          error: "Parâmetros trailId, walletAddress e ipfsHash são obrigatórios",
         }),
         { status: 400 }
       );
     }
-    const whitelistDocRef = doc(db, "whitelist", uid);
-    const docSnap = await getDoc(whitelistDocRef);
+    const whitelistDocRef = adminDb.collection("whitelist").doc(uid);
+    const docSnap = await whitelistDocRef.get();
 
-    if (docSnap.exists()) {
+    if (docSnap.exists) {
       // Se o documento já existe, atualiza o status da trilha
-      await updateDoc(whitelistDocRef, {
-        address: walletAddress, // Atualiza o endereço, se necessário
+      await whitelistDocRef.update({
+        address: walletAddress,
         [`status.${trailId}`]: {
-          // Usa a notação de colchetes para criar a chave dinamicamente
           eligible: true,
           ipfsHash: ipfsHash,
+          minted: false,
+          txHash: "",
         },
       });
 
@@ -35,7 +40,7 @@ export const POST = async (req: NextRequest, res: NextResponse) => {
       );
     } else {
       // Cria o novo documento na coleção "whitelist"
-      await setDoc(whitelistDocRef, {
+      await whitelistDocRef.set({
         address: walletAddress,
         status: {
           // Cria o objeto status com a trilha como chave
@@ -76,10 +81,10 @@ export const GET = async (req: NextRequest) => {
       );
     }
 
-    const whitelistDocRef = doc(db, "whitelist", uid);
-    const docSnap = await getDoc(whitelistDocRef);
+    const whitelistDocRef = adminDb.collection("whitelist").doc(uid);
+    const docSnap = await whitelistDocRef.get();
 
-    if (!docSnap.exists()) {
+    if (!docSnap.exists) {
       return new NextResponse(
         JSON.stringify({
           eligible: true,
@@ -92,20 +97,24 @@ export const GET = async (req: NextRequest) => {
     const trailStatus = userData?.status?.[trailId];
 
     if (!trailStatus) {
+      // Trilha nunca foi solicitada — usuário é elegível
       return new NextResponse(
         JSON.stringify({
-          eligible: false,
+          eligible: true,
         }),
         { status: 200 }
       );
     }
 
-    // Check if the user is eligible and has no TX hash, maybe validate the minted status
-    const isEligible = trailStatus.txHash === "" || !trailStatus.txHash;
+    // Elegível somente se ainda não foi mintado E não tem txHash (não processado ainda)
+    const alreadyMinted = trailStatus.minted === true;
+    const hasTxHash = trailStatus.txHash && trailStatus.txHash !== "";
+    const isEligible = !alreadyMinted && !hasTxHash;
 
     return new NextResponse(
       JSON.stringify({
         eligible: isEligible,
+        txHash: trailStatus.txHash || null,
       }),
       { status: 200 }
     );

@@ -12,65 +12,58 @@ import { useState } from "react";
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 import { Bounce, toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import { authHeaders } from "@/lib/getIdToken";
+import { useTranslations } from "next-intl";
 
-const steps = [
-  {
-    title: "Carteira Web3",
-    description:
-      "Nossa plataforma conta com uma carteira web3 integrada única para cada usuário, permitindo que você explore e interaja com a web3 em poucos cliques.",
-    image: Onboarding1.src,
-    progress: 20,
-    instruction: "Entre na carteira localizada no canto superior direito",
-  },
-  {
-    title: "Configure a sua Carteira",
-    description:
-      "Esta é a sua carteira! Com ela, você poderá receber NFTs como recompensa ao concluir trilhas de aprendizagem. Antes de começar, vamos configurá-la juntos.",
-    image: Onboarding2.src,
-    progress: 40,
-    instruction: "Vá até a aba de (Configurações)",
-  },
-  {
-    title: "Configure a sua Carteira",
-    description:
-      "Esta é a sua carteira! Com ela, você poderá receber NFTs como recompensa ao concluir trilhas de aprendizagem. Antes de começar, vamos configurá-la juntos.",
-    image: Onboarding3.src,
-    progress: 60,
-    instruction: "Vá até a sessão (Em Geral)",
-  },
-  {
-    title: "Configure a sua Carteira",
-    description:
-      "Essas configurações são essenciais para que você possa receber os NFTs de recompensa ao completar nossas trilhas de aprendizagem.",
-    image: Onboarding4.src,
-    progress: 80,
-    instruction:
-      "Ative a opção 'Redes de Teste' e, em seguida, selecione 'Ethereum Sepolia' como sua rede padrão.",
-  },
-  {
-    title: "Tudo Pronto!",
-    description:
-      "Ótimo! Agora que as configurações estão concluídas, você está pronto para criar sua conta e começar a explorar nossas trilhas de aprendizagem. Vamos lá?",
-    image: Onboarding5.src,
-    progress: 100,
-    instruction: "Sua carteira deve ficar da seguinte maneira:",
-    additionalText:
-      "Este tutorial estará sempre disponível na aba Ajuda, caso precise revisitar algum passo ou tirar dúvidas.",
-  },
+const WALLET_IMAGES = [
+  Onboarding1.src,
+  Onboarding2.src,
+  Onboarding3.src,
+  Onboarding4.src,
+  Onboarding5.src,
 ];
+
+const WALLET_PROGRESS = [20, 40, 60, 80, 100];
 
 export const ObWalletContainer = () => {
   const { googleUserInfo, setUserDbInfo } = useWeb3AuthContext();
   const router = useRouter();
+  const t = useTranslations("onboarding.wallet");
+
+  const steps = [
+    {
+      title: t("step1Title"),
+      description: t("step1Text"),
+      instruction: t("step1Instruction"),
+    },
+    {
+      title: t("step2Title"),
+      description: t("step2Text"),
+      instruction: t("step2Instruction"),
+    },
+    {
+      title: t("step2Title"),
+      description: t("step2Text"),
+      instruction: t("step3Instruction"),
+    },
+    {
+      title: t("step2Title"),
+      description: t("step4Text"),
+      instruction: t("step4Instruction"),
+    },
+    {
+      title: t("step2Title"),
+      description: t("step5Text"),
+      instruction: t("step5Instruction"),
+    },
+  ];
 
   const fetchTutorialDone = async () => {
     try {
       const response = await fetch("/api/user/onboarding", {
         method: "POST",
-        headers: { "Content-Type": "aplication/json" },
-        body: JSON.stringify({
-          uid: googleUserInfo?.uid,
-        }),
+        headers: await authHeaders(),
+        body: JSON.stringify({}),
       });
       if (response.ok) {
         const response = await fetch(`/api/user?uid=${googleUserInfo?.uid}`, {
@@ -101,13 +94,10 @@ export const ObWalletContainer = () => {
   const handleNextStep = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
-    } else {
-      console.log("Finalizado");
     }
   };
 
-  const { title, description, image, progress, instruction, additionalText } =
-    steps[currentStep];
+  const { title, description, instruction } = steps[currentStep];
 
   return (
     <div className="flex md:flex-row flex-col">
@@ -118,7 +108,7 @@ export const ObWalletContainer = () => {
             <p className="text-5xl text-dblue">{title}</p>
             <p className="text-2xl">{description}</p>
             {currentStep === steps.length - 1 && (
-              <p className="text-lg text-gray-600 mt-4">{additionalText}</p>
+              <p className="text-lg text-gray-600 mt-4">{t("availableHelp")}</p>
             )}
           </div>
         </div>
@@ -126,12 +116,12 @@ export const ObWalletContainer = () => {
       <div className="md:w-3/6 w-full h-full flex flex-col items-center justify-center p-10 gap-10">
         <progress
           className="progress progress-success w-56"
-          value={progress}
+          value={WALLET_PROGRESS[currentStep]}
           max="100"
         ></progress>
         <div
           style={{
-            backgroundImage: `url(${image})`,
+            backgroundImage: `url(${WALLET_IMAGES[currentStep]})`,
             backgroundSize: "cover",
             backgroundPosition: "top",
           }}
@@ -141,11 +131,7 @@ export const ObWalletContainer = () => {
           <p>{instruction}</p>
         </div>
         <MotionButton
-          label={
-            currentStep === steps.length - 1
-              ? "Configure sua Carteira"
-              : "Próximo Passo"
-          }
+          label={currentStep === steps.length - 1 ? t("finish") : t("nextStep")}
           type="button"
           func={() =>
             currentStep === steps.length - 1

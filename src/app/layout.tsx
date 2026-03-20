@@ -7,6 +7,10 @@ import { ToastContainer } from "react-toastify";
 import { RewardContainer } from "@/components/RewardContainer/RewardContainer";
 import { Lexend_Deca } from "next/font/google";
 import { LoadingProvider } from "@/lib/loading-context";
+import { WagmiProviders } from "@/lib/wagmi/WagmiProviders";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
+import { cookies } from "next/headers";
 import type { Metadata } from "next";
 
 const LexendDeca = Lexend_Deca({
@@ -61,45 +65,53 @@ export const metadata: Metadata = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+  const cookieStore = await cookies();
+  const theme = cookieStore.get("APP_THEME")?.value === "dark" ? "dark" : "light";
+
   return (
-    <html lang="pt-br">
+    <html lang={locale} data-theme={theme} suppressHydrationWarning>
       <head>
         <meta name="robots" content="index, follow" />
       </head>
       <body className={LexendDeca.className}>
-        <LoadingProvider>
-          <Web3AuthProvider>
-            <ContentProvider>
-              <main
-                className="flex w-full flex-col items-center bg-neutralbg justify-start h-screen overflow-hidden "
-                data-theme="light"
-              >
-                <NavBar />
-                <section className="flex flex-col h-full w-full overflow-y-auto ">
-                  {children}
-                </section>
-                <RewardContainer />
-                <ToastContainer
-                  position="top-center"
-                  autoClose={2500}
-                  hideProgressBar={false}
-                  newestOnTop={false}
-                  closeOnClick
-                  rtl={false}
-                  pauseOnFocusLoss
-                  draggable
-                  pauseOnHover
-                  theme="light"
-                />
-              </main>
-            </ContentProvider>
-          </Web3AuthProvider>
-        </LoadingProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <WagmiProviders>
+            <LoadingProvider>
+              <Web3AuthProvider>
+                <ContentProvider>
+                  <main
+                    className="flex w-full flex-col items-center bg-neutralbg justify-start h-screen overflow-hidden "
+                  >
+                    <NavBar />
+                    <section className="flex flex-col h-full w-full overflow-y-auto ">
+                      {children}
+                    </section>
+                    <RewardContainer />
+                    <ToastContainer
+                      position="top-center"
+                      autoClose={2500}
+                      hideProgressBar={false}
+                      newestOnTop={false}
+                      closeOnClick
+                      rtl={false}
+                      pauseOnFocusLoss
+                      draggable
+                      pauseOnHover
+                      theme={theme}
+                    />
+                  </main>
+                </ContentProvider>
+              </Web3AuthProvider>
+            </LoadingProvider>
+          </WagmiProviders>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

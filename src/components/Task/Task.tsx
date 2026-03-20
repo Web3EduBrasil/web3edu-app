@@ -1,10 +1,13 @@
 import { useEffect, useState, useCallback } from "react";
 import { RenderQuizV } from "./Quiz";
 import { useContent } from "@/providers/content-context";
-
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 import MdxSection from "./RenderMdx";
 import { RenderQuestionV } from "./Question";
+import { RenderVideoV } from "./RenderVideoV";
+import { RenderAudioV } from "./RenderAudioV";
+import { RenderImageV } from "./RenderImageV";
+import { authHeaders } from "@/lib/getIdToken";
 
 export const Task = ({
   sectionId,
@@ -18,6 +21,7 @@ export const Task = ({
     fetchTrailSections,
     handleRewardContainer,
     trailSections,
+    trail,
   } = useContent();
   const [section, setSection] = useState<any>({});
   const { googleUserInfo } = useWeb3AuthContext();
@@ -28,9 +32,10 @@ export const Task = ({
       sectionId,
       googleUserInfo?.uid
     );
+    const sorted = [...trailSections].sort((a, b) => Number(a.id) - Number(b.id));
     const isLast =
-      trailSections.length > 0 &&
-      trailSections[trailSections.length - 1].id === sectionId;
+      sorted.length > 0 &&
+      String(sorted[sorted.length - 1].id) === String(sectionId);
     setSection({ ...sectionData, isLast });
   }, [trailId, sectionId, googleUserInfo, fetchSectionContent, trailSections]);
 
@@ -40,34 +45,30 @@ export const Task = ({
     }
   }, [googleUserInfo, trailId, section, fetchData]);
 
-  useEffect(() => {
-    console.log(section);
-  }, [section]);
-
   const fetchDone = async (isLast: Boolean) => {
     try {
       const response = await fetch("/api/user/section", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: await authHeaders(),
         body: JSON.stringify({
           trailId: trailId,
           sectionId: sectionId,
-          uid: googleUserInfo?.uid,
         }),
       });
       if (response.ok) {
         fetchTrailSections(trailId, googleUserInfo?.uid);
         setSection({ ...section, done: true });
         if (isLast) {
-          handleRewardContainer();
+          handleRewardContainer({
+            type: "trail",
+            id: trailId,
+            name: trail?.name || trailId,
+            icon: trail?.banner || "",
+          });
         }
       }
-      const data = await response.json();
-      console.log(data);
     } catch (error: any) {
-      console.log(error);
+      console.error(error);
     }
   };
 
@@ -106,6 +107,34 @@ export const Task = ({
               trailId={trailId}
               done={section.done}
               id={section.id}
+            />
+          ) : section.type === "video" ? (
+            <RenderVideoV
+              videoUrl={section.videoUrl}
+              description={section.description}
+              fetchDone={fetchDone}
+              isLast={section.isLast}
+              done={section.done} id={section.id}
+              trailId={trailId} />
+          ) : section.type === "audio" ? (
+            <RenderAudioV
+              audioUrl={section.audioUrl}
+              title={section.title}
+              description={section.description}
+              fetchDone={fetchDone}
+              isLast={section.isLast}
+              done={section.done} id={section.id}
+              trailId={trailId} />
+          ) : section.type === "image" ? (
+            <RenderImageV
+              imageUrl={section.imageUrl}
+              caption={section.caption}
+              description={section.description}
+              id={section.id}
+              trailId={trailId}
+              fetchDone={fetchDone}
+              isLast={section.isLast}
+              done={section.done}
             />
           ) : (
             <>

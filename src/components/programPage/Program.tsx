@@ -1,7 +1,6 @@
-import { use, useEffect, useState } from "react";
-
-import { ContentProvider, useContent } from "@/providers/content-context";
-import { Task } from "../Task/Task";
+import { useEffect, useState } from "react";
+import { ProgramProps, ProgramContainerProps } from "@/interfaces/interfaces";
+import { useContent } from "@/providers/content-context";
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 import { useRouter } from "next/navigation";
 import { ProgramContainer } from "../programsPage/ProgramContainer";
@@ -18,55 +17,52 @@ export const Program = ({ programId }: ProgramProps) => {
     title: "",
   });
 
-  useEffect(() => {
-    console.log(program);
-  }, [program]);
-
   const router = useRouter();
 
-  const fetchProgram = async () => {
-    try {
-      const response = await fetch(`/api/program?programId=${programId}`, {
-        method: "GET",
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message);
-      }
-
-      const data = await response.json();
-      const requiredTrail = trailsList.find(
-        (trail: { id: string }) => trail.id === data.requirements.trail
-      );
-
-      // Armazena o nome e a porcentagem da trilha
-      if (requiredTrail) {
-        data.requirements.trailName = requiredTrail.name;
-        data.requirements.trailPercentage = requiredTrail.percentage;
-      }
-      setProgram(data);
-    } catch (error: any) {
-      console.error("Erro na requisição fetchProgram:", error);
-    }
-  };
 
   useEffect(() => {
     if (!userInfo) {
       router.push("/");
     }
-  }, [userInfo]);
+  }, [userInfo, router]);
 
   useEffect(() => {
     if (Object.keys(userDbInfo).length !== 0) {
       fetchTrailsList(userDbInfo?.uid);
     }
-  }, [programId, userDbInfo]);
+  }, [programId, userDbInfo, fetchTrailsList]);
 
   useEffect(() => {
+    const fetchProgram = async () => {
+      try {
+        const response = await fetch(`/api/program?programId=${programId}`, {
+          method: "GET",
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message);
+        }
+
+        const data = await response.json();
+        const requiredTrail = trailsList.find(
+          (trail: { id: string }) => trail.id === data.requirements.trail
+        );
+
+        // Armazena o nome e a porcentagem da trilha
+        if (requiredTrail) {
+          data.requirements.trailName = requiredTrail.name;
+          data.requirements.trailPercentage = requiredTrail.percentage;
+        }
+        setProgram(data);
+      } catch (error: any) {
+        console.error("Erro na requisição fetchProgram:", error);
+      }
+    };
+
     if (program.programId === "" && trailsList.length > 0) {
       fetchProgram();
     }
-  }, [programId, trailsList]);
+  }, [programId, trailsList, program.programId]);
 
   return (
     <div className="md:h-full w-full justify-center items-center flex flex-col md:flex-row sm:px-10 sm:pb-6 md:gap-10 ">

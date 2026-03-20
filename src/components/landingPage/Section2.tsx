@@ -1,12 +1,16 @@
+"use client";
+
 import MainFunctions from "./mainFunctions";
 import dynamic from 'next/dynamic';
 import AnimationLearning from "../../../public/assets/animations/LearningAnimation.json";
 import AnimationRewards from "../../../public/assets/animations/RewardsAnimation.json";
 import AnimationEmBreve from "../../../public/assets/animations/EmBreveAnimation.json";
+import { useTranslations } from "next-intl";
 
 const Lottie = dynamic(() => import('lottie-react'), { ssr: false });
 
 export default function Section2() {
+  const t = useTranslations("landing.features");
   return (
     <div className="w-full flex flex-col">
       <figure>
@@ -20,15 +24,15 @@ export default function Section2() {
       </figure>
 
       <div className="bg-cgreen w-full h-fit p-10 flex flex-col justify-center items-center gap-10 mt-[-1px]">
-        <p className="text-neutral text-3xl font-bold">Principais Funções</p>
+        <p className="text-neutral text-3xl font-bold">{t("title")}</p>
 
         {/* container do scroll horizontal */}
         <div className="w-full overflow-x-auto">
           {/* linha de funções, centralizada na tela mas alinhando os itens à esquerda */}
           <div className="flex justify-start items-center gap-10 py-10 h-fit text-justify max-w-7xl mx-auto px-4">
             <MainFunctions
-              functionName="Sistema de Recompensas"
-              content="Os alunos que concluem as trilhas de aprendizagem recebem certificação via blockchain, garantindo reconhecimento autêntico e verificável do conhecimento adquirido."
+              functionName={t("rewards")}
+              content={t("rewardsContent")}
               image={
                 <Lottie
                   animationData={AnimationRewards}
@@ -40,8 +44,8 @@ export default function Section2() {
             />
 
             <MainFunctions
-              functionName="Trilhas de Aprendizagem"
-              content="Nossas trilhas de aprendizagem guiam os alunos do básico ao avançado de forma prática e interativa, com módulos bem estruturados e testes para reforçar o conhecimento."
+              functionName={t("learningTrails")}
+              content={t("learningTrailsContent")}
               image={
                 <Lottie
                   animationData={AnimationLearning}
@@ -53,12 +57,8 @@ export default function Section2() {
             />
 
             <MainFunctions
-              functionName={
-                <>
-                  Mais <br /> em breve...
-                </>
-              }
-              content="Nós oferecemos um fórum para que nossos usuários possam compartilhar experiências e relatos sobre blockchain"
+              functionName={t("soon")}
+              content={t("soonContent")}
               image={
                 <Lottie
                   animationData={AnimationEmBreve}

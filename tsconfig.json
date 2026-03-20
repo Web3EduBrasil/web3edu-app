@@ -1,6 +1,10 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -13,7 +17,9 @@
     "jsx": "preserve",
     "incremental": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     },
     "plugins": [
       {
@@ -28,8 +34,9 @@
     ".next/types/**/*.ts",
     "src/components/Task/RenderMdx.tsx"
   ],
-  "exclude": ["node_modules"]
-
-
-  
+  "exclude": [
+    "node_modules",
+    "functions",
+    "scripts"
+  ]
 }

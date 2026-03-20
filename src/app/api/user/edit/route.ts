@@ -1,10 +1,14 @@
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { db } from "@/firebase/config";
+import { adminDb } from "@/lib/firebase-admin";
 import { NextRequest, NextResponse } from "next/server";
+import { verifyAuth } from "@/lib/auth-helper";
 
 export const POST = async (req: NextRequest) => {
+  let verifiedUid: string;
+  try { verifiedUid = await verifyAuth(req); }
+  catch { return new NextResponse(JSON.stringify({ message: "Não autorizado" }), { status: 401 }); }
   try {
-    const { uid, displayName, socialMedia } = await req.json();
+    const { displayName, socialMedia } = await req.json();
+    const uid = verifiedUid;
 
     if (
       !uid ||
@@ -22,11 +26,11 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
-    const userDocRef = doc(db, "users", uid);
-    const docSnap = await getDoc(userDocRef);
+    const userDocRef = adminDb.collection("users").doc(uid);
+    const docSnap = await userDocRef.get();
 
-    if (docSnap.exists()) {
-      await updateDoc(userDocRef, {
+    if (docSnap.exists) {
+      await userDocRef.update({
         displayName,
         socialMedia,
       });
@@ -36,7 +40,7 @@ export const POST = async (req: NextRequest) => {
         { status: 200 }
       );
     } else {
-      await setDoc(userDocRef, {
+      await userDocRef.set({
         displayName,
         socialMedia,
       });
@@ -47,7 +51,7 @@ export const POST = async (req: NextRequest) => {
       );
     }
   } catch (error: any) {
-    console.log(error.message);
+    console.error(error.message);
     return new NextResponse(
       JSON.stringify({ message: "Internal Server Error" }),
       { status: 500 }

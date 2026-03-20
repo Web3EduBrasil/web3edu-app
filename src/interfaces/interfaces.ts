@@ -1,48 +1,48 @@
-interface MotionButtonProps<T> {
+export interface MotionButtonProps<T> {
   label: string;
   type: "button" | "submit" | "reset";
   className?: string;
-  rightIcon?: Boolean;
+  rightIcon?: boolean;
   Icon?: React.ComponentType<{ className: string }> | string;
   func: (param: T) => T;
 }
 
-interface AiAnswerProps {
+export interface AiAnswerProps {
   explicacao: string;
-  valido: Boolean;
+  valido: boolean;
 }
 
-interface IconButtonProps<T> {
+export interface IconButtonProps<T> {
   func: (param: T) => T;
   className?: string;
   Icon: React.ComponentType<{ className: string }>;
 }
 
-interface MotionDiv<T> {
+export interface MotionDiv<T> {
   className?: string;
   func?: (param: T) => T;
   children: React.ReactNode;
 }
 
-interface LearnProps {
-  trailIdRt: any;
-  sectionId: any;
+export interface LearnProps {
+  trailIdRt: string;
+  sectionId: string;
 }
 
-interface ProgramProps {
-  programId: any;
+export interface ProgramProps {
+  programId: string;
 }
 
-interface ProgramContainerProps {
+export interface ProgramContainerProps {
   programId: string;
   banner: string;
   description: string;
-  estimatedTime: Number;
-  requirements: any;
+  estimatedTime: number;
+  requirements: { trailPercentage?: number; trailName?: string };
   title: string;
 }
 
-interface Interests {
+export interface Interests {
   crypto: boolean;
   blockchain: boolean;
   rwa: boolean;
@@ -50,62 +50,62 @@ interface Interests {
   defi: boolean;
 }
 
-interface Kyc1Props<T> {
+export interface Kyc1Props<T> {
   setLevel: React.Dispatch<React.SetStateAction<string>>;
   level: string;
   handleTabClick: (param: string) => T;
 }
 
-interface Kyc2Props<T> {
+export interface Kyc2Props<T> {
   interests: Interests;
   setInterests: React.Dispatch<React.SetStateAction<Interests>>;
   handleTabClick: (param: string) => T;
   fetchKyc: () => Promise<void>;
 }
 
-interface KycIntroProps<T> {
+export interface KycIntroProps<T> {
   handleTabClick: (param: string) => T;
 }
 
-interface OnboardingProps<T> {
+export interface OnboardingProps<T> {
   handleTabClick: (param: string) => T;
 }
 
-interface ObIntro<T> {
+export interface ObIntro<T> {
   handleTabClick: (param: string) => T;
 }
 
-interface HandleScreenProps {
+export interface HandleScreenProps {
   activeTab: string;
 }
 
-interface TaskUnitsProps {
+export interface TaskUnitsProps {
   text: string;
   id: string;
   trailId: string;
-  done: Boolean;
+  done: boolean;
   index: number;
 }
 
-interface TrailsPageProps {
+export interface TrailsPageProps {
   id: string;
   image: string;
   title: string;
   description: string;
 }
 
-interface TrailCardHomeProps {
+export interface TrailCardHomeProps {
   Icon?: React.ComponentType<{ className: string }> | string;
   text: string;
   progress: number;
   trailId: string;
 }
 
-interface TrailSectionData<T> {
+export interface TrailSectionData<T> {
   contents: Array<T>;
 }
 
-interface Trail {
+export interface Trail {
   categories: string[];
   introVideo: string;
   createdAt: { seconds: number; nanoseconds: number };
@@ -116,7 +116,7 @@ interface Trail {
   trailId: string;
 }
 
-interface AchievedNft {
+export interface AchievedNft {
   walletAddress: string;
   trailId: string;
   ipfs: string;

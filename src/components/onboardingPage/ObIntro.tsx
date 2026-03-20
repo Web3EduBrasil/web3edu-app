@@ -6,19 +6,21 @@ import { MotionButton } from "../ui/Button";
 import { useRouter } from "next/navigation";
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 import { Bounce, toast } from "react-toastify";
+import { OnboardingProps } from "@/interfaces/interfaces";
+import { authHeaders } from "@/lib/getIdToken";
+import { useTranslations } from "next-intl";
 
 export const ObIntro = ({ handleTabClick }: OnboardingProps<void>) => {
   const router = useRouter();
   const { googleUserInfo, setUserDbInfo } = useWeb3AuthContext();
+  const t = useTranslations("onboarding");
 
   const fetchTutorialDone = async () => {
     try {
       const response = await fetch("/api/user/onboarding", {
         method: "POST",
-        headers: { "Content-Type": "aplication/json" },
-        body: JSON.stringify({
-          uid: googleUserInfo?.uid,
-        }),
+        headers: await authHeaders(),
+        body: JSON.stringify({}),
       });
       if (response.ok) {
         const response = await fetch(`/api/user?uid=${googleUserInfo?.uid}`, {
@@ -53,21 +55,20 @@ export const ObIntro = ({ handleTabClick }: OnboardingProps<void>) => {
         />
         <div className="text-neutral font-semibold flex flex-col justify-center items-center gap-5">
           <p className="md:text-4xl text-3xl text-dblue">
-            Seja bem vindo a Web3EduBrasil!
+            {t("welcome.title")}
           </p>
           <p className="md:text-2xl text-xl  text-center">
-            Antes de começarmos, vamos entender as funcionalidades da plataforma
-            Web3EduBrasil
+            {t("welcome.subtitle")}
           </p>
         </div>
         <MotionButton
-          label="Avançar"
+          label={t("next")}
           type="button"
           func={() => handleTabClick("ObCommu")}
           className="bg-cgreen w-28 text-neutral font-bold"
         />
         <div className="cursor-pointer text-dblue">
-          <a onClick={() => fetchTutorialDone()}>Pular Introdução</a>
+          <a onClick={() => fetchTutorialDone()}>{t("skip")}</a>
         </div>
       </div>
     </div>

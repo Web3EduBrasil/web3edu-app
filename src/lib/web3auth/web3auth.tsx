@@ -1,250 +1,270 @@
 "use client";
 
 import {
-  ADAPTER_EVENTS,
-  CHAIN_NAMESPACES,
-  IProvider,
-  WALLET_ADAPTERS,
-  WEB3AUTH_NETWORK,
-} from "@web3auth/base";
-import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
-import { Web3AuthNoModal } from "@web3auth/no-modal";
-import {
-  OpenloginAdapter,
-  OpenloginLoginParams,
-} from "@web3auth/openlogin-adapter";
-import {
   getAuth,
   GoogleAuthProvider,
   onAuthStateChanged,
   signInWithPopup,
+  signInWithEmailAndPassword,
+  signInWithCustomToken,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut,
   User,
   UserCredential,
 } from "firebase/auth";
-import React, { useEffect, useState } from "react";
-import { WalletServicesPlugin } from "@web3auth/wallet-services-plugin";
-import Web3 from "web3";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { app } from "@/firebase/config";
 import { useLoading } from "../loading-context";
 import { toast } from "react-toastify";
-import { logEvent } from "firebase/analytics";
-
-// Configuração do Web3Auth e da Chain
-const chainConfig = {
-  chainNamespace: CHAIN_NAMESPACES.EIP155,
-  chainId: "0xAA36A7",
-  rpcTarget: process.env.NEXT_PUBLIC_ALCHEMY_RPC_TARGET || "",
-  displayName: "Sepolia Testnet",
-  blockExplorerUrl: "https://sepolia.etherscan.io/",
-  ticker: "ETH",
-  tickerName: "Ethereum",
-  isTestnet: true,
-};
-
-const web3authConfig = {
-  clientId: process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID || "",
-  web3AuthNetwork: "sapphire_devnet",
-  chainConfig,
-};
-
-const openloginAdapter = new OpenloginAdapter({
-  adapterSettings: {
-    uxMode: "redirect",
-    loginConfig: {
-      jwt: {
-        verifier: process.env.NEXT_PUBLIC_WEB3AUTH_VERIFIER || "",
-        typeOfLogin: "jwt",
-        clientId: process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID || "",
-      },
-    },
-    redirectUrl: `${process.env.NEXT_PUBLIC_BUILD_ENV === "production" ? `${process.env.NEXT_PUBLIC_APP_LINK}/homePage` : "http://localhost:3000/homePage"}`,
-    whiteLabel: {
-      appName: "Web3EduBrasil",
-      appUrl: process.env.NEXT_PUBLIC_APP_LINK,
-      defaultLanguage: "pt",
-      useLogoLoader: true,
-    },
-  },
-  privateKeyProvider: new EthereumPrivateKeyProvider({
-    config: { chainConfig },
-  }),
-});
-
-const web3auth = new Web3AuthNoModal({
-  clientId: web3authConfig.clientId,
-  web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
-  chainConfig: web3authConfig.chainConfig,
-  uiConfig: {
-    logoLight:
-      "https://github.com/Web3EduBrasil/web3edu-app/blob/main/public/assets/images/Web3EduBrasil_logo.png?raw=true",
-    logoDark:
-      "https://github.com/Web3EduBrasil/web3edu-app/blob/main/public/assets/images/Web3EduBrasil_logo.png?raw=true",
-    defaultLanguage: "pt",
-    appName: "Web3EduBrasil",
-  },
-});
-
-web3auth.configureAdapter(openloginAdapter);
-
-const walletPlugin = new WalletServicesPlugin({
-  walletInitOptions: {
-    confirmationStrategy: "modal",
-    whiteLabel: {
-      logoLight: "https://cdn.prod.website-files.com/67360adb26042a9f3ca96aa5/673b3e0fd01940ddba6f657a_image%201.png",
-      logoDark: "https://cdn.prod.website-files.com/67360adb26042a9f3ca96aa5/673e41d192a4e63d42f9d3db_Mask%20group%201.webp",
-      useLogoLoader: false,
-      defaultLanguage: "pt",
-      appName: "Web3EduBrasil",
-    },
-  },
-});
+import { useAccount, useSignMessage, useDisconnect } from "wagmi";
+import { useAccountModal } from "@rainbow-me/rainbowkit";
 
 export default function useWeb3Auth() {
   const router = useRouter();
   const pathname = usePathname();
-
-  const [user, setUser] = useState<User | null>(null);
-  const [provider, setProvider] = useState<IProvider | null>(null);
-  const [userInfo, setUserInfo] =
-    useState<Partial<OpenloginLoginParams> | null>(null);
-  const [googleUserInfo, setGoogleUserInfo] = useState<any | null>(null);
-  const [userAccount, setAccounts] = useState<string[]>([]);
-  const [userDbInfo, setUserDbInfo] = useState({});
-  const [walletServicesPlugin, setWalletServicesPlugin] =
-    useState<WalletServicesPlugin | null>(null);
   const { setIsLoading } = useLoading();
 
-  useEffect(() => {
-    const init = async () => {
-      try {
-        web3auth.getPlugin("wallet-services") === null && web3auth.addPlugin(walletPlugin);
-        await web3auth.init();
-        setProvider(web3auth.provider);
-        setWalletServicesPlugin(walletPlugin);
+  const [user, setUser] = useState<User | null>(null);
+  const [googleUserInfo, setGoogleUserInfo] = useState<any | null>(null);
+  const [userDbInfo, setUserDbInfo] = useState<any>({});
 
-        if (web3auth.status === ADAPTER_EVENTS.CONNECTED) {
-          const userInfo = await web3auth.getUserInfo();
-          setUserInfo(userInfo);
+  // wagmi hooks
+  const { address, isConnected } = useAccount();
+  const { signMessageAsync } = useSignMessage();
+  const { disconnect } = useDisconnect();
+  const { openAccountModal } = useAccountModal();
 
-          const web3 = new Web3(web3auth.provider as any);
-          const addresses = await web3.eth.getAccounts();
-          setAccounts(addresses.length > 0 ? addresses : []);
-        }
-
-        const storedGoogleUserInfo = localStorage.getItem("googleUserInfo");
-        if (storedGoogleUserInfo)
-          setGoogleUserInfo(JSON.parse(storedGoogleUserInfo));
-      } catch (error) {
-        console.error(error);
+  // userInfo compatível com o contrato anterior do contexto
+  const userInfo = user
+    ? {
+        profileImage: user.photoURL || "",
+        name: user.displayName || "",
+        email: user.email || "",
       }
-    };
-    init();
+    : null;
+
+  // userAccount compatível com o contrato anterior
+  const userAccount: string[] = address ? [address] : [];
+
+  // Restaura googleUserInfo do localStorage na montagem
+  useEffect(() => {
+    const stored = localStorage.getItem("googleUserInfo");
+    if (stored) {
+      try {
+        setGoogleUserInfo(JSON.parse(stored));
+      } catch {
+        localStorage.removeItem("googleUserInfo");
+      }
+    }
   }, []);
 
+  // Quando a carteira conecta → autentica no Firebase via custom token
+  const walletAuthAttempted = useRef<string | null>(null);
   useEffect(() => {
-    if (!web3auth) return;
+    if (!isConnected || !address) {
+      walletAuthAttempted.current = null;
+      return;
+    }
+    if (walletAuthAttempted.current === address) return;
 
-    const handleConnectionChange = () => {
-      if (web3auth.status !== ADAPTER_EVENTS.CONNECTED) {
-        router.push("/");
+    (async () => {
+      const auth = getAuth(app);
+      // Espera o Firebase inicializar para não sobrescrever sessão existente
+      await auth.authStateReady();
+      if (auth.currentUser) {
+        walletAuthAttempted.current = address;
+        return;
       }
-    };
 
-    web3auth.on(ADAPTER_EVENTS.CONNECTED, handleConnectionChange);
-    web3auth.on(ADAPTER_EVENTS.DISCONNECTED, handleConnectionChange);
+      walletAuthAttempted.current = address;
 
-    return () => {
-      web3auth.off(ADAPTER_EVENTS.CONNECTED, handleConnectionChange);
-      web3auth.off(ADAPTER_EVENTS.DISCONNECTED, handleConnectionChange);
-    };
-  }, [web3auth]);
+      try {
+        setIsLoading(true);
+        const timestamp = Date.now();
+        const message = `Web3EduBrasil Authentication\n\nEndereço: ${address}\nTimestamp: ${timestamp}`;
 
-  const fetchUserDbData = async (uid: string, email?: string | null, googleName?: string |  null) => {
-    const response = await fetch(`/api/user?uid=${uid}&email=${email || ''}&googleName=${googleName || ''}`, {
-      method: "GET",
-    });
+        const signature = await signMessageAsync({ message });
+
+        const res = await fetch("/api/auth/metamask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ address, signature, timestamp }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || "Erro na autenticação com carteira");
+        }
+
+        const { token } = await res.json();
+        const cred = await signInWithCustomToken(auth, token);
+
+        const shortAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
+        const walletInfo = {
+          uid: cred.user.uid,
+          displayName: shortAddress,
+          email: null,
+          photoURL: null,
+          wallet: address,
+        };
+        localStorage.setItem("googleUserInfo", JSON.stringify(walletInfo));
+        setGoogleUserInfo(walletInfo);
+      } catch (error: any) {
+        walletAuthAttempted.current = null;
+        const isUserRejected =
+          error?.name === "UserRejectedRequestError" ||
+          error?.code === 4001 ||
+          error?.message?.toLowerCase().includes("user rejected") ||
+          error?.message?.toLowerCase().includes("rejected the request");
+
+        if (isUserRejected) {
+          toast.error("Assinatura cancelada.");
+        } else {
+          toast.error(error?.message || "Erro ao conectar com carteira.");
+        }
+        disconnect();
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, [isConnected, address, disconnect, setIsLoading, signMessageAsync]);
+
+  // Quando a carteira desconecta → faz logout do Firebase se era sessão de carteira
+  useEffect(() => {
+    if (isConnected) return;
+    const auth = getAuth(app);
+    if (!auth.currentUser) return;
+    // UIDs de carteira são endereços ethereum (começam com 0x)
+    if (!auth.currentUser.uid.startsWith("0x")) return;
+
+    signOut(auth).catch(() => {});
+    setGoogleUserInfo(null);
+    setUserDbInfo({});
+    localStorage.removeItem("googleUserInfo");
+  }, [isConnected]);
+
+  const fetchUserDbData = async (
+    uid: string,
+    email?: string | null,
+    googleName?: string | null
+  ) => {
+    const response = await fetch(
+      `/api/user?uid=${uid}&email=${email || ""}&googleName=${googleName || ""}`,
+      { method: "GET" }
+    );
     const data = await response.json();
     setUserDbInfo(data.user);
-    console.log(data);
+    // Atualiza streak silenciosamente
+    import("@/lib/getIdToken")
+      .then(({ authHeaders: ah }) => ah())
+      .then((headers) =>
+        fetch("/api/user/streak", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({}),
+        })
+      )
+      .catch(() => {});
   };
 
   useEffect(() => {
     const auth = getAuth(app);
 
-    onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
 
       if (firebaseUser) {
-        // here the endpoint handles the case wheter the user is registered or not
-        fetchUserDbData(firebaseUser.uid, firebaseUser.email, firebaseUser.displayName);
+        fetchUserDbData(
+          firebaseUser.uid,
+          firebaseUser.email,
+          firebaseUser.displayName
+        );
       } else {
-        //check if user has already logged but the Firebase session is expired
-        if (!web3auth.connected && googleUserInfo) {
-          logout();
-          toast.warning("Login expirado, faça login novamente");
-          return;
-        }
         if (pathname !== "/") {
           router.push("/");
           toast.warning("Faça login para acessar esta tela");
-          return;
         }
       }
     });
+
+    return () => unsubscribe();
   }, [router, pathname]);
 
   const signInWithGoogle = async (): Promise<UserCredential> => {
     const auth = getAuth(app);
     const googleProvider = new GoogleAuthProvider();
     const res = await signInWithPopup(auth, googleProvider);
-    localStorage.setItem("googleUserInfo", JSON.stringify(res.user));
+    const userObj = {
+      uid: res.user.uid,
+      displayName: res.user.displayName,
+      email: res.user.email,
+      photoURL: res.user.photoURL,
+    };
+    localStorage.setItem("googleUserInfo", JSON.stringify(userObj));
+    setGoogleUserInfo(userObj);
     return res;
   };
 
   const login = async () => {
     try {
       setIsLoading(true);
-      const loginRes = await signInWithGoogle();
-      const idToken = await loginRes.user.getIdToken(true);
-
-      const web3authProvider = await web3auth.connectTo(
-        WALLET_ADAPTERS.OPENLOGIN,
-        {
-          loginProvider: "jwt",
-          extraLoginOptions: {
-            id_token: idToken,
-            verifierIdField: "email",
-          },
-        }
-      );
-
-      if (web3authProvider) {
-        setProvider(web3authProvider);
-        const web3 = new Web3(web3authProvider as any);
-        const addresses = await web3.eth.getAccounts();
-        setAccounts(addresses.length > 0 ? addresses : []);
-
-        const userInfo = await web3auth.getUserInfo();
-        setUserInfo(userInfo);
-      }
-      // logEvent(analytics, "login");
+      await signInWithGoogle();
     } catch (error) {
       console.error(error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
+  const loginWithEmail = async (email: string, password: string) => {
+    try {
+      setIsLoading(true);
+      const auth = getAuth(app);
+      let loginRes: UserCredential;
+      try {
+        loginRes = await signInWithEmailAndPassword(auth, email, password);
+      } catch (err: any) {
+        if (
+          err.code === "auth/user-not-found" ||
+          err.code === "auth/invalid-credential"
+        ) {
+          loginRes = await createUserWithEmailAndPassword(auth, email, password);
+        } else {
+          throw err;
+        }
+      }
+      const userObj = {
+        uid: loginRes.user.uid,
+        displayName: loginRes.user.displayName || email,
+        email: loginRes.user.email,
+        photoURL: loginRes.user.photoURL,
+      };
+      localStorage.setItem("googleUserInfo", JSON.stringify(userObj));
+      setGoogleUserInfo(userObj);
+    } catch (error) {
+      console.error("Erro no login com email:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Mantido para compatibilidade — abertura do modal é feita diretamente no LoginButton
+  const loginWithMetaMask = async () => {};
+
+  const resetPassword = async (email: string) => {
+    const auth = getAuth(app);
+    await sendPasswordResetEmail(auth, email);
+  };
+
   const logout = async () => {
     try {
-      if (web3auth.status === ADAPTER_EVENTS.CONNECTED) await web3auth.logout();
       await signOut(getAuth(app));
-      setProvider(null);
-      setAccounts([]);
+      disconnect();
       setUserDbInfo({});
-      setUserInfo(null);
       setGoogleUserInfo(null);
       localStorage.removeItem("googleUserInfo");
     } catch (error) {
@@ -253,21 +273,19 @@ export default function useWeb3Auth() {
   };
 
   const WalletUi = async () => {
-    try {
-      if (!web3auth.connected || web3auth.getPlugin("wallet-services") === null) {
-        toast.warning("Carteira web3 ainda não conectada, tente novamente");
-        return;
-      }
-      await walletServicesPlugin?.showWalletUi();
-      // logEvent(analytics, "open_wallet");
-    } catch (error) {
-      console.error("error while displaying the wallet: ", error);
+    if (openAccountModal) {
+      openAccountModal();
+    } else {
+      toast.info("Nenhuma carteira conectada.");
     }
   };
 
   return {
     logout,
     login,
+    loginWithEmail,
+    loginWithMetaMask,
+    resetPassword,
     user,
     WalletUi,
     userInfo,

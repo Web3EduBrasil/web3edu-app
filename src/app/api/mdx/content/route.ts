@@ -2,7 +2,8 @@ import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
 import { serialize } from "next-mdx-remote/serialize";
-import { get } from "http";
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 
 export const GET = async (req: NextRequest) => {
@@ -15,7 +16,6 @@ export const GET = async (req: NextRequest) => {
       trailId !== null ? trailId : "",
       `/${Id}.mdx`
     );
-    console.log("[USOF[SAOUIFVG{UIVfPUIVSFPIUvPVFPIUSVBSAPIVDFSPI", filePath);
     const file = fs.readFileSync(filePath, "utf-8");
     const { content } = matter(file);
     const mdxSource = await serialize(content);

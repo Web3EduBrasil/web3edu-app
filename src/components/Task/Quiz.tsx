@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { MotionButton } from "../ui/Button";
 import { MotionDiv } from "../ui/MotionDiv";
 import { Bounce, toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import { useContent } from "@/providers/content-context";
 
 interface QuizSectionProps {
   options: Array<any>;
@@ -27,7 +28,15 @@ export const RenderQuizV = ({
 }: QuizSectionProps) => {
   const [selectedOpt, setSelectedOpt] = useState(0);
   const [isCorrect, setIsCorrect] = useState(false);
+  const { trailSections } = useContent();
   const router = useRouter();
+
+  const getNextSectionId = (): string | null => {
+    const sorted = [...trailSections].sort((a, b) => Number(a.id) - Number(b.id));
+    const currentIndex = sorted.findIndex((s) => String(s.id) === String(id));
+    if (currentIndex === -1 || currentIndex >= sorted.length - 1) return null;
+    return String(sorted[currentIndex + 1].id);
+  };
 
   function HandleSubmit() {
     if (isCorrect) {
@@ -81,13 +90,12 @@ export const RenderQuizV = ({
               func={() => {
                 setSelectedOpt(index);
               }}
-              className={`w-full h-24 justify-center bg-white flex flex-col p-5 shadow-lg rounded-box cursor-pointer ${
-                isCorrect === true && e.correct === true
+              className={`w-full h-24 justify-center bg-white flex flex-col p-5 shadow-lg rounded-box cursor-pointer ${isCorrect === true && e.correct === true
                   ? "bg-green border-2 border-green shadow-green shadow"
                   : selectedOpt === index
-                  ? "border-2"
-                  : ""
-              }`}
+                    ? "border-2"
+                    : ""
+                }`}
             >
               <p className="text-dblue md:text-lg text-base w-full text-center h-fit">
                 {e.option}
@@ -101,16 +109,18 @@ export const RenderQuizV = ({
           type="button"
           label="Avançar"
           className="w-fit bg-blue text-white"
-          func={() => router.push(`/learn/${trailId}/${Number(id) + 1}`)}
+          func={() => {
+            const nextId = getNextSectionId();
+            if (nextId) router.push(`/learn/${trailId}/${nextId}`);
+          }}
         />
       ) : (
         <MotionButton
           rightIcon={true}
           label={isCorrect === true ? "Marcar como concluído" : "Verificar"}
           type="button"
-          className={`text-neutral w-fit h-12 self-end ${
-            isCorrect ? "bg-green" : "bg-transparent border border-2"
-          }`}
+          className={`text-neutral w-fit h-12 self-end ${isCorrect ? "bg-green" : "bg-transparent border-2"
+            }`}
           func={() => {
             HandleSubmit();
           }}

@@ -1,5 +1,6 @@
 import { MotionDiv } from "../ui/MotionDiv";
 import { useRouter } from "next/navigation";
+import { TrailCardHomeProps } from "@/interfaces/interfaces";
 
 export const TrailCardHome = ({
   text,

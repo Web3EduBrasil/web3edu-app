@@ -1,37 +1,29 @@
-import { collection, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { db } from "@/firebase/config";
+import { adminDb } from "@/lib/firebase-admin";
 import { NextRequest, NextResponse } from "next/server";
+import { verifyAuth } from "@/lib/auth-helper";
 
-export const POST = async (req: NextRequest, res: NextResponse) => {
+export const POST = async (req: NextRequest) => {
+  let verifiedUid: string;
+  try { verifiedUid = await verifyAuth(req); }
+  catch { return NextResponse.json({ message: "Não autorizado" }, { status: 401 }); }
   try {
     const data = await req.json();
-    const userDocRef = doc(db, "users", data.uid);
+    const userDocRef = adminDb.collection("users").doc(verifiedUid);
+    const docSnap = await userDocRef.get();
 
-    const docSnap = await getDoc(userDocRef);
-
-    if (docSnap.exists()) {
-      await updateDoc(userDocRef, {
+    if (docSnap.exists) {
+      await userDocRef.update({
         kyc: {
           level: data.userInfo.level,
           interests: data.userInfo.interests,
         },
       });
-
-      return new NextResponse(
-        JSON.stringify({ message: "Dados de KYC atualizados com sucesso" }),
-        { status: 200 }
-      );
+      return NextResponse.json({ message: "Dados de KYC atualizados com sucesso" }, { status: 200 });
     } else {
-      return new NextResponse(
-        JSON.stringify({ message: "Usuário não encontrado" }),
-        { status: 404 }
-      );
+      return NextResponse.json({ message: "Usuário não encontrado" }, { status: 404 });
     }
   } catch (error: any) {
-    console.log(error.message);
-    return new NextResponse(
-      JSON.stringify({ message: "Internal Server Error" }),
-      { status: 500 }
-    );
+    console.error(error.message);
+    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 };

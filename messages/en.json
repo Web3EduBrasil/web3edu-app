@@ -1,0 +1,175 @@
+{
+  "common": {
+    "seeMore": "See More",
+    "save": "Save",
+    "comingSoon": "Coming Soon"
+  },
+  "navbar": {
+    "home": "Home",
+    "mentoring": "Mentoring",
+    "trails": "Trails"
+  },
+  "userMenu": {
+    "profile": "Profile",
+    "help": "Help",
+    "logout": "Logout"
+  },
+  "login": {
+    "button": "Login",
+    "google": "Sign in with Google",
+    "wallet": "Connect Wallet",
+    "email": "Sign in with Email",
+    "emailPlaceholder": "your@email.com",
+    "passwordPlaceholder": "Password",
+    "forgotPassword": "Forgot my password",
+    "back": "Back",
+    "sendReset": "Send reset link",
+    "loading": "Signing in..."
+  },
+  "landing": {
+    "banner": "Connect to the Future: Driving Innovation in Web3",
+    "communityLink": "Join the community",
+    "hero": "Turn Knowledge into Growth Opportunities",
+    "features": {
+      "title": "Main Features",
+      "rewards": "Reward System",
+      "rewardsContent": "Students who complete learning trails receive blockchain certification, ensuring authentic and verifiable recognition of the knowledge acquired.",
+      "learningTrails": "Learning Trails",
+      "learningTrailsContent": "Our learning trails guide students from basic to advanced in a practical and interactive way, with well-structured modules and tests to reinforce knowledge.",
+      "soon": "More coming soon...",
+      "soonContent": "We offer a forum for our users to share experiences and stories about blockchain"
+    },
+    "explore": {
+      "accessing": "Accessing the Future",
+      "with": "with",
+      "title": "Explore the Platform",
+      "description": "Check out our main features available on our site. Learn the key concepts of the Web3 world!",
+      "rewards": "Rewards",
+      "trails": "Trails"
+    },
+    "trails": {
+      "title": "Learning Trails",
+      "description": "Explore detailed content on these fascinating topics and expand your knowledge of the digital world of finance and technology. Welcome to your learning journey with us!"
+    },
+    "footer": "All rights reserved."
+  },
+  "home": {
+    "journeys": {
+      "title": "User Journey",
+      "fillProfile": "Fill in profile data",
+      "profileSurvey": "Profile survey",
+      "startTrail": "Start a trail"
+    },
+    "nfts": {
+      "title": "NFTs",
+      "seeMore": "See More",
+      "noCertifications": "You have no certifications yet"
+    }
+  },
+  "onboarding": {
+    "next": "Next",
+    "skip": "Skip Introduction",
+    "access": "Access Platform",
+    "welcome": {
+      "title": "Welcome to Web3EduBrasil!",
+      "subtitle": "Before we begin, let's understand the features of the Web3EduBrasil platform"
+    },
+    "communities": {
+      "title": "Join our communities",
+      "text": "Join our Web3 communities and stay up to date! Follow us on social media, share experiences and learn together with us.",
+      "discord": "Discord",
+      "telegram": "Telegram",
+      "followSocials": "And follow our networks!"
+    },
+    "homeScreen": {
+      "title": "Home Screen",
+      "text": "On this screen you will find some profile data, a preview of your earned NFTs, the user journey and your last three learning trails.",
+      "access": "Access via the navigation bar at the top of the screen"
+    },
+    "profile": {
+      "title": "Your Profile",
+      "text": "Here you can customize your profile, adding your Discord or LinkedIn. Don't forget to update your name, as it will appear on your certificate!",
+      "access": "Access (Profile) in the top right corner of your screen"
+    },
+    "userConfig": {
+      "title": "Configure user profile",
+      "text": "Complete our brief form so we can recommend learning trails of your interest.",
+      "access": "Access on the home screen in User Journey"
+    },
+    "trailsScreen": {
+      "title": "Trails Screen",
+      "text": "On this screen you will find all learning trails, being able to search them by name or category and access them.",
+      "access": "Access via the navigation bar at the top of the screen"
+    },
+    "learning": {
+      "title": "Learning Trail",
+      "text": "Learn about Web3 by accessing and completing the tasks in our trails!",
+      "access": "Access via the trails screen or through the quick access on the home screen"
+    },
+    "reward": {
+      "title": "Claim your reward!",
+      "text": "Upon completing a learning trail, claim your NFT by clicking Claim Now",
+      "access": "Available when marking the last task of a trail as complete."
+    },
+    "done": {
+      "title": "All set!",
+      "text": "Great! You are ready to start exploring our platform and collecting NFTs",
+      "access": "Click on Access Platform to start your journey!",
+      "help": "If you need to revisit any step or have questions, access this tutorial in the Help tab in the user menu.",
+      "instruction": "Access your NFT by clicking on your wallet"
+    },
+    "wallet": {
+      "step1Title": "Web3 Wallet",
+      "step1Text": "Our platform has a unique integrated Web3 wallet for each user, allowing you to explore and interact with Web3 in just a few clicks.",
+      "step1Instruction": "Open the wallet located in the top right corner",
+      "step2Title": "Set Up Your Wallet",
+      "step2Text": "This is your wallet! With it, you can receive NFTs as rewards for completing learning trails. Let's set it up together.",
+      "step2Instruction": "Go to the (Settings) tab",
+      "step3Instruction": "Go to the (General) section",
+      "step4Text": "These settings are essential for you to receive NFT rewards upon completing our learning trails.",
+      "step4Instruction": "Enable 'Test Networks' and then select 'Ethereum Sepolia' as your default network.",
+      "step5Text": "Great! Now that the settings are complete, you're ready to create your account and start exploring our learning trails. Let's go!",
+      "step5Instruction": "Your wallet should look like this:",
+      "nextStep": "Next Step",
+      "finish": "Set Up Your Wallet",
+      "availableHelp": "This tutorial will always be available in the Help tab, in case you need to revisit any step or have questions."
+    }
+  },
+  "userPage": {
+    "title": "Data",
+    "personalData": "Personal Data",
+    "certificates": "Certificates",
+    "displayName": "Display Name",
+    "discord": "Discord",
+    "discordPlaceholder": "Your Profile Name",
+    "email": "Email",
+    "linkedin": "LinkedIn",
+    "linkedinPlaceholder": "www.linkedin.com/in/username",
+    "save": "Save",
+    "noCertificates": "No certificates yet",
+    "noCertificatesText": "Complete a trail or program to receive your unique NFT certificate."
+  },
+  "learn": {
+    "enroll": "Enroll",
+    "enrollFree": "Enroll for Free",
+    "enrolling": "Enrolling...",
+    "continue": "Continue Learning",
+    "review": "Review Content",
+    "sections": "sections",
+    "completed": "completed",
+    "contentHours": "{hours}h of content",
+    "yourProgress": "Your progress",
+    "whatYouLearn": "What you will learn",
+    "connectWallet": "Connect Wallet",
+    "claimNft": "Claim NFT",
+    "claiming": "Claiming..."
+  },
+  "reward": {
+    "trailCompleted": "Congratulations, {name}! You completed the trail {trail}.",
+    "programCompleted": "Congratulations, {name}! You completed the program {program}.",
+    "bodyText": "All your effort and dedication did not go unnoticed. To celebrate this achievement, you will receive an NFT token as a reward! This token symbolizes everything you have learned and your commitment at every step.",
+    "connectWarning": "⚠️ Connect a wallet to claim your NFT.",
+    "claimNow": "Claim Now!",
+    "processing": "Processing..."
+  }
+}

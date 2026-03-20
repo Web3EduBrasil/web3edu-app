@@ -3,6 +3,7 @@ import { MDXRemote } from "next-mdx-remote";
 import { toast } from "react-toastify";
 import { MotionButton } from "../ui/Button";
 import { useRouter } from "next/navigation";
+import { useContent } from "@/providers/content-context";
 
 interface MdxSectionProps {
   fetchDone: (param: Boolean) => Promise<void>;
@@ -21,6 +22,14 @@ export default function MdxSection({
 }: MdxSectionProps) {
   const [mdxSource, setMdxSource] = useState<any>(null);
   const router = useRouter();
+  const { trailSections } = useContent();
+
+  const getNextSectionId = (): string | null => {
+    const sorted = [...trailSections].sort((a, b) => Number(a.id) - Number(b.id));
+    const currentIndex = sorted.findIndex((s) => String(s.id) === String(id));
+    if (currentIndex === -1 || currentIndex >= sorted.length - 1) return null;
+    return String(sorted[currentIndex + 1].id);
+  };
 
   useEffect(() => {
     if (id && trailId) {
@@ -33,7 +42,6 @@ export default function MdxSection({
             }
           );
           const data = await response.json();
-          console.log(data);
           setMdxSource(data.mdxSource);
         } catch (error) {
           console.error("Error fetching MDX file:", error);
@@ -58,7 +66,10 @@ export default function MdxSection({
           type="button"
           label="Avançar"
           className="w-fit bg-blue text-white"
-          func={() => router.push(`/learn/${trailId}/${Number(id) + 1}`)}
+          func={() => {
+            const nextId = getNextSectionId();
+            if (nextId) router.push(`/learn/${trailId}/${nextId}`);
+          }}
         />
       ) : (
         <MotionButton

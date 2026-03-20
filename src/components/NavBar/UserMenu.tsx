@@ -1,11 +1,16 @@
+"use client";
+
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { CgProfile } from "react-icons/cg";
 import { IoWalletOutline } from "react-icons/io5";
+import { useTranslations } from "next-intl";
 
 export const UserMenu = () => {
   const { googleUserInfo, logout, userInfo, WalletUi } = useWeb3AuthContext();
   const router = useRouter();
+  const t = useTranslations("userMenu");
 
   return (
     <div className="flex flex-row justify-self-end items-center gap-2">
@@ -28,9 +33,16 @@ export const UserMenu = () => {
           role="button"
           className="btn btn-ghost btn-circle avatar"
         >
-          <div className="w-9 rounded-full">
-            {userInfo ? (
-              <img alt="User Image" src={userInfo?.profileImage} fetchPriority="high"/>
+          <div className="w-9 rounded-full relative overflow-hidden">
+            {userInfo?.profileImage ? (
+              <Image
+                src={userInfo.profileImage}
+                alt="User Image"
+                fill
+                sizes="36px"
+                style={{ objectFit: "cover" }}
+                priority
+              />
             ) : (
               <CgProfile className="w-9 h-9" />
             )}
@@ -41,14 +53,13 @@ export const UserMenu = () => {
           className="menu menu-md dropdown-content bg-neutralbg rounded-box z-[1] mt-1 w-52 p-2 shadow py-2 text-neutral"
         >
           <li>
-            <a onClick={() => router.push("/userPage")}>Perfil</a>
+            <a onClick={() => router.push("/userPage")}>{t("profile")}</a>
           </li>
           <li>
-            <a onClick={() => router.push("/onboarding")}>Ajuda</a>
+            <a onClick={() => router.push("/onboarding")}>{t("help")}</a>
           </li>
-
           <li>
-            <a onClick={logout}>Sair</a>
+            <a onClick={logout}>{t("logout")}</a>
           </li>
         </ul>
       </div>

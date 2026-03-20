@@ -12,89 +12,45 @@ import Onboarding7 from "../../../../public/assets/images/tutorial/yourprofile.j
 import web3EduLogo from "../../../../public/assets/images/Web3EduBrasil_logo.png";
 import { useState } from "react";
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
-import { Bounce, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import { authHeaders } from "@/lib/getIdToken";
+import { useTranslations } from "next-intl";
 
-const steps = [
-  {
-    title: "Tela Home",
-    description:
-      "Nesta tela você encontrará alguns dados de seu perfil, um preview de suas NFT's conquistadas, a jornada de usuário e suas três últimas trilhas de aprendizagem realizadas.",
-    image: Onboarding1.src,
-    progress: 16.6,
-    instruction: "Acesse através da barra de navegação ao topo da tela",
-  },
-  {
-    title: "Seu Perfil",
-    description: (
-      <span>
-        Aqui, você pode personalizar seu perfil, adicionando o Discord e LinkedIn. <span className="bg-cyellow">Não esqueça de atualizar seu nome, pois ele aparecerá no seu certificado!</span>
-      </span>
-    ),
-    image: Onboarding7.src,
-    progress: 25,
-    instruction:
-      "Acesse (Perfil) no canto superior direito da sua tela, clicando no ícone do seu perfil.",
-  },
-  {
-    title: "Configurar perfil de usuário",
-    description:
-      "Complete nosso breve formulário para recomendarmos trilhas de aprendizagem do seu interesse!",
-    image: Onboarding2.src,
-    progress: 33.3,
-    instruction: `Acesse na tela home em "Pesquisa de perfil"`,
-  },
-  {
-    title: "Tela de trilhas",
-    description:
-      "Nesta tela você encontrará todas as trilhas de aprendizagem, podendo buscá-las por nome ou categoria e acessá-las.",
-    image: Onboarding3.src,
-    progress: 50,
-    instruction: "Acesse através da barra de navegação ao topo da tela",
-  },
-  {
-    title: "Trilha de aprendizagem",
-    description:
-      "Aprenda sobre Web3 acessando e completando as tarefas de nossas trilhas!",
-    image: Onboarding4.src,
-    progress: 66.6,
-    instruction:
-      "Acesse através da tela de trilhas ou pelo acesso rápido na tela home",
-  },
-  {
-    title: "Resgate sua recompensa!",
-    description: `Ao concluir uma trilha de aprendizagem, resgate sua NFT clicando em "Resgatar Agora"`,
-    image: Onboarding5.src,
-    progress: 83.3,
-    instruction:
-      "Disponível ao marcar a última tarefa de uma trilha como concluída.",
-    additionalText:
-      "Este tutorial estará sempre disponível na aba Ajuda, caso precise revisitar algum passo ou tirar dúvidas.",
-  },
-  {
-    title: "Tudo Pronto!",
-    description:
-      "Ótimo! Você está pronto para começar a explorar nossa plataforma e colecionar NFT's",
-    image: Onboarding6.src,
-    progress: 100,
-    instruction: "Acesse sua NFT clicando em sua carteira",
-    additionalText: `Caso precise revisitar algum passo ou tirar dúvidas, acesse este tutorial na aba "Ajuda" no menu de usuário.`,
-  },
+const STEP_IMAGES = [
+  Onboarding1.src,
+  Onboarding7.src,
+  Onboarding2.src,
+  Onboarding3.src,
+  Onboarding4.src,
+  Onboarding5.src,
+  Onboarding6.src,
 ];
+
+const STEP_PROGRESS = [16.6, 25, 33.3, 50, 66.6, 83.3, 100];
+
+type StepKey = "homeScreen" | "profile" | "userConfig" | "trailsScreen" | "learning" | "reward" | "done";
+const STEP_KEYS: StepKey[] = ["homeScreen", "profile", "userConfig", "trailsScreen", "learning", "reward", "done"];
 
 export const ObTutorialContainer = () => {
   const { googleUserInfo, setUserDbInfo } = useWeb3AuthContext();
   const router = useRouter();
+  const t = useTranslations("onboarding");
+
+  const steps = STEP_KEYS.map((key, i) => ({
+    title: t(`${key}.title`),
+    description: t(`${key}.text`),
+    instruction: t(`${key}.access`),
+    image: STEP_IMAGES[i],
+    progress: STEP_PROGRESS[i],
+  }));
 
   const fetchTutorialDone = async () => {
     try {
-      console.log(googleUserInfo.uid);
       const response = await fetch("/api/user/onboarding", {
         method: "POST",
-        headers: { "Content-Type": "aplication/json" },
-        body: JSON.stringify({
-          uid: googleUserInfo?.uid,
-        }),
+        headers: await authHeaders(),
+        body: JSON.stringify({}),
       });
       if (response.ok) {
         const response = await fetch(`/api/user?uid=${googleUserInfo?.uid}`, {
@@ -115,12 +71,10 @@ export const ObTutorialContainer = () => {
   const handleNextStep = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
-    } else {
-      console.log("Finalizado");
     }
   };
 
-  const { title, description, image, progress, instruction, additionalText } =
+  const { title, description, image, progress, instruction } =
     steps[currentStep];
 
   return (
@@ -132,7 +86,7 @@ export const ObTutorialContainer = () => {
             <p className="md:text-5xl text-3xl text-dblue">{title}</p>
             <p className="md:text-2xl text-xl">{description}</p>
             {currentStep === steps.length - 1 && (
-              <p className="text-lg text-gray-600 mt-4">{additionalText}</p>
+              <p className="text-lg text-gray-600 mt-4">{t("done.help")}</p>
             )}
           </div>
         </div>
@@ -158,8 +112,8 @@ export const ObTutorialContainer = () => {
         <MotionButton
           label={
             currentStep === steps.length - 1
-              ? "Acessar plataforma"
-              : "Próximo Passo"
+              ? t("access")
+              : t("next")
           }
           type="button"
           func={() =>

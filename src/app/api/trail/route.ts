@@ -1,5 +1,5 @@
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/firebase/config";
+import { adminDb } from "@/lib/firebase-admin";
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 
 export const GET = async (req: NextRequest) => {
@@ -7,20 +7,17 @@ export const GET = async (req: NextRequest) => {
     const trailId = req.nextUrl.searchParams.get("trailId");
 
     if (!trailId) {
-      return new NextResponse("Parâmetro trailId é obrigatório", {
-        status: 400,
-      });
+      return NextResponse.json({ message: "Parâmetro trailId é obrigatório" }, { status: 400 });
     }
 
-    const trailDocRef = doc(db, "trails", trailId);
-    const trailDocSnap = await getDoc(trailDocRef);
+    const trailDocSnap = await adminDb.collection("trails").doc(trailId).get();
 
-    if (trailDocSnap.exists()) {
-      const trailData = trailDocSnap.data();
-
-      return new NextResponse(
-        JSON.stringify({
+    if (trailDocSnap.exists) {
+      const trailData = trailDocSnap.data()!;
+      return NextResponse.json(
+        {
           trailId,
+          banner: trailData.banner,
           categories: trailData.categories,
           createdAt: trailData.createdAt,
           description: trailData.description,
@@ -28,16 +25,14 @@ export const GET = async (req: NextRequest) => {
           introVideo: trailData.introVideo,
           name: trailData.name,
           topics: trailData.topics,
-        }),
-        {
-          status: 200,
-        }
+        },
+        { status: 200 }
       );
     } else {
-      return new NextResponse("Trilha não encontrada", { status: 404 });
+      return NextResponse.json({ message: "Trilha não encontrada" }, { status: 404 });
     }
   } catch (error) {
     console.error("Erro ao buscar dados:", error);
-    return new NextResponse("Erro ao buscar dados", { status: 500 });
+    return NextResponse.json({ message: "Erro ao buscar dados" }, { status: 500 });
   }
 };

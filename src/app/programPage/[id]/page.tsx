@@ -6,5 +6,5 @@ import { useParams } from "next/navigation";
 export default function ProgramPage() {
   const { id } = useParams();
 
-  return <Program programId={id} />;
+  return <Program programId={id as string} />;
 }

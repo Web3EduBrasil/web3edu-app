@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "web3edubrasil"
-  }
+    "default": "web3edu-57c7f",
+    "web3": "web3edu-57c7f"
+  },
+  "targets": {},
+  "etags": {}
 }

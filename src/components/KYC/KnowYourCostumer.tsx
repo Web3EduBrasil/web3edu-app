@@ -1,16 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { MotionButton } from "../ui/Button";
+import { useState } from "react";
 import Kyc1 from "./Kyc1";
 import Kyc2 from "./Kyc2";
 import KycIntro from "./KycIntro";
-import useWeb3Auth from "@/lib/web3auth/web3auth";
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
-import { userInfo } from "os";
-import { Bounce, toast } from "react-toastify";
 import { FaXmark } from "react-icons/fa6";
 import { IconButton } from "../ui/IconButton";
+import { authHeaders } from "@/lib/getIdToken";
+import { HandleScreenProps, Interests } from "@/interfaces/interfaces";
 
 interface KycContainerProps {
   setKycOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -35,9 +33,8 @@ function KnowLedge({ setKycOpen, kycOpen }: KycContainerProps) {
     try {
       const response = await fetch("/api/kyc", {
         method: "POST",
-        headers: { "Content-Type": "aplication/json" },
+        headers: await authHeaders(),
         body: JSON.stringify({
-          uid: googleUserInfo?.uid,
           userInfo: {
             level: level,
             interests: interests,

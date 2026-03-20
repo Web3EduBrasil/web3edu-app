@@ -1,13 +1,13 @@
-"use client";
-
+import type { Metadata } from "next";
 import { Trails } from "@/components/TrailsPage/Trails";
-import useWeb3Auth from "@/lib/web3auth/web3auth";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { toast } from "react-toastify";
+
+export const metadata: Metadata = {
+  title: "Trilhas de Aprendizagem | Web3EduBrasil",
+  description:
+    "Explore as trilhas de aprendizagem de Web3, Blockchain, NFTs e Criptomoedas da Web3EduBrasil.",
+};
 
 export default function trailsPage() {
-
   return (
     <>
       <Trails />

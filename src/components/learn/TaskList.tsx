@@ -19,7 +19,7 @@ export const TaskList = ({ uid }: { uid: string }) => {
     ) {
       fetchTrailSections(trailIdRt, uid);
     }
-  }, [trailIdRt, uid]);
+  }, [trailIdRt, uid, fetchTrailSections, trailSections]);
 
   return (
     <div className="md:w-3/12 md:min-w-80 w-full h-full bg-cgray md:rounded-box p-8 md:overflow-y-auto gap-2 flex flex-col justify-start items-start">

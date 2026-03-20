@@ -1,6 +1,6 @@
 // src/handlers/airdropHandler.js
 
-import { onDocumentWritten } from "firebase-functions/v2/firestore";
+import { onDocumentWritten, FirestoreEvent, DocumentSnapshot, Change } from "firebase-functions/v2/firestore";
 import { runContract } from "../utils/wallet";
 import { updateAirdropStatus } from "../utils/firestoreScripts";
 
@@ -9,7 +9,7 @@ export const airdropNFT = onDocumentWritten(
         document: "whitelist/{uid}",
         secrets: ["CONTRACT_ADDRESS", "PRIVATE_KEY", "RPC_URL"],
     },
-    async (event) => {
+    async (event: FirestoreEvent<Change<DocumentSnapshot> | undefined, { uid: string }>) => {
         // Obtenha o documento atualizado
         if (!event.data) {
             console.error("Event data is undefined");

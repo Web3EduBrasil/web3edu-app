@@ -1,5 +1,3 @@
-import { FaBitcoin, FaDollarSign } from "react-icons/fa";
-import { SiHive, SiHiveBlockchain } from "react-icons/si";
 import { TrailCardHome } from "./TrailCardHome";
 import { useContent } from "@/providers/content-context";
 import { useEffect } from "react";
@@ -13,8 +11,7 @@ export const TrailsCardSection = () => {
     if (Object.keys(trailsList).length === 0 && googleUserInfo !== null) {
       fetchTrailsList(googleUserInfo?.uid);
     }
-    console.log(trailsList);
-  }, [trailsList, googleUserInfo]);
+  }, [trailsList, googleUserInfo, fetchTrailsList]);
 
   return (
     <div className="flex flex-col lg:h-full h-80 w-full lg:col-span-3 lg:row-span-3 gap-3">
