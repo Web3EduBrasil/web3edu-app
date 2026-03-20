@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useState, useContext } from "react";
+import { AchievedNft } from "@/interfaces/interfaces";
 import {
   getFirestore,
   doc,

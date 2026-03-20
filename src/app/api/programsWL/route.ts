@@ -1,57 +1,44 @@
-import { doc, updateDoc, arrayUnion, getDoc } from "firebase/firestore";
-import { db } from "@/firebase/config";
+import { adminDb } from "@/lib/firebase-admin";
 import { NextRequest, NextResponse } from "next/server";
 
-export const POST = async (req: NextRequest, res: NextResponse) => {
+export const POST = async (req: NextRequest) => {
   try {
     const { programId, address, email, name } = await req.json();
     if (!programId || !address || !email || !name) {
-      return new NextResponse(
-        JSON.stringify({
-          error: `Parameters programId, address, email and name are required`,
-        }),
+      return NextResponse.json(
+        { error: "Parameters programId, address, email and name are required" },
         { status: 400 }
       );
     }
 
-    const programDocRef = doc(db, "programsWL", programId);
-    const docSnap = await getDoc(programDocRef);
+    const programDocRef = adminDb.collection("programsWL").doc(programId);
+    const docSnap = await programDocRef.get();
 
-    if (docSnap.exists()) {
+    if (docSnap.exists) {
       const users = docSnap.data()?.users;
       const userExists = users?.some((user: any) => user.address === address);
 
       if (userExists) {
-        return new NextResponse(
-          JSON.stringify({
-            message: "You already have an open request for this program.",
-          }),
+        return NextResponse.json(
+          { message: "You already have an open request for this program." },
           { status: 400 }
         );
       }
     }
 
-    await updateDoc(programDocRef, {
-      users: arrayUnion({
-        address: address,
-        email: email,
+    await programDocRef.update({
+      users: [...(docSnap.data()?.users || []), {
+        address,
+        email,
         minted: false,
-        name: name,
+        name,
         txHash: "",
-      }),
+      }],
     });
 
-    return new NextResponse(
-      JSON.stringify({
-        message: "User added to array successfully",
-      }),
-      { status: 200 }
-    );
+    return NextResponse.json({ message: "User added to array successfully" }, { status: 200 });
   } catch (error: any) {
     console.error(error.message);
-    return new NextResponse(
-      JSON.stringify({ message: "Internal Server Error" }),
-      { status: 500 }
-    );
+    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 };

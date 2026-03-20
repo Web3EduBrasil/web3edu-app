@@ -2,11 +2,11 @@
 
 import React, { createContext, useContext, ReactNode } from "react";
 import useWeb3Auth from "./web3auth";
-// import { web3authConfig } from "./web3auth.config";
 
 interface Web3AuthContextProps {
   login: () => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
+  loginWithMetaMask: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   WalletUi: () => Promise<void>;
@@ -27,6 +27,7 @@ export const Web3AuthProvider = ({ children }: { children: ReactNode }) => {
   const {
     login,
     loginWithEmail,
+    loginWithMetaMask,
     resetPassword,
     logout,
     WalletUi,
@@ -44,6 +45,7 @@ export const Web3AuthProvider = ({ children }: { children: ReactNode }) => {
       value={{
         login,
         loginWithEmail,
+        loginWithMetaMask,
         resetPassword,
         logout,
         WalletUi,

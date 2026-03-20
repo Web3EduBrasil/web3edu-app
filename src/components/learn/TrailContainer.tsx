@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { Trail } from "@/interfaces/interfaces";
 import { TrailTopics } from "./TrailTopics";
 
 export const TrailContainer = ({ trail }: { trail: Trail }) => {

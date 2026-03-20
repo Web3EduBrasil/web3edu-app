@@ -1,6 +1,7 @@
 "use client";
 
 import { ObWalletContainer } from "./components/ObWalletContainer";
+import { OnboardingProps } from "@/interfaces/interfaces";
 
 export const ObWalletConfig = ({ handleTabClick }: OnboardingProps<void>) => {
   return (

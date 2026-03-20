@@ -1,5 +1,4 @@
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { db } from "@/firebase/config";
+import { adminDb } from "@/lib/firebase-admin";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth-helper";
 
@@ -19,11 +18,11 @@ export const GET = async (req: NextRequest) => {
       );
     }
 
-    const docRef = doc(db, "programWhitelist", uid);
-    const docSnap = await getDoc(docRef);
+    const docRef = adminDb.collection("programWhitelist").doc(uid);
+    const docSnap = await docRef.get();
 
     // Documento não existe — primeira vez, elegível
-    if (!docSnap.exists()) {
+    if (!docSnap.exists) {
       return new NextResponse(JSON.stringify({ eligible: true }), {
         status: 200,
       });
@@ -78,11 +77,11 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
-    const docRef = doc(db, "programWhitelist", uid);
-    const docSnap = await getDoc(docRef);
+    const docRef = adminDb.collection("programWhitelist").doc(uid);
+    const docSnap = await docRef.get();
 
-    if (docSnap.exists()) {
-      await updateDoc(docRef, {
+    if (docSnap.exists) {
+      await docRef.update({
         address: walletAddress,
         [`status.${programId}`]: {
           eligible: true,
@@ -98,7 +97,7 @@ export const POST = async (req: NextRequest) => {
         { status: 200 }
       );
     } else {
-      await setDoc(docRef, {
+      await docRef.set({
         address: walletAddress,
         status: {
           [programId]: {

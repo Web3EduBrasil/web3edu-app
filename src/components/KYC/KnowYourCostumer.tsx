@@ -8,6 +8,7 @@ import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 import { FaXmark } from "react-icons/fa6";
 import { IconButton } from "../ui/IconButton";
 import { authHeaders } from "@/lib/getIdToken";
+import { HandleScreenProps, Interests } from "@/interfaces/interfaces";
 
 interface KycContainerProps {
   setKycOpen: React.Dispatch<React.SetStateAction<boolean>>;

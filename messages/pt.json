@@ -1,0 +1,175 @@
+{
+  "common": {
+    "seeMore": "Veja Mais",
+    "save": "Salvar",
+    "comingSoon": "Em breve"
+  },
+  "navbar": {
+    "home": "Home",
+    "mentoring": "Mentorias",
+    "trails": "Trilhas"
+  },
+  "userMenu": {
+    "profile": "Perfil",
+    "help": "Ajuda",
+    "logout": "Sair"
+  },
+  "login": {
+    "button": "Login",
+    "google": "Entrar com Google",
+    "wallet": "Conectar Carteira",
+    "email": "Entrar com Email",
+    "emailPlaceholder": "seu@email.com",
+    "passwordPlaceholder": "Senha",
+    "forgotPassword": "Esqueci minha senha",
+    "back": "Voltar",
+    "sendReset": "Enviar redefinição",
+    "loading": "Entrando..."
+  },
+  "landing": {
+    "banner": "Conecte-se ao Futuro: Impulsionando a Inovação na Web3",
+    "communityLink": "Participe da comunidade",
+    "hero": "Transforme Conhecimento em Oportunidades de Crescimento",
+    "features": {
+      "title": "Principais Funções",
+      "rewards": "Sistema de Recompensas",
+      "rewardsContent": "Os alunos que concluem as trilhas de aprendizagem recebem certificação via blockchain, garantindo reconhecimento autêntico e verificável do conhecimento adquirido.",
+      "learningTrails": "Trilhas de Aprendizagem",
+      "learningTrailsContent": "Nossas trilhas de aprendizagem guiam os alunos do básico ao avançado de forma prática e interativa, com módulos bem estruturados e testes para reforçar o conhecimento.",
+      "soon": "Mais em breve...",
+      "soonContent": "Nós oferecemos um fórum para que nossos usuários possam compartilhar experiências e relatos sobre blockchain"
+    },
+    "explore": {
+      "accessing": "Acessando o Futuro",
+      "with": "com a",
+      "title": "Explore a Plataforma",
+      "description": "Veja a seguir as nossas principais funções presentes em nosso site. Aprenda as principais coisas do mundo do Web3!",
+      "rewards": "Recompensas",
+      "trails": "Trilhas"
+    },
+    "trails": {
+      "title": "Trilhas de Aprendizagem",
+      "description": "Explore conteúdos detalhados sobre esses temas fascinantes e amplie seu conhecimento sobre o universo digital das finanças e tecnologia. Seja bem-vindo à sua jornada de aprendizado conosco!"
+    },
+    "footer": "Todos os direitos reservados."
+  },
+  "home": {
+    "journeys": {
+      "title": "Jornada do usuário",
+      "fillProfile": "Preencher dados do perfil",
+      "profileSurvey": "Pesquisa de perfil",
+      "startTrail": "Comece uma trilha"
+    },
+    "nfts": {
+      "title": "NFTs",
+      "seeMore": "Veja Mais",
+      "noCertifications": "Você não possui certificações"
+    }
+  },
+  "onboarding": {
+    "next": "Avançar",
+    "skip": "Pular Introdução",
+    "access": "Acessar Plataforma",
+    "welcome": {
+      "title": "Seja bem vindo a Web3EduBrasil!",
+      "subtitle": "Antes de começarmos, vamos entender as funcionalidades da plataforma Web3EduBrasil"
+    },
+    "communities": {
+      "title": "Participe das nossas comunidades",
+      "text": "Junte-se às nossas comunidades Web3 e fique por dentro de tudo! Siga-nos nas redes sociais, compartilhe experiências e aprenda junto com a gente.",
+      "discord": "Discord",
+      "telegram": "Telegram",
+      "followSocials": "E acompanhe as nossas redes!"
+    },
+    "homeScreen": {
+      "title": "Tela Home",
+      "text": "Nesta tela você encontrará alguns dados de seu perfil, um preview de suas NFTs conquistadas, a jornada de usuário e suas três últimas trilhas de aprendizagem.",
+      "access": "Acesse através da barra de navegação ao topo da tela"
+    },
+    "profile": {
+      "title": "Seu Perfil",
+      "text": "Aqui, você pode personalizar seu perfil, adicionando o Discord ou o LinkedIn. Não esqueça de atualizar seu nome, pois ele aparecerá no seu certificado!",
+      "access": "Acesse (Perfil) no canto superior direito da sua tela"
+    },
+    "userConfig": {
+      "title": "Configurar perfil de usuário",
+      "text": "Complete nosso breve formulário para recomendarmos trilhas de aprendizagem do seu interesse.",
+      "access": "Acesse na tela home em Jornada do usuário"
+    },
+    "trailsScreen": {
+      "title": "Tela de trilhas",
+      "text": "Nesta tela você encontrará todas as trilhas de aprendizagem, podendo buscá-las por nome ou categoria e acessá-las.",
+      "access": "Acesse através da barra de navegação ao topo da tela"
+    },
+    "learning": {
+      "title": "Trilha de aprendizagem",
+      "text": "Aprenda sobre Web3 acessando e completando as tarefas de nossas trilhas!",
+      "access": "Acesse através da tela de trilhas ou pelo acesso rápido na tela home"
+    },
+    "reward": {
+      "title": "Resgate sua recompensa!",
+      "text": "Ao concluir uma trilha de aprendizagem, resgate sua NFT clicando em Resgatar Agora",
+      "access": "Disponível ao marcar a última tarefa de uma trilha como concluída."
+    },
+    "done": {
+      "title": "Tudo pronto!",
+      "text": "Ótimo! Você está pronto para começar a explorar nossa plataforma e colecionar NFTs",
+      "access": "Clique em Acessar Plataforma para começar sua jornada!",
+      "help": "Caso precise revisitar algum passo ou tirar dúvidas, acesse este tutorial na aba Ajuda no menu de usuário.",
+      "instruction": "Acesse sua NFT clicando em sua carteira"
+    },
+    "wallet": {
+      "step1Title": "Carteira Web3",
+      "step1Text": "Nossa plataforma conta com uma carteira web3 integrada única para cada usuário, permitindo que você explore e interaja com a web3 em poucos cliques.",
+      "step1Instruction": "Entre na carteira localizada no canto superior direito",
+      "step2Title": "Configure a sua Carteira",
+      "step2Text": "Esta é a sua carteira! Com ela, você poderá receber NFTs como recompensa ao concluir trilhas de aprendizagem. Antes de começar, vamos configurá-la juntos.",
+      "step2Instruction": "Vá até a aba de (Configurações)",
+      "step3Instruction": "Vá até a sessão (Em Geral)",
+      "step4Text": "Essas configurações são essenciais para que você possa receber os NFTs de recompensa ao completar nossas trilhas de aprendizagem.",
+      "step4Instruction": "Ative a opção 'Redes de Teste' e, em seguida, selecione 'Ethereum Sepolia' como sua rede padrão.",
+      "step5Text": "Ótimo! Agora que as configurações estão concluídas, você está pronto para criar sua conta e começar a explorar nossas trilhas de aprendizagem. Vamos lá?",
+      "step5Instruction": "Sua carteira deve ficar da seguinte maneira:",
+      "nextStep": "Próximo Passo",
+      "finish": "Configure sua Carteira",
+      "availableHelp": "Este tutorial estará sempre disponível na aba Ajuda, caso precise revisitar algum passo ou tirar dúvidas."
+    }
+  },
+  "userPage": {
+    "title": "Dados",
+    "personalData": "Dados Pessoais",
+    "certificates": "Certificados",
+    "displayName": "Nome de Exibição",
+    "discord": "Discord",
+    "discordPlaceholder": "Nome do seu Perfil",
+    "email": "Email",
+    "linkedin": "LinkedIn",
+    "linkedinPlaceholder": "www.linkedin.com/in/username",
+    "save": "Salvar",
+    "noCertificates": "Nenhum certificado ainda",
+    "noCertificatesText": "Complete uma trilha ou programa para receber seu NFT certificado único."
+  },
+  "learn": {
+    "enroll": "Inscrever-se",
+    "enrollFree": "Inscrever-se Gratuitamente",
+    "enrolling": "Inscrevendo...",
+    "continue": "Continuar Aprendendo",
+    "review": "Rever Conteúdo",
+    "sections": "seções",
+    "completed": "concluídas",
+    "contentHours": "{hours}h de conteúdo",
+    "yourProgress": "Seu progresso",
+    "whatYouLearn": "O que você aprenderá",
+    "connectWallet": "Conectar Carteira",
+    "claimNft": "Resgatar NFT",
+    "claiming": "Resgatando..."
+  },
+  "reward": {
+    "trailCompleted": "Parabéns, {name}! Você concluiu a trilha {trail}.",
+    "programCompleted": "Parabéns, {name}! Você concluiu o programa {program}.",
+    "bodyText": "Todo o seu empenho e dedicação não passaram despercebidos. Para celebrar essa conquista, você receberá um token NFT como recompensa! Esse token simboliza tudo o que você aprendeu e o seu compromisso em cada etapa.",
+    "connectWarning": "⚠️ Conecte uma carteira para resgatar seu NFT.",
+    "claimNow": "Resgatar Agora!",
+    "processing": "Processando..."
+  }
+}

@@ -2,6 +2,7 @@ import Image from "next/image";
 import React, { useState } from "react";
 import web3EduLogo from "../../../public/assets/images/Web3EduBrasil_logo.png";
 import { MotionButton } from "../ui/Button";
+import { Kyc1Props } from "@/interfaces/interfaces";
 
 export default function Kyc1({
   setLevel,

@@ -3,6 +3,7 @@ import web3EduLogo from "../../../public/assets/images/Web3EduBrasil_logo.png";
 import { MotionButton } from "../ui/Button";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { Kyc2Props, Interests } from "@/interfaces/interfaces";
 
 export default function Kyc2({
   handleTabClick,

@@ -11,7 +11,10 @@ const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
 
 import { useState } from "react";
 
+import { useTranslations } from "next-intl";
+
 export const Section3 = () => {
+  const t = useTranslations("landing.explore");
   const [videoLink, setVideoLink] = useState(
     "https://www.youtube.com/embed/LDWxrrl21AM"
   );
@@ -22,8 +25,8 @@ export const Section3 = () => {
         <div className="h-full w-full">
           <div className="w-full flex flex-col m-0 md:flex-row items-center justify-start text-3xl text-center md:text-left">
             <p className="font-bold whitespace-pre-wrap text-neutral">
-              Acessando o Futuro <br />
-              com a<span className="font-bold text-cgreen"> Web3EduBrasil</span>
+              {t("accessing")} <br />
+              {t("with")}<span className="font-bold text-cgreen"> Web3EduBrasil</span>
             </p>
             <div className="h-24 w-24 md:ml-4 mt-4 md:mt-0 flex justify-center">
               <Lottie animationData={AnimationFuture} loop={true} />
@@ -32,12 +35,11 @@ export const Section3 = () => {
 
           <p className="whitespace-pre-wrap"> </p>
           <p className="font-bold md:text-4xl text-3xl text-neutral md:text-left text-center">
-            Explore a Plataforma
+            {t("title")}
           </p>
           <p className="whitespace-pre-wrap"> </p>
           <p className="text-gray md:w-3/4 w-full md:text-left text-justify">
-            Veja a seguir as nossas principais funções presentes em nosso site.
-            <strong> Aprenda</strong> as principais coisas do mundo do Web3!
+            {t("description")}
           </p>
         </div>
 
@@ -48,7 +50,7 @@ export const Section3 = () => {
             func={() =>
               setVideoLink("https://www.youtube.com/embed/LDWxrrl21AM")
             }
-            label="Recompensas"
+            label={t("rewards")}
             Icon={() => (
               <Image src={GiftIcon} alt="Trail Icon" className="w-4 h-4" />
             )}
@@ -60,7 +62,7 @@ export const Section3 = () => {
             func={() =>
               setVideoLink("https://www.youtube.com/embed/AWrs8B5_K34")
             }
-            label="Trilhas"
+            label={t("trails")}
             Icon={() => (
               <Image src={TrailIcon} alt="Trail Icon" className="w-4 h-4" />
             )}

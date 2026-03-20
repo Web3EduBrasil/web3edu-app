@@ -46,7 +46,7 @@ if (fs.existsSync(envFile)) {
 const admin = require("firebase-admin");
 
 if (!admin.apps.length) {
-  const saEnv = process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT;
+  const saEnv = process.env.ADMIN_SERVICE_ACCOUNT;
   if (saEnv) {
     try {
       const json = saEnv.startsWith("{")
@@ -56,7 +56,7 @@ if (!admin.apps.length) {
       admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
       console.log("✅ Firebase Admin inicializado com service account.");
     } catch (e) {
-      console.error("❌ Falha ao parsear FIREBASE_ADMIN_SERVICE_ACCOUNT:", e.message);
+      console.error("❌ Falha ao parsear ADMIN_SERVICE_ACCOUNT:", e.message);
       process.exit(1);
     }
   } else {
@@ -87,15 +87,17 @@ const TRAIL_META = {
 const SECTIONS = [
   { id: "1", title: "Introdução", type: "text", order: 1 },
   { id: "2", title: "As Gerações da Internet", type: "text", order: 2 },
-  { id: "4", title: "Web 2.0, a internet social", type: "text", order: 3 },
-  { id: "5", title: "Web3, a internet semântica", type: "text", order: 4 },
-  { id: "10", title: "O que é Blockchain?", type: "text", order: 5 },
-  { id: "16", title: "Como funciona uma Blockchain?", type: "text", order: 6 },
-  { id: "17", title: "Aplicações da Blockchain", type: "text", order: 7 },
-  { id: "23", title: "Segurança e Carteiras", type: "text", order: 8 },
-  { id: "24", title: "Golpes com Criptomoedas", type: "text", order: 9 },
-  { id: "30", title: "O que são NFTs?", type: "text", order: 10 },
-  { id: "31", title: "Comunidades NFT", type: "text", order: 11 },
+  { id: "3", title: "Web 2.0, a internet social", type: "text", order: 3 },
+  { id: "4", title: "Web3, a internet semântica", type: "text", order: 4 },
+  { id: "5", title: "O que é Blockchain?", type: "text", order: 5 },
+  { id: "6", title: "Como funciona uma Blockchain?", type: "text", order: 6 },
+  { id: "7", title: "Aplicações da Blockchain", type: "text", order: 7 },
+  { id: "8", title: "Carteiras de Criptomoedas", type: "text", order: 8 },
+  { id: "9", title: "Golpes com Criptomoedas", type: "text", order: 9 },
+  { id: "10", title: "O que são NFTs?", type: "text", order: 10 },
+  { id: "11", title: "Setup Básico", type: "text", order: 11 },
+  { id: "12", title: "Vídeos Interessantes", type: "text", order: 12 },
+  { id: "13", title: "Crie uma Identidade Sólida", type: "text", order: 13 },
 ];
 
 // ── Seed ──────────────────────────────────────────────────────────────────────

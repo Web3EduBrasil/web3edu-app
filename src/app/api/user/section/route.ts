@@ -1,10 +1,4 @@
-import {
-  doc,
-  getDoc,
-  updateDoc, collection,
-  getDocs
-} from "firebase/firestore";
-import { db } from "@/firebase/config";
+import { adminDb } from "@/lib/firebase-admin";
 import { NextRequest, NextResponse } from "next/server";
 import { levelFromXp, XP_REWARDS } from "@/lib/xp";
 import { verifyAuth } from "@/lib/auth-helper";
@@ -24,16 +18,14 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
-    const userDocRef = doc(db, "users", uid);
-    const trailDocRef = doc(db, "trails", trailId);
-    const contentsCollectionRef = collection(trailDocRef, "contents");
+    const userDocRef = adminDb.collection("users").doc(uid);
 
     const [userDocSnap, contentsSnap] = await Promise.all([
-      getDoc(userDocRef),
-      getDocs(contentsCollectionRef),
+      userDocRef.get(),
+      adminDb.collection(`trails/${trailId}/contents`).get(),
     ]);
 
-    if (userDocSnap.exists() && contentsSnap.size > 0) {
+    if (userDocSnap.exists && contentsSnap.size > 0) {
       const trailSections = contentsSnap.docs.map((doc) => doc.id);
 
       const userTrails = userDocSnap.data()?.trails || [];
@@ -101,7 +93,7 @@ export const POST = async (req: NextRequest) => {
       const newXp = currentXp + xpGained;
       const newLevel = levelFromXp(newXp);
 
-      await updateDoc(userDocRef, {
+      await userDocRef.update({
         trails: userTrails,
         ...(xpGained > 0 ? { xp: newXp, level: newLevel } : {}),
       });

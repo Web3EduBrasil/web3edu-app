@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { IoMdArrowRoundBack } from "react-icons/io";
+import { IconButtonProps } from "@/interfaces/interfaces";
 
 export const IconButton = ({
   func,

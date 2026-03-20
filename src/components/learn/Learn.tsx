@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { LearnProps } from "@/interfaces/interfaces";
 import { TaskList } from "./TaskList";
 import { useContent } from "@/providers/content-context";
 import { Task } from "../Task/Task";

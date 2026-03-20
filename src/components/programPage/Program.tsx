@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-
+import { ProgramProps, ProgramContainerProps } from "@/interfaces/interfaces";
 import { useContent } from "@/providers/content-context";
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 import { useRouter } from "next/navigation";

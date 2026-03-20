@@ -1,16 +1,12 @@
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/firebase/config";
+import { adminDb } from "@/lib/firebase-admin";
 export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
 
 export const GET = async (req: NextRequest) => {
   try {
-    const docsRef = collection(db, "programs");
-    const querySnapshot = await getDocs(docsRef);
+    const querySnapshot = await adminDb.collection("programs").get();
 
-    const programs: any = [];
-
+    const programs: any[] = [];
     querySnapshot.forEach((program) => {
       programs.push({
         id: program.id,
@@ -22,11 +18,9 @@ export const GET = async (req: NextRequest) => {
       });
     });
 
-    return new NextResponse(JSON.stringify({ programs }), {
-      status: 200,
-    });
+    return NextResponse.json({ programs }, { status: 200 });
   } catch (error: any) {
     console.error(error.message);
-    return new NextResponse("Erro ao buscar programas", { status: 500 });
+    return NextResponse.json({ message: "Erro ao buscar programas" }, { status: 500 });
   }
 };

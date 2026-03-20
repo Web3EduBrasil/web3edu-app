@@ -1,5 +1,4 @@
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { db } from "@/firebase/config";
+import { adminDb } from "@/lib/firebase-admin";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth-helper";
 
@@ -18,12 +17,12 @@ export const POST = async (req: NextRequest, res: NextResponse) => {
         { status: 400 }
       );
     }
-    const whitelistDocRef = doc(db, "whitelist", uid);
-    const docSnap = await getDoc(whitelistDocRef);
+    const whitelistDocRef = adminDb.collection("whitelist").doc(uid);
+    const docSnap = await whitelistDocRef.get();
 
-    if (docSnap.exists()) {
+    if (docSnap.exists) {
       // Se o documento já existe, atualiza o status da trilha
-      await updateDoc(whitelistDocRef, {
+      await whitelistDocRef.update({
         address: walletAddress,
         [`status.${trailId}`]: {
           eligible: true,
@@ -41,7 +40,7 @@ export const POST = async (req: NextRequest, res: NextResponse) => {
       );
     } else {
       // Cria o novo documento na coleção "whitelist"
-      await setDoc(whitelistDocRef, {
+      await whitelistDocRef.set({
         address: walletAddress,
         status: {
           // Cria o objeto status com a trilha como chave
@@ -82,10 +81,10 @@ export const GET = async (req: NextRequest) => {
       );
     }
 
-    const whitelistDocRef = doc(db, "whitelist", uid);
-    const docSnap = await getDoc(whitelistDocRef);
+    const whitelistDocRef = adminDb.collection("whitelist").doc(uid);
+    const docSnap = await whitelistDocRef.get();
 
-    if (!docSnap.exists()) {
+    if (!docSnap.exists) {
       return new NextResponse(
         JSON.stringify({
           eligible: true,

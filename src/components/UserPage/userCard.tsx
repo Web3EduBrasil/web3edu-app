@@ -12,12 +12,14 @@ import { IconButton } from "../ui/IconButton";
 import { authHeaders } from "@/lib/getIdToken";
 import { useContent } from "@/providers/content-context";
 import { FaExternalLinkAlt } from "react-icons/fa";
+import { useTranslations } from "next-intl";
 
 export const UserSection = () => {
   const { userDbInfo, googleUserInfo, fetchUserDbData, userAccount } = useWeb3AuthContext();
   const { fetchAchievedNfts, achievedNfts } = useContent();
   const router = useRouter();
   const { userInfo } = useWeb3AuthContext();
+  const t = useTranslations("userPage");
 
   const [activeTab, setActiveTab] = useState<"dados" | "certificados">("dados");
 
@@ -115,14 +117,14 @@ export const UserSection = () => {
               onClick={() => setActiveTab("dados")}
               className={`tab text-sm md:text-base ${activeTab === "dados" ? "tab-active font-semibold" : "text-dgray"}`}
             >
-              Dados Pessoais
+              {t("personalData")}
             </button>
             <button
               role="tab"
               onClick={() => setActiveTab("certificados")}
               className={`tab text-sm md:text-base ${activeTab === "certificados" ? "tab-active font-semibold" : "text-dgray"}`}
             >
-              🏆 Certificados
+              🏆 {t("certificates")}
             </button>
           </div>
         </div>
@@ -147,14 +149,14 @@ export const UserSection = () => {
 
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex flex-col w-full gap-1">
-                <span className="text-xs md:text-sm text-dgray">Nome de Exibição</span>
+                <span className="text-xs md:text-sm text-dgray">{t("displayName")}</span>
                 <input
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
                   type="text"
                   className="input input-bordered w-full h-9 bg-white text-sm rounded-lg border-2 border-gray text-dgray"
                 />
-                <span className="text-xs md:text-sm text-dgray mt-2">Email</span>
+                <span className="text-xs md:text-sm text-dgray mt-2">{t("email")}</span>
                 <input
                   value={userDbInfo.email || ""}
                   type="text"
@@ -163,20 +165,20 @@ export const UserSection = () => {
                 />
               </div>
               <div className="flex flex-col w-full gap-1">
-                <span className="text-xs md:text-sm text-dgray">Discord</span>
+                <span className="text-xs md:text-sm text-dgray">{t("discord")}</span>
                 <input
                   value={discord}
                   onChange={(e) => setDiscord(e.target.value)}
                   type="text"
-                  placeholder="Nome do seu Perfil"
+                  placeholder={t("discordPlaceholder")}
                   className="input input-bordered w-full h-9 bg-white text-sm rounded-lg border-2 border-gray text-dgray"
                 />
-                <span className="text-xs md:text-sm text-dgray mt-2">LinkedIn</span>
+                <span className="text-xs md:text-sm text-dgray mt-2">{t("linkedin")}</span>
                 <input
                   value={linkedin}
                   onChange={(e) => setLinkedin(e.target.value)}
                   type="text"
-                  placeholder="www.linkedin.com/in/username"
+                  placeholder={t("linkedinPlaceholder")}
                   className="input input-bordered w-full h-9 bg-white text-sm rounded-lg border-2 border-gray text-dgray"
                 />
               </div>
@@ -185,7 +187,7 @@ export const UserSection = () => {
             <div className="flex justify-end">
               <MotionButton
                 Icon={FaSave}
-                label="Salvar"
+                label={t("save")}
                 func={() => Submit()}
                 className="flex justify-center text-xs items-center h-8 w-28 bg-green text-ddblue md:text-sm"
                 type="button"
@@ -200,9 +202,9 @@ export const UserSection = () => {
             {achievedNfts.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
                 <span className="text-5xl">🏅</span>
-                <p className="text-dgray font-semibold text-lg">Nenhum certificado ainda</p>
+                <p className="text-dgray font-semibold text-lg">{t("noCertificates")}</p>
                 <p className="text-dgray/70 text-sm max-w-xs">
-                  Complete uma trilha ou programa para receber seu NFT certificado único.
+                  {t("noCertificatesText")}
                 </p>
               </div>
             ) : (

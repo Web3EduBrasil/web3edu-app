@@ -7,6 +7,8 @@ import { useState } from "react";
 import { IconButton } from "../ui/IconButton";
 import { useContent } from "@/providers/content-context";
 import "react-toastify/dist/ReactToastify.css";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
+import { useTranslations } from "next-intl";
 
 export const RewardContainer = () => {
   const {
@@ -17,10 +19,20 @@ export const RewardContainer = () => {
     fetchProgramAirDrop,
   } = useContent();
   const { googleUserInfo, userAccount, userDbInfo } = useWeb3AuthContext();
+  const { openConnectModal } = useConnectModal();
   const [isLoading, setIsLoading] = useState(false);
+  const t = useTranslations("reward");
+  const tLearn = useTranslations("learn");
+
+  const hasWallet = !!userAccount[0];
 
   const handleClaim = async () => {
-    if (!rewardData || !googleUserInfo || !userAccount[0]) return;
+    if (!rewardData || !googleUserInfo) return;
+
+    if (!hasWallet) {
+      if (openConnectModal) openConnectModal();
+      return;
+    }
     setIsLoading(true);
     try {
       const userName =
@@ -53,8 +65,8 @@ export const RewardContainer = () => {
 
   const title =
     rewardData?.type === "program"
-      ? `Parabéns, ${googleUserInfo?.displayName || ""}! Você concluiu o programa ${rewardData?.name || ""}.`
-      : `Parabéns, ${googleUserInfo?.displayName || ""}! Você concluiu a trilha ${rewardData?.name || ""}.`;
+      ? t("programCompleted", { name: googleUserInfo?.displayName || "", program: rewardData?.name || "" })
+      : t("trailCompleted", { name: googleUserInfo?.displayName || "", trail: rewardData?.name || "" });
 
   return (
     <div
@@ -71,16 +83,16 @@ export const RewardContainer = () => {
               className="h-5"
             />
           </div>
-          <p>
-            Todo o seu empenho e dedicação não passaram despercebidos. Para
-            celebrar essa conquista, você receberá um token NFT como recompensa!
-            Esse token simboliza tudo o que você aprendeu e o seu compromisso em
-            cada etapa.
-          </p>
+          <p>{t("bodyText")}</p>
+          {!hasWallet && (
+            <p className="text-sm text-orange-500 font-medium">
+              {t("connectWarning")}
+            </p>
+          )}
         </div>
         <MotionButton
           rightIcon={true}
-          label={isLoading ? "Processando..." : "Resgatar Agora!"}
+          label={isLoading ? t("processing") : hasWallet ? t("claimNow") : tLearn("connectWallet")}
           type="button"
           className="bg-green text-neutral w-full h-12 self-end font-semibold text-md"
           func={handleClaim}

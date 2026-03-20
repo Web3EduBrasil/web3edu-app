@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { MotionButtonProps } from "@/interfaces/interfaces";
 
 export const MotionButton = ({
   label,
@@ -24,23 +25,23 @@ export const MotionButton = ({
       {rightIcon ? (
         <>
           {Icon ? (
-            <div className="flex items-center justify-center gap-2">
-              <p className="truncate">{label}</p>
+            <span className="flex items-center justify-center gap-2">
+              <span className="truncate">{label}</span>
               <Icon className="w-4 h-4" />
-            </div>
+            </span>
           ) : (
-            <p className="truncate">{label}</p>
+            <span className="truncate">{label}</span>
           )}
         </>
       ) : (
         <>
           {Icon ? (
-            <div className="flex items-center justify-center gap-2">
+            <span className="flex items-center justify-center gap-2">
               <Icon className="w-4 h-4" />
-              <p className="truncate">{label}</p>
-            </div>
+              <span className="truncate">{label}</span>
+            </span>
           ) : (
-            <p className="truncate">{label}</p>
+            <span className="truncate">{label}</span>
           )}
         </>
       )}
