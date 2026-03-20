@@ -11,6 +11,23 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 const nextConfig = {
   reactStrictMode: true,
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
+  experimental: {
+    optimizePackageImports: [
+      "react-icons/fa",
+      "react-icons/fa6",
+      "react-icons/fi",
+      "react-icons/md",
+      "react-icons/rx",
+      "react-icons/ci",
+      "react-icons/gr",
+      "react-icons/si",
+      "react-icons/io5",
+      "react-icons/bs",
+      "react-icons/cg",
+      "@rainbow-me/rainbowkit",
+      "framer-motion",
+    ],
+  },
   images: {
     remotePatterns: [
       {
