@@ -98,7 +98,7 @@ env:
       - BUILD
       - RUNTIME
   - variable: NEXT_PUBLIC_APP_LINK
-    value: "http://localhost:3000"
+    value: "https://my-web-app--web3edu-57c7f.us-central1.hosted.app"
     availability:
       - BUILD
       - RUNTIME
