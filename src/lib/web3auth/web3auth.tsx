@@ -37,7 +37,10 @@ import { toast } from "react-toastify";
 const chainConfig = {
   chainNamespace: CHAIN_NAMESPACES.EIP155,
   chainId: "0xAA36A7",
-  rpcTarget: process.env.NEXT_PUBLIC_ALCHEMY_RPC_TARGET || "",
+  // Usa env se disponível; senão, fallback seguro para Sepolia
+  rpcTarget:
+    process.env.NEXT_PUBLIC_ALCHEMY_RPC_TARGET ||
+    "https://rpc.ankr.com/eth_sepolia",
   displayName: "Sepolia Testnet",
   blockExplorerUrl: "https://sepolia.etherscan.io/",
   ticker: "ETH",

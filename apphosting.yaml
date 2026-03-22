@@ -1,0 +1,118 @@
+# Settings for Backend (on Cloud Run).
+# See https://firebase.google.com/docs/app-hosting/configure#cloud-run
+runConfig:
+  minInstances: 0
+  # maxInstances: 100
+  # concurrency: 80
+  # cpu: 1
+  # memoryMiB: 512
+
+# Environment variables and secrets.
+env:
+  # FIREBASE (Client SDK – exposed in browser)
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: "AIzaSyAUR-UidJOgs-OUfwXYVVOjDerYl2v-uag"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH
+    value: "web3edu-57c7f.firebaseapp.com"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: "web3edu-57c7f"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: "web3edu-57c7f.firebasestorage.app"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "631758998354"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:631758998354:web:17057826d55c426a8cc88b"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    value: "G-LXP9B10NNX"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # FIREBASE ADMIN (Server-side – use Secret Manager)
+  - variable: ADMIN_SERVICE_ACCOUNT
+    secret: ADMIN_SERVICE_ACCOUNT
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # WEB3AUTH
+  - variable: NEXT_PUBLIC_WEB3AUTH_CLIENT_ID
+    value: "BBuZNtIbMXxhWIhBaT9hg-nyZFo-pzKeGS8tO302Lb28CJnhjuIi_czkinpM-W6lmPz4KLukW0nRj3_bCmb36Nc"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_WEB3AUTH_VERIFIER
+    value: "web3edu-firebase"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_WEB3AUTH_NETWORK
+    value: "sapphire_devnet"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # ALCHEMY / RPC (última configuração do .env.local)
+  - variable: NEXT_PUBLIC_ALCHEMY_RPC_TARGET
+    value: "https://rpc.ankr.com/eth_sepolia"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # PINATA (IPFS – server-side, usar Secret Manager)
+  - variable: PINATA_JWT
+    value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiIzZWZkYTBlZi0wMWM1LTQ4MjktYmYzOS05MTM5MmI3MDBkYzUiLCJlbWFpbCI6ImRhdmltcXoyMDAzQGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJwaW5fcG9saWN5Ijp7InJlZ2lvbnMiOlt7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6IkZSQTEifSx7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6Ik5ZQzEifV0sInZlcnNpb24iOjF9LCJtZmFfZW5hYmxlZCI6ZmFsc2UsInN0YXR1cyI6IkFDVElWRSJ9LCJhdXRoZW50aWNhdGlvblR5cGUiOiJzY29wZWRLZXkiLCJzY29wZWRLZXlLZXkiOiIxNGVlZTdjZDJjMzU4YmYwNjUyNCIsInNjb3BlZEtleVNlY3JldCI6ImM0OWJiNDAxYjkzMjE3YzNlZGYwMDJhZTJmOTNlNmRmZDVhNTFjODdhZWQ2MmIwYzAxNjk4NTA2MzE3YzcyMGMiLCJleHAiOjE4MDUyMDY2MDN9.YvCG7hwb31D5x22CEG2LpFqWs87GnIUvmrUQ9q7RzbM"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # CONTRATO NFT (Sepolia)
+  - variable: NEXT_PUBLIC_CONTRACT_ADDRESS
+    value: "0x8984b78F102f85222E7fa9c43d37d84E087B1Be8"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # APP
+  - variable: NEXT_PUBLIC_BUILD_ENV
+    value: "development"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_APP_LINK
+    value: "http://localhost:3000"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # SEED (rota /api/admin/seed-trail – Secret Manager)
+  - variable: SEED_SECRET
+    value: "dev-seed-secret"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # WALLETCONNECT (RainbowKit)
+  - variable: NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
+    value: "404b8ab5820ac290636f6132c998b870"
+    availability:
+      - BUILD
+      - RUNTIME
