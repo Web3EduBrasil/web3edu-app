@@ -18,8 +18,10 @@ import { useRouter, usePathname } from "next/navigation";
 import { app } from "@/firebase/config";
 import { useLoading } from "../loading-context";
 import { toast } from "react-toastify";
+
 import { useAccount, useSignMessage, useDisconnect } from "wagmi";
 import { useAccountModal } from "@rainbow-me/rainbowkit";
+
 
 export default function useWeb3Auth() {
   const router = useRouter();
