@@ -1,47 +1,53 @@
-import { getDefaultConfig } from "@rainbow-me/rainbowkit";
-import { createConfig, http } from "wagmi";
-import { injected, metaMask, coinbaseWallet } from "wagmi/connectors";
-import { sepolia } from "wagmi/chains";
+import { createConfig, createStorage, http } from "wagmi";
+import { connectorsForWallets } from "@rainbow-me/rainbowkit";
+import { metaMaskWallet } from "@rainbow-me/rainbowkit/wallets";
+import { mainnet, sepolia } from "wagmi/chains";
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? "";
+const chains = [mainnet, sepolia] as const;
 
-const transport = http(
-  process.env.NEXT_PUBLIC_ALCHEMY_RPC_TARGET ||
-  "https://rpc.ankr.com/eth_sepolia"
-);
+type WagmiConfigInstance = ReturnType<typeof createConfig>;
 
-function buildConfig() {
-  if (projectId) {
-    // Configuração completa com WalletConnect (requer projectId válido)
-    return getDefaultConfig({
+const globalForWagmi = globalThis as typeof globalThis & {
+  __web3EduWagmiConfig?: WagmiConfigInstance;
+};
+
+function buildWagmiConfig(): WagmiConfigInstance {
+  const transport = http(
+    process.env.NEXT_PUBLIC_ALCHEMY_RPC_TARGET ||
+    "https://rpc.ankr.com/eth_sepolia"
+  );
+
+  const mainnetTransport = http("https://ethereum-rpc.publicnode.com");
+
+  const connectors = connectorsForWallets(
+    [
+      {
+        groupName: "Carteiras",
+        wallets: [metaMaskWallet],
+      },
+    ],
+    {
       appName: "Web3EduBrasil",
       projectId,
-      chains: [sepolia],
-      transports: { [sepolia.id]: transport },
-      ssr: true,
-    });
-  }
+    }
+  );
 
-  // Sem projectId: conectores raw do wagmi — NÃO usam WalletConnect nem IndexedDB
-  // RainbowKit detecta automaticamente esses conectores e exibe no modal
-  if (typeof window === "undefined") {
-    console.warn(
-      "[wagmi] NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID não definido. " +
-      "Somente carteiras injetadas disponíveis. Obtenha um projectId gratuito em https://cloud.walletconnect.com"
-    );
-  }
   return createConfig({
-    chains: [sepolia],
-    connectors: [
-      injected(),
-      metaMask(),
-      coinbaseWallet({ appName: "Web3EduBrasil" }),
-    ],
-    transports: { [sepolia.id]: transport },
-    // ssr: false evita que o wagmi chame setup() dos conectores no Node.js
-    // (os conectores acima usam APIs de browser e não devem rodar no servidor)
+    chains,
+    connectors,
+    transports: {
+      [mainnet.id]: mainnetTransport,
+      [sepolia.id]: transport,
+    },
+    storage: createStorage({ key: "wagmi-web3edu-v2" }),
     ssr: false,
   });
 }
 
-export const wagmiConfig = buildConfig();
+export const wagmiConfig =
+  globalForWagmi.__web3EduWagmiConfig ?? buildWagmiConfig();
+
+if (process.env.NODE_ENV !== "production") {
+  globalForWagmi.__web3EduWagmiConfig = wagmiConfig;
+}

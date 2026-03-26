@@ -36,7 +36,7 @@ export function WagmiProviders({ children }: { children: ReactNode }) {
     : lightTheme({ accentColor, accentColorForeground: "white", borderRadius: "medium" });
 
   return (
-    <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
+    <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider locale="pt-BR" theme={rkTheme}>
           {children}

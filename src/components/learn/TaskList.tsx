@@ -2,8 +2,7 @@
 
 import { useContent } from "@/providers/content-context";
 import { TaskUnits } from "../Task/TaskUnits";
-import { useEffect, useState } from "react";
-import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
+import { useEffect } from "react";
 import { useParams } from "next/navigation";
 
 export const TaskList = ({ uid }: { uid: string }) => {
@@ -11,15 +10,9 @@ export const TaskList = ({ uid }: { uid: string }) => {
   const { trailIdRt }: any = useParams();
 
   useEffect(() => {
-    if (Object.keys(trailSections).length === 0 && uid !== undefined) {
-      fetchTrailSections(trailIdRt, uid);
-    } else if (
-      uid !== undefined &&
-      !trailSections.some((t: { id: string }) => t.id === trailIdRt)
-    ) {
-      fetchTrailSections(trailIdRt, uid);
-    }
-  }, [trailIdRt, uid, fetchTrailSections, trailSections]);
+    if (!trailIdRt || !uid) return;
+    fetchTrailSections(trailIdRt, uid);
+  }, [trailIdRt, uid, fetchTrailSections]);
 
   return (
     <div className="md:w-3/12 md:min-w-80 w-full h-full bg-cgray md:rounded-box p-8 md:overflow-y-auto gap-2 flex flex-col justify-start items-start">

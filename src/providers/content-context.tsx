@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useState, useContext } from "react";
+import React, { createContext, useState, useContext, useCallback } from "react";
 import { AchievedNft } from "@/interfaces/interfaces";
 import {
   getFirestore,
@@ -180,7 +180,7 @@ export const ContentProvider = ({
     }
   };
 
-  const fetchTrailSections = async (trailIdRt: string, uid: string) => {
+  const fetchTrailSections = useCallback(async (trailIdRt: string, uid: string) => {
     try {
       const response = await fetch(
         `/api/trail/contents?trailId=${trailIdRt}&uid=${uid}`,
@@ -204,7 +204,7 @@ export const ContentProvider = ({
       console.error("Erro na requisição fetchTrailSections:", error);
       throw error;
     }
-  };
+  }, []);
 
   const fetchSectionContent = async (
     trailId: string,
@@ -366,15 +366,19 @@ export const ContentProvider = ({
       toast.success("Processando mint do NFT na blockchain...");
 
       // 4. Salva na subcoleção achievedNfts do usuário
-      const firestore = getFirestore();
-      const userRef = doc(firestore, "users", uid);
-      await addDoc(collection(userRef, "achievedNfts"), {
-        walletAddress,
-        trailId,
-        ipfs: trailIcon,
-        type: "trail",
-        createdAt: serverTimestamp(),
-      });
+      try {
+        const firestore = getFirestore();
+        const userRef = doc(firestore, "users", uid);
+        await addDoc(collection(userRef, "achievedNfts"), {
+          walletAddress,
+          trailId,
+          ipfs: trailIcon,
+          type: "trail",
+          createdAt: serverTimestamp(),
+        });
+      } catch (error) {
+        console.error("Erro ao registrar NFT em achievedNfts:", error);
+      }
 
       // 5. Polling — aguarda txHash vindo da Cloud Function
       pollMintStatus(uid, trailId, "trail");
@@ -428,15 +432,19 @@ export const ContentProvider = ({
       toast.success("Processando mint do certificado NFT na blockchain...");
 
       // 4. Salva na subcoleção achievedNfts do usuário
-      const firestore = getFirestore();
-      const userRef = doc(firestore, "users", uid);
-      await addDoc(collection(userRef, "achievedNfts"), {
-        walletAddress,
-        trailId: programId,
-        ipfs: programIcon,
-        type: "program",
-        createdAt: serverTimestamp(),
-      });
+      try {
+        const firestore = getFirestore();
+        const userRef = doc(firestore, "users", uid);
+        await addDoc(collection(userRef, "achievedNfts"), {
+          walletAddress,
+          trailId: programId,
+          ipfs: programIcon,
+          type: "program",
+          createdAt: serverTimestamp(),
+        });
+      } catch (error) {
+        console.error("Erro ao registrar NFT em achievedNfts:", error);
+      }
 
       // 5. Polling — aguarda txHash vindo da Cloud Function
       pollMintStatus(uid, programId, "program");

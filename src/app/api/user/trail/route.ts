@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth-helper";
 
 /**
- * POST /api/user/trail
+ * POST /z/trail
  * Inscreve o usuário em uma trilha (adiciona à lista trails sem doneSections).
  * Idempotente — não duplica se já estiver inscrito.
  */
@@ -12,15 +12,15 @@ export const POST = async (req: NextRequest) => {
   try {
     verifiedUid = await verifyAuth(req);
   } catch {
-    return new NextResponse(JSON.stringify({ message: "Não autorizado" }), { status: 401 });
+    return NextResponse.json({ message: "Não autorizado" }, { status: 401 });
   }
 
   try {
     const { trailId } = await req.json();
 
     if (!trailId) {
-      return new NextResponse(
-        JSON.stringify({ message: "Parâmetro trailId é obrigatório" }),
+      return NextResponse.json(
+        { message: "Parâmetro trailId é obrigatório" },
         { status: 400 }
       );
     }
@@ -29,24 +29,24 @@ export const POST = async (req: NextRequest) => {
     const userSnap = await userDocRef.get();
 
     if (!userSnap.exists) {
-      return new NextResponse(JSON.stringify({ message: "Usuário não encontrado" }), { status: 404 });
+      return NextResponse.json({ message: "Usuário não encontrado" }, { status: 404 });
     }
 
     const trails: any[] = userSnap.data()?.trails || [];
     const alreadyEnrolled = trails.some((t: any) => t.trailId === trailId);
 
     if (alreadyEnrolled) {
-      return new NextResponse(JSON.stringify({ enrolled: true, alreadyEnrolled: true }), { status: 200 });
+      return NextResponse.json({ enrolled: true, alreadyEnrolled: true }, { status: 200 });
     }
 
     await userDocRef.update({
       trails: [...trails, { trailId, doneSections: [], percentage: 0 }],
     });
 
-    return new NextResponse(JSON.stringify({ enrolled: true }), { status: 201 });
+    return NextResponse.json({ enrolled: true }, { status: 201 });
   } catch (error: any) {
     console.error("Erro ao inscrever em trilha:", error);
-    return new NextResponse(JSON.stringify({ message: "Erro interno" }), { status: 500 });
+    return NextResponse.json({ message: "Erro interno" }, { status: 500 });
   }
 };
 
@@ -60,8 +60,8 @@ export const GET = async (req: NextRequest) => {
     const trailId = req.nextUrl.searchParams.get("trailId");
 
     if (!uid || !trailId) {
-      return new NextResponse(
-        JSON.stringify({ message: "Parâmetros uid e trailId são obrigatórios" }),
+      return NextResponse.json(
+        { message: "Parâmetros uid e trailId são obrigatórios" },
         { status: 400 }
       );
     }
@@ -70,22 +70,22 @@ export const GET = async (req: NextRequest) => {
     const userSnap = await userDocRef.get();
 
     if (!userSnap.exists) {
-      return new NextResponse(JSON.stringify({ enrolled: false }), { status: 200 });
+      return NextResponse.json({ enrolled: false }, { status: 200 });
     }
 
     const trails: any[] = userSnap.data()?.trails || [];
     const trailEntry = trails.find((t: any) => t.trailId === trailId);
 
-    return new NextResponse(
-      JSON.stringify({
+    return NextResponse.json(
+      {
         enrolled: !!trailEntry,
         percentage: trailEntry?.percentage || 0,
         doneSections: trailEntry?.doneSections || [],
-      }),
+      },
       { status: 200 }
     );
   } catch (error: any) {
     console.error("Erro ao verificar inscrição:", error);
-    return new NextResponse(JSON.stringify({ message: "Erro interno" }), { status: 500 });
+    return NextResponse.json({ message: "Erro interno" }, { status: 500 });
   }
 };

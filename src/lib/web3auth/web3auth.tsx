@@ -18,9 +18,17 @@ import { useRouter, usePathname } from "next/navigation";
 import { app } from "@/firebase/config";
 import { useLoading } from "../loading-context";
 import { toast } from "react-toastify";
+import { authHeaders } from "@/lib/getIdToken";
 
-import { useAccount, useSignMessage, useDisconnect } from "wagmi";
+import {
+  useAccount,
+  useSignMessage,
+  useDisconnect,
+  useChainId,
+  useSwitchChain,
+} from "wagmi";
 import { useAccountModal } from "@rainbow-me/rainbowkit";
+import { sepolia } from "wagmi/chains";
 
 
 export default function useWeb3Auth() {
@@ -33,9 +41,11 @@ export default function useWeb3Auth() {
   const [userDbInfo, setUserDbInfo] = useState<any>({});
 
   // wagmi hooks
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, isReconnecting } = useAccount();
+  const chainId = useChainId();
   const { signMessageAsync } = useSignMessage();
   const { disconnect } = useDisconnect();
+  const { switchChainAsync } = useSwitchChain();
   const { openAccountModal } = useAccountModal();
 
   // userInfo compatível com o contrato anterior do contexto
@@ -84,6 +94,17 @@ export default function useWeb3Auth() {
 
       try {
         setIsLoading(true);
+
+        if (chainId !== sepolia.id) {
+          try {
+            await switchChainAsync({ chainId: sepolia.id });
+          } catch {
+            toast.error("Troque para a rede Sepolia para continuar.");
+            disconnect();
+            return;
+          }
+        }
+
         const timestamp = Date.now();
         const message = `Web3EduBrasil Authentication\n\nEndereço: ${address}\nTimestamp: ${timestamp}`;
 
@@ -131,11 +152,20 @@ export default function useWeb3Auth() {
         setIsLoading(false);
       }
     })();
-  }, [isConnected, address, disconnect, setIsLoading, signMessageAsync]);
+  }, [
+    isConnected,
+    address,
+    chainId,
+    disconnect,
+    setIsLoading,
+    signMessageAsync,
+    switchChainAsync,
+  ]);
 
   // Quando a carteira desconecta → faz logout do Firebase se era sessão de carteira
   useEffect(() => {
     if (isConnected) return;
+    if (isReconnecting) return;
     const auth = getAuth(app);
     if (!auth.currentUser) return;
     // UIDs de carteira são endereços ethereum (começam com 0x)
@@ -145,22 +175,42 @@ export default function useWeb3Auth() {
     setGoogleUserInfo(null);
     setUserDbInfo({});
     localStorage.removeItem("googleUserInfo");
-  }, [isConnected]);
+  }, [isConnected, isReconnecting]);
 
   const fetchUserDbData = async (
     uid: string,
     email?: string | null,
     googleName?: string | null
   ) => {
-    const response = await fetch(
-      `/api/user?uid=${uid}&email=${email || ""}&googleName=${googleName || ""}`,
-      { method: "GET" }
-    );
+    let response = await fetch(`/api/user?uid=${uid}`, { method: "GET" });
+
+    if (response.status === 404) {
+      const createRes = await fetch("/api/user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          uid,
+          email: email || null,
+          displayName: googleName || null,
+          tutorialDone: false,
+        }),
+      });
+
+      if (!createRes.ok) {
+        throw new Error("Falha ao criar usuário");
+      }
+
+      response = createRes;
+    }
+
+    if (!response.ok) {
+      throw new Error("Falha ao buscar usuário");
+    }
+
     const data = await response.json();
-    setUserDbInfo(data.user);
-    // Atualiza streak silenciosamente
-    import("@/lib/getIdToken")
-      .then(({ authHeaders: ah }) => ah())
+    setUserDbInfo(data.user || {});
+
+    authHeaders()
       .then((headers) =>
         fetch("/api/user/streak", {
           method: "POST",
@@ -182,7 +232,9 @@ export default function useWeb3Auth() {
           firebaseUser.uid,
           firebaseUser.email,
           firebaseUser.displayName
-        );
+        ).catch(() => {
+          toast.error("Erro ao carregar dados do usuário.");
+        });
       } else {
         if (pathname !== "/") {
           router.push("/");
