@@ -256,7 +256,7 @@ export default function useWeb3Auth() {
     });
 
     return () => unsubscribe();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, pathname, wagmiStatus]);
 
   const signInWithGoogle = async (): Promise<UserCredential> => {
