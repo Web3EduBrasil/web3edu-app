@@ -5,17 +5,21 @@ import React, { createContext, useContext, useState } from "react";
 const LoadingContext = createContext<{
   isLoading: boolean;
   setIsLoading: (isLoading: boolean) => void;
+  loadingMessage: string;
+  setLoadingMessage: (message: string) => void;
   progressLoading: number | null;
   setProgressLoading: (progress: number | null) => void;
   countLoading: number[] | null;
   setCountLoading: (count: number[] | null) => void;
 }>({
   isLoading: true,
-  setIsLoading: () => {},
+  setIsLoading: () => { },
+  loadingMessage: "",
+  setLoadingMessage: () => { },
   progressLoading: null,
-  setProgressLoading: () => {},
+  setProgressLoading: () => { },
   countLoading: null,
-  setCountLoading: () => {},
+  setCountLoading: () => { },
 });
 
 export const LoadingProvider = ({
@@ -24,6 +28,7 @@ export const LoadingProvider = ({
   children: React.ReactNode;
 }) => {
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingMessage, setLoadingMessage] = useState("");
   const [progressLoading, setProgressLoading] = useState<number | null>(null);
   const [countLoading, setCountLoading] = useState<number[] | null>(null);
 
@@ -32,6 +37,8 @@ export const LoadingProvider = ({
       value={{
         isLoading,
         setIsLoading,
+        loadingMessage,
+        setLoadingMessage,
         progressLoading,
         setProgressLoading,
         countLoading,

@@ -14,12 +14,18 @@ export const Trails = () => {
   const [filteredTrails, setFilteredTrails] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("");
+  const [isLoadingTrails, setIsLoadingTrails] = useState(true);
 
+  // Busca trilhas assim que uid estiver disponível (ou sem uid para listagem básica)
   useEffect(() => {
-    if (userDbInfo !== null && trailsList.length === 0) {
-      fetchTrailsList(userDbInfo?.uid);
+    if (trailsList.length > 0) {
+      setIsLoadingTrails(false);
+      return;
     }
-  }, [userDbInfo, trailsList, fetchTrailsList]);
+    setIsLoadingTrails(true);
+    fetchTrailsList(userDbInfo?.uid || "").finally(() => setIsLoadingTrails(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userDbInfo?.uid]);
 
   useEffect(() => {
     if (trailsList.length > 0) {
@@ -32,7 +38,6 @@ export const Trails = () => {
     }
   }, [searchTerm, activeCategory, trailsList]);
 
-  // Extrair categorias únicas de todas as trilhas
   const allCategories: string[] = Array.from(
     new Set(trailsList.flatMap((t: any) => t.categories || []))
   );
@@ -43,7 +48,6 @@ export const Trails = () => {
         <p className="font-bold lg:text-3xl text-2xl text-center text-nowrap md:order-first order-last">
           Trilhas de aprendizagem
         </p>
-        {/* Barra de busca */}
         <div className="relative flex-1 max-w-xs">
           <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-dgray/60" />
           <input
@@ -56,13 +60,11 @@ export const Trails = () => {
         </div>
       </div>
 
-      {/* Filtro por categoria */}
       {allCategories.length > 0 && (
         <div className="flex gap-2 flex-wrap w-full mb-4">
           <button
             onClick={() => setActiveCategory("")}
-            className={`badge badge-lg cursor-pointer ${activeCategory === "" ? "badge-neutral" : "badge-outline"
-              }`}
+            className={`badge badge-lg cursor-pointer ${activeCategory === "" ? "badge-neutral" : "badge-outline"}`}
           >
             Todas
           </button>
@@ -70,8 +72,7 @@ export const Trails = () => {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat === activeCategory ? "" : cat)}
-              className={`badge badge-lg cursor-pointer ${activeCategory === cat ? "badge-neutral" : "badge-outline"
-                }`}
+              className={`badge badge-lg cursor-pointer ${activeCategory === cat ? "badge-neutral" : "badge-outline"}`}
             >
               {cat}
             </button>
@@ -80,18 +81,20 @@ export const Trails = () => {
       )}
 
       <div className="w-full h-full gap-7 mb-8 flex flex-wrap">
-        {filteredTrails.length !== 0 ? (
-          filteredTrails.map((e: any, index: any) => {
-            return (
-              <TrailCards
-                key={index}
-                id={e.id}
-                image={e.banner}
-                title={e.name}
-                description={e.resumedDescription}
-              />
-            );
-          })
+        {isLoadingTrails ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="skeleton w-full max-w-80 h-80 rounded-box" />
+          ))
+        ) : filteredTrails.length !== 0 ? (
+          filteredTrails.map((e: any, index: any) => (
+            <TrailCards
+              key={index}
+              id={e.id}
+              image={e.banner}
+              title={e.name}
+              description={e.resumedDescription}
+            />
+          ))
         ) : (
           <div className="w-full min-h-full flex items-center justify-center">
             <p className="text-3xl text-gray/80 font-bold">

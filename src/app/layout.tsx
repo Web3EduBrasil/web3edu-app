@@ -8,6 +8,7 @@ import { RewardContainer } from "@/components/RewardContainer/RewardContainer";
 import { Lexend_Deca } from "next/font/google";
 import { LoadingProvider } from "@/lib/loading-context";
 import { WagmiProviders } from "@/lib/wagmi/WagmiProviders";
+import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { cookies } from "next/headers";
@@ -86,6 +87,7 @@ export default async function RootLayout({
             <LoadingProvider>
               <Web3AuthProvider>
                 <ContentProvider>
+                  <LoadingOverlay />
                   <main
                     className="flex w-full flex-col items-center bg-neutralbg justify-start h-screen overflow-hidden "
                   >

@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { TrailsPageProps } from "@/interfaces/interfaces";
 import { useRouter } from "next/navigation";
 import { MotionDiv } from "../ui/MotionDiv";
+import { SafeImage } from "../ui/SafeImage";
 
 export const TrailCards = ({
   image,
@@ -22,7 +22,7 @@ export const TrailCards = ({
     >
       <div className="card bg-cgray w-full h-full shadow-xl border-2 border-gray overflow-hidden text-left">
         <div className="relative min-h-[40%] w-full">
-          <Image
+          <SafeImage
             src={image || ""}
             alt={title || "trail image"}
             fill

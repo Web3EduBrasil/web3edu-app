@@ -42,6 +42,10 @@ function buildWagmiConfig(): WagmiConfigInstance {
     },
     storage: createStorage({ key: "wagmi-web3edu-v2" }),
     ssr: false,
+    // Desabilita a descoberta automática de carteiras injetadas (EIP-6963).
+    // Evita store updates extras no mount que causam o warning
+    // "Cannot update during render" do React com wagmi v2.
+    multiInjectedProviderDiscovery: false,
   });
 }
 

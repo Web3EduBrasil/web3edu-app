@@ -34,14 +34,14 @@ import { sepolia } from "wagmi/chains";
 export default function useWeb3Auth() {
   const router = useRouter();
   const pathname = usePathname();
-  const { setIsLoading } = useLoading();
+  const { setIsLoading, setLoadingMessage } = useLoading();
 
   const [user, setUser] = useState<User | null>(null);
   const [googleUserInfo, setGoogleUserInfo] = useState<any | null>(null);
   const [userDbInfo, setUserDbInfo] = useState<any>({});
 
   // wagmi hooks
-  const { address, isConnected, isReconnecting } = useAccount();
+  const { address, isConnected, isReconnecting, status: wagmiStatus } = useAccount();
   const chainId = useChainId();
   const { signMessageAsync } = useSignMessage();
   const { disconnect } = useDisconnect();
@@ -51,10 +51,10 @@ export default function useWeb3Auth() {
   // userInfo compatível com o contrato anterior do contexto
   const userInfo = user
     ? {
-        profileImage: user.photoURL || "",
-        name: user.displayName || "",
-        email: user.email || "",
-      }
+      profileImage: user.photoURL || "",
+      name: user.displayName || "",
+      email: user.email || "",
+    }
     : null;
 
   // userAccount compatível com o contrato anterior
@@ -93,10 +93,12 @@ export default function useWeb3Auth() {
       walletAuthAttempted.current = address;
 
       try {
+        setLoadingMessage("Conectando carteira...");
         setIsLoading(true);
 
         if (chainId !== sepolia.id) {
           try {
+            setLoadingMessage("Trocando para rede Sepolia...");
             await switchChainAsync({ chainId: sepolia.id });
           } catch {
             toast.error("Troque para a rede Sepolia para continuar.");
@@ -108,8 +110,10 @@ export default function useWeb3Auth() {
         const timestamp = Date.now();
         const message = `Web3EduBrasil Authentication\n\nEndereço: ${address}\nTimestamp: ${timestamp}`;
 
+        setLoadingMessage("Assine a mensagem na MetaMask...");
         const signature = await signMessageAsync({ message });
 
+        setLoadingMessage("Autenticando...");
         const res = await fetch("/api/auth/metamask", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -150,6 +154,7 @@ export default function useWeb3Auth() {
         disconnect();
       } finally {
         setIsLoading(false);
+        setLoadingMessage("");
       }
     })();
   }, [
@@ -158,24 +163,26 @@ export default function useWeb3Auth() {
     chainId,
     disconnect,
     setIsLoading,
+    setLoadingMessage,
     signMessageAsync,
     switchChainAsync,
   ]);
 
   // Quando a carteira desconecta → faz logout do Firebase se era sessão de carteira
+  // Usa wagmiStatus para garantir que só deslogar quando definitivamente "disconnected"
+  // e não durante a fase de reconnect (que ocorre no carregamento da página)
   useEffect(() => {
-    if (isConnected) return;
-    if (isReconnecting) return;
+    if (wagmiStatus !== "disconnected") return;
     const auth = getAuth(app);
     if (!auth.currentUser) return;
     // UIDs de carteira são endereços ethereum (começam com 0x)
     if (!auth.currentUser.uid.startsWith("0x")) return;
 
-    signOut(auth).catch(() => {});
+    signOut(auth).catch(() => { });
     setGoogleUserInfo(null);
     setUserDbInfo({});
     localStorage.removeItem("googleUserInfo");
-  }, [isConnected, isReconnecting]);
+  }, [wagmiStatus]);
 
   const fetchUserDbData = async (
     uid: string,
@@ -218,7 +225,7 @@ export default function useWeb3Auth() {
           body: JSON.stringify({}),
         })
       )
-      .catch(() => {});
+      .catch(() => { });
   };
 
   useEffect(() => {
@@ -226,6 +233,9 @@ export default function useWeb3Auth() {
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
+      // Resolve o loading inicial (auth verificado pelo Firebase)
+      setIsLoading(false);
+      setLoadingMessage("");
 
       if (firebaseUser) {
         fetchUserDbData(
@@ -236,6 +246,8 @@ export default function useWeb3Auth() {
           toast.error("Erro ao carregar dados do usuário.");
         });
       } else {
+        // Só redireciona se wagmi não está reconectando (evita logout no reload)
+        if (wagmiStatus === "reconnecting" || wagmiStatus === "connecting") return;
         if (pathname !== "/") {
           router.push("/");
           toast.warning("Faça login para acessar esta tela");
@@ -244,7 +256,7 @@ export default function useWeb3Auth() {
     });
 
     return () => unsubscribe();
-  }, [router, pathname]);
+  }, [router, pathname, wagmiStatus]);
 
   const signInWithGoogle = async (): Promise<UserCredential> => {
     const auth = getAuth(app);
@@ -263,6 +275,7 @@ export default function useWeb3Auth() {
 
   const login = async () => {
     try {
+      setLoadingMessage("Entrando com Google...");
       setIsLoading(true);
       await signInWithGoogle();
     } catch (error) {
@@ -270,6 +283,7 @@ export default function useWeb3Auth() {
       throw error;
     } finally {
       setIsLoading(false);
+      setLoadingMessage("");
     }
   };
 
@@ -307,7 +321,7 @@ export default function useWeb3Auth() {
   };
 
   // Mantido para compatibilidade — abertura do modal é feita diretamente no LoginButton
-  const loginWithMetaMask = async () => {};
+  const loginWithMetaMask = async () => { };
 
   const resetPassword = async (email: string) => {
     const auth = getAuth(app);

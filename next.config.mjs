@@ -10,6 +10,10 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  productionBrowserSourceMaps: false,
+  // Força o Next.js a transpilar react-toastify pelo pipeline webpack/swc,
+  // o que remove referências sourceMappingURL que causam 404 no browser.
+  transpilePackages: ["react-toastify"],
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   experimental: {
     optimizePackageImports: [
@@ -64,6 +68,12 @@ const nextConfig = {
       "pino-pretty": false,
       "encoding": false,
     };
+
+    // Suprimir avisos de source maps ausentes de pacotes de terceiros
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings || []),
+      { message: /Failed to parse source map/ },
+    ];
 
     // No servidor (SSR), idb-keyval usa indexedDB que não existe no Node.js.
     // O WalletConnect tenta inicializá-lo durante setup(), quebrando o SSR.
