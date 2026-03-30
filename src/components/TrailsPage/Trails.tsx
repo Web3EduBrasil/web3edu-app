@@ -23,7 +23,13 @@ export const Trails = () => {
       return;
     }
     setIsLoadingTrails(true);
-    fetchTrailsList(userDbInfo?.uid || "").finally(() => setIsLoadingTrails(false));
+    void (async () => {
+      try {
+        await fetchTrailsList(userDbInfo?.uid || "");
+      } finally {
+        setIsLoadingTrails(false);
+      }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userDbInfo?.uid]);
 

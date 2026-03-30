@@ -28,7 +28,7 @@ interface ContentState {
   rewardContainerVisibility: boolean;
   rewardData: RewardData | null;
   fetchAchievedNfts: (walletAddress: string) => void;
-  fetchTrailsList: (uid: string) => void;
+  fetchTrailsList: (uid: string) => Promise<void>;
   fetchProgramsList: () => void;
   fetchTrail: (trailIdRt: string) => any;
   fetchTrailSections: (trailIdRt: string, uid: string) => Promise<void>;
@@ -66,7 +66,7 @@ const ContentContext = createContext<ContentState>({
   achievedNfts: [],
   rewardContainerVisibility: false,
   rewardData: null,
-  fetchTrailsList: () => { },
+  fetchTrailsList: async () => { },
   fetchAchievedNfts: () => { },
   fetchProgramsList: () => { },
   fetchTrail: () => ({}),
