@@ -1,7 +1,11 @@
 import { adminDb } from "@/lib/firebase-admin";
 import { NextRequest, NextResponse } from "next/server";
+import { verifyAuth } from "@/lib/auth-helper";
 
 export const POST = async (req: NextRequest) => {
+  let verifiedUid: string;
+  try { verifiedUid = await verifyAuth(req); }
+  catch { return NextResponse.json({ message: "Não autorizado" }, { status: 401 }); }
   try {
     const { programId, address, email, name } = await req.json();
     if (!programId || !address || !email || !name) {

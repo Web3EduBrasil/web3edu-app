@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { RenderQuizV } from "./Quiz";
 import { useContent } from "@/providers/content-context";
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
@@ -25,6 +25,8 @@ export const Task = ({
   } = useContent();
   const [section, setSection] = useState<any>({});
   const { googleUserInfo } = useWeb3AuthContext();
+  const trailSectionsRef = useRef(trailSections);
+  trailSectionsRef.current = trailSections;
 
   const fetchData = useCallback(async () => {
     const sectionData = await fetchSectionContent(
@@ -32,12 +34,12 @@ export const Task = ({
       sectionId,
       googleUserInfo?.uid
     );
-    const sorted = [...trailSections].sort((a, b) => Number(a.id) - Number(b.id));
+    const sorted = [...trailSectionsRef.current].sort((a, b) => Number(a.id) - Number(b.id));
     const isLast =
       sorted.length > 0 &&
       String(sorted[sorted.length - 1].id) === String(sectionId);
     setSection({ ...sectionData, isLast });
-  }, [trailId, sectionId, googleUserInfo, fetchSectionContent, trailSections]);
+  }, [trailId, sectionId, googleUserInfo, fetchSectionContent]);
 
   useEffect(() => {
     if (googleUserInfo && trailId && Object.keys(section).length === 0) {

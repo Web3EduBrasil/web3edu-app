@@ -1,7 +1,7 @@
 "use client";
 
 import { useContent } from "@/providers/content-context";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { ProgramCard } from "./ProgramCard";
 import { useOnboardingGuard } from "@/lib/useOnboardingGuard";
 import { FiSearch } from "react-icons/fi";
@@ -11,12 +11,14 @@ export const Programs = () => {
   const { fetchProgramsList, programsList } = useContent();
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredPrograms, setFilteredPrograms] = useState([]);
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
-    if (programsList.length <= 0) {
+    if (programsList.length <= 0 && !fetchedRef.current) {
+      fetchedRef.current = true;
       fetchProgramsList();
     }
-  }, [programsList, fetchProgramsList]);
+  }, [programsList.length, fetchProgramsList]);
 
   useEffect(() => {
     if (programsList.length > 0) {

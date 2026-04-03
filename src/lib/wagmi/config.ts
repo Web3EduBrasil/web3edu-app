@@ -1,37 +1,55 @@
 import { createConfig, createStorage, http } from "wagmi";
 import { connectorsForWallets } from "@rainbow-me/rainbowkit";
-import { metaMaskWallet } from "@rainbow-me/rainbowkit/wallets";
+import {
+  metaMaskWallet,
+  coinbaseWallet,
+  walletConnectWallet,
+  rainbowWallet,
+  trustWallet,
+  phantomWallet,
+} from "@rainbow-me/rainbowkit/wallets";
 import { mainnet, sepolia } from "wagmi/chains";
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? "";
-const chains = [mainnet, sepolia] as const;
+export const chains = [mainnet, sepolia] as const;
 
 type WagmiConfigInstance = ReturnType<typeof createConfig>;
 
+const CONFIG_VERSION = 4;
+
 const globalForWagmi = globalThis as typeof globalThis & {
   __web3EduWagmiConfig?: WagmiConfigInstance;
+  __web3EduConfigVersion?: number;
 };
 
-function buildWagmiConfig(): WagmiConfigInstance {
-  const transport = http(
-    process.env.NEXT_PUBLIC_ALCHEMY_RPC_TARGET ||
-    "https://rpc.ankr.com/eth_sepolia"
-  );
+const transport = http(
+  process.env.NEXT_PUBLIC_ALCHEMY_RPC_TARGET ||
+  "https://rpc.ankr.com/eth_sepolia"
+);
+const mainnetTransport = http("https://ethereum-rpc.publicnode.com");
 
-  const mainnetTransport = http("https://ethereum-rpc.publicnode.com");
-
-  const connectors = connectorsForWallets(
-    [
-      {
-        groupName: "Carteiras",
-        wallets: [metaMaskWallet],
-      },
-    ],
+export function buildWagmiConfig(extraWallets?: any[]): WagmiConfigInstance { // eslint-disable-line
+  const walletGroups = [
+    ...(extraWallets && extraWallets.length > 0
+      ? [{ groupName: "Login Social", wallets: extraWallets }]
+      : []),
     {
-      appName: "Web3EduBrasil",
-      projectId,
-    }
-  );
+      groupName: "Carteiras",
+      wallets: [
+        metaMaskWallet,
+        coinbaseWallet,
+        walletConnectWallet,
+        rainbowWallet,
+        trustWallet,
+        phantomWallet,
+      ],
+    },
+  ];
+
+  const connectors = connectorsForWallets(walletGroups, {
+    appName: "Web3EduBrasil",
+    projectId,
+  });
 
   return createConfig({
     chains,
@@ -40,18 +58,33 @@ function buildWagmiConfig(): WagmiConfigInstance {
       [mainnet.id]: mainnetTransport,
       [sepolia.id]: transport,
     },
-    storage: createStorage({ key: "wagmi-web3edu-v2" }),
+    storage: createStorage({ key: "wagmi-web3edu-v4" }),
     ssr: false,
-    // Desabilita a descoberta automática de carteiras injetadas (EIP-6963).
-    // Evita store updates extras no mount que causam o warning
-    // "Cannot update during render" do React com wagmi v2.
-    multiInjectedProviderDiscovery: false,
+    multiInjectedProviderDiscovery: true,
   });
 }
 
-export const wagmiConfig =
-  globalForWagmi.__web3EduWagmiConfig ?? buildWagmiConfig();
+const isClient = typeof window !== "undefined";
 
-if (process.env.NODE_ENV !== "production") {
+const cachedConfig =
+  isClient && globalForWagmi.__web3EduConfigVersion === CONFIG_VERSION
+    ? globalForWagmi.__web3EduWagmiConfig
+    : null;
+
+// Config inicial SEM Web3Auth (rápida, sem deps pesadas)
+export let wagmiConfig = cachedConfig ?? buildWagmiConfig();
+
+/** Chamado pelo WagmiProviders depois do import() dinâmico do Web3Auth */
+export function upgradeConfigWithSocialWallets(socialWallets: any[]) { // eslint-disable-line
+  wagmiConfig = buildWagmiConfig(socialWallets);
+  if (isClient) {
+    globalForWagmi.__web3EduWagmiConfig = wagmiConfig;
+    globalForWagmi.__web3EduConfigVersion = CONFIG_VERSION;
+  }
+  return wagmiConfig;
+}
+
+if (process.env.NODE_ENV !== "production" && isClient) {
   globalForWagmi.__web3EduWagmiConfig = wagmiConfig;
+  globalForWagmi.__web3EduConfigVersion = CONFIG_VERSION;
 }

@@ -5,7 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 import { useContent } from "@/providers/content-context";
 import { authHeaders } from "@/lib/getIdToken";
-import { FaCheck, FaPlay, FaBookOpen } from "react-icons/fa";
+import { FaCheck, FaPlay, FaBookOpen, FaMedal } from "react-icons/fa";
+import { IoArrowBack } from "react-icons/io5";
 import { MdAccessTime } from "react-icons/md";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -17,7 +18,7 @@ export default function TrailOverviewPage() {
   const { trailIdRt } = useParams() as { trailIdRt: string };
   const router = useRouter();
   const { googleUserInfo } = useWeb3AuthContext();
-  const { fetchTrail, trail } = useContent();
+  const { fetchTrail, trail, handleRewardContainer } = useContent();
 
   const [enrolled, setEnrolled] = useState(false);
   const [percentage, setPercentage] = useState(0);
@@ -109,6 +110,15 @@ export default function TrailOverviewPage() {
   return (
     <div className="flex w-full h-full justify-center items-start overflow-y-auto p-6 md:p-10">
       <div className="w-full max-w-3xl flex flex-col gap-8">
+        {/* Botão voltar */}
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-sm font-semibold text-neutral hover:text-dblue transition-colors w-fit"
+        >
+          <IoArrowBack className="w-4 h-4" />
+          {t("back")}
+        </button>
+
         {/* Banner + vídeo intro */}
         {trail.introVideo ? (
           <iframe
@@ -142,6 +152,13 @@ export default function TrailOverviewPage() {
         {/* Progresso (se inscrito) */}
         {enrolled && (
           <div className="flex flex-col gap-2">
+            {/* Badge de conclusão */}
+            {percentage === 100 && (
+              <div className="flex items-center gap-2 bg-green/10 text-green border border-green/30 rounded-box px-4 py-3 font-bold text-base">
+                <FaCheck className="w-5 h-5 shrink-0" />
+                {t("trailCompleted")}
+              </div>
+            )}
             <div className="flex justify-between text-sm font-semibold text-neutral">
               <span>{t("yourProgress")}</span>
               <span>{percentage}%</span>
@@ -172,15 +189,33 @@ export default function TrailOverviewPage() {
         {/* CTA */}
         <div className="flex gap-4 flex-col sm:flex-row">
           {enrolled ? (
-            <motion.button
-              onClick={handleContinue}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="btn btn-lg flex-1 bg-dblue text-white font-bold gap-2"
-            >
-              <FaPlay className="w-4 h-4" />
-              {percentage === 100 ? t("review") : t("continue")}
-            </motion.button>
+            <>
+              <motion.button
+                onClick={handleContinue}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="btn btn-lg flex-1 bg-dblue text-white font-bold gap-2"
+              >
+                <FaPlay className="w-4 h-4" />
+                {percentage === 100 ? t("review") : t("continue")}
+              </motion.button>
+              {percentage === 100 && (
+                <motion.button
+                  onClick={() => handleRewardContainer({
+                    type: "trail",
+                    id: trailIdRt,
+                    name: trail.name,
+                    icon: trail.banner || "",
+                  })}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="btn btn-lg flex-1 border-2 border-dblue text-dblue bg-transparent font-bold gap-2"
+                >
+                  <FaMedal className="w-4 h-4 text-yellow-500" />
+                  {t("claimCertificate")}
+                </motion.button>
+              )}
+            </>
           ) : (
             <motion.button
               onClick={handleEnroll}

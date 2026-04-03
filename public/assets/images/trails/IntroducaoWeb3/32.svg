@@ -1,0 +1,14 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#34D399;stop-opacity:0.15"/>
+      <stop offset="100%" style="stop-color:#34D399;stop-opacity:0.05"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#bg)" rx="16"/>
+  <rect x="2" y="2" width="796" height="446" fill="none" stroke="#34D399" stroke-width="2" stroke-opacity="0.3" rx="16"/>
+  <text x="400" y="170" text-anchor="middle" font-size="72" fill="#34D399"></text>
+  <text x="400" y="250" text-anchor="middle" font-family="system-ui,sans-serif" font-size="32" font-weight="700" fill="#1e293b">Comunidade</text>
+  <text x="400" y="290" text-anchor="middle" font-family="system-ui,sans-serif" font-size="18" fill="#64748b">Engajamento e comunidade</text>
+  <text x="400" y="420" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" fill="#94a3b8">Web3EduBrasil  Introdu\u00e7\u00e3o \u00e0 Web3</text>
+</svg>

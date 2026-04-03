@@ -77,7 +77,7 @@ const TRAIL_META = {
     "Aprenda os fundamentos da Web3, blockchain, NFTs e criptomoedas de forma prática e acessível.",
   estimatedTime: 3,
   banner:
-    "https://firebasestorage.googleapis.com/v0/b/web3edubrasil.firebasestorage.app/o/imagens%2Fintrodu%C3%A7%C3%A3o%20%C3%A0%20Web3.png?alt=media&token=420a423a-fe0d-472a-bd1c-2b9f17fadb31",
+    "/assets/images/trails/IntroducaoWeb3/banner.svg",
   categories: ["blockchain", "web3", "nft", "iniciante"],
   topics: ["Web3", "Blockchain", "Criptomoedas", "NFTs", "Segurança"],
   introVideo: "",

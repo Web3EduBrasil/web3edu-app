@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useMemo } from "react";
 
 const LoadingContext = createContext<{
   isLoading: boolean;
@@ -32,19 +32,19 @@ export const LoadingProvider = ({
   const [progressLoading, setProgressLoading] = useState<number | null>(null);
   const [countLoading, setCountLoading] = useState<number[] | null>(null);
 
+  const contextValue = useMemo(() => ({
+    isLoading,
+    setIsLoading,
+    loadingMessage,
+    setLoadingMessage,
+    progressLoading,
+    setProgressLoading,
+    countLoading,
+    setCountLoading,
+  }), [isLoading, loadingMessage, progressLoading, countLoading]);
+
   return (
-    <LoadingContext.Provider
-      value={{
-        isLoading,
-        setIsLoading,
-        loadingMessage,
-        setLoadingMessage,
-        progressLoading,
-        setProgressLoading,
-        countLoading,
-        setCountLoading,
-      }}
-    >
+    <LoadingContext.Provider value={contextValue}>
       {children}
     </LoadingContext.Provider>
   );

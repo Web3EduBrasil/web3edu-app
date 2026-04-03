@@ -38,9 +38,10 @@ export const airdropProgramNFT = onDocumentWritten(
         try {
           const walletAddress = newValue?.address;
           const ipfsHash = airdrop.ipfsHash;
+          const tokenURI = ipfsHash.startsWith("ipfs://") ? ipfsHash : `ipfs://${ipfsHash}`;
           const contract = runContract(contractAddress, privateKey, rpcUrl);
 
-          const tx = await contract.safeMint(walletAddress, ipfsHash);
+          const tx = await contract.safeMint(walletAddress, tokenURI);
           await tx.wait();
 
           await updateProgramAirdropStatus(uid, programId, true, tx.hash);
@@ -52,7 +53,7 @@ export const airdropProgramNFT = onDocumentWritten(
             `Erro ao mintar certificado de programa para usuário ${uid}, programa ${programId}:`,
             error
           );
-          await updateProgramAirdropStatus(uid, programId, false, "");
+          // NÃO re-escreve para evitar loop infinito de triggers.
         }
       }
     }

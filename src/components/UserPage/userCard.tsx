@@ -219,15 +219,15 @@ export const UserSection = () => {
                   >
                     <div className="w-full aspect-square relative">
                       <Image
-                        src={nft.ipfs || "/assets/icons/nft-placeholder.png"}
+                        src={nft.ipfs || "/assets/icons/nft-placeholder.svg"}
                         alt={`NFT ${nft.trailId}`}
                         fill
                         sizes="200px"
                         style={{ objectFit: "cover" }}
                         onError={(e) => {
                           try {
-                            (e.target as HTMLImageElement).src = "/assets/icons/nft-placeholder.png";
-                          } catch {}
+                            (e.target as HTMLImageElement).src = "/assets/icons/nft-placeholder.svg";
+                          } catch { }
                         }}
                       />
                     </div>

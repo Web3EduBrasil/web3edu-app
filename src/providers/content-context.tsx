@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useState, useContext, useCallback } from "react";
+import React, { createContext, useState, useContext, useCallback, useMemo } from "react";
 import { AchievedNft } from "@/interfaces/interfaces";
 import {
   getFirestore,
@@ -51,6 +51,9 @@ interface ContentState {
     programName: string
   ) => Promise<void>;
   handleRewardContainer: (data?: RewardData) => void;
+  mintStep: "idle" | "uploading" | "minting" | "polling" | "success" | "error";
+  mintTxHash: string | null;
+  retryMintStatusCheck: (uid: string, itemId: string, type: "trail" | "program") => Promise<void>;
 }
 
 interface AiAnswerProps {
@@ -76,6 +79,9 @@ const ContentContext = createContext<ContentState>({
   fetchAiAnswerCheck: () => Promise.resolve({ explicacao: "", valido: false }),
   fetchSectionContent: async () => ({}),
   handleRewardContainer: () => { },
+  mintStep: "idle",
+  mintTxHash: null,
+  retryMintStatusCheck: async () => { },
 });
 
 export const ContentProvider = ({
@@ -91,44 +97,66 @@ export const ContentProvider = ({
     useState(false);
   const [rewardData, setRewardData] = useState<RewardData | null>(null);
   const [trail, setTrail] = useState<any>({});
+  const [mintStep, setMintStep] = useState<"idle" | "uploading" | "minting" | "polling" | "success" | "error">("idle");
+  const [mintTxHash, setMintTxHash] = useState<string | null>(null);
 
-  const handleRewardContainer = (data?: RewardData) => {
-    if (data) setRewardData(data);
+  const handleRewardContainer = useCallback((data?: RewardData) => {
+    if (data) {
+      setRewardData(data);
+      setMintStep("idle");
+      setMintTxHash(null);
+    }
     setRewardContainerVisibility((prev) => !prev);
-  };
+  }, []);
 
-  const fetchAchievedNfts = async (walletAddress: string) => {
+  const fetchAchievedNfts = useCallback(async (walletAddress: string) => {
     const contractAddress =
       process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ||
       "0x8984b78F102f85222E7fa9c43d37d84E087B1Be8";
-    const url = `https://eth-sepolia.g.alchemy.com/nft/v3/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}/getNFTsForOwner?owner=${walletAddress}&contractAddresses[]=${contractAddress}&withMetadata=true&orderBy=transferTime&pageSize=100`;
+    const alchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
 
+    // Tenta buscar via Alchemy NFT API (dados on-chain, mais completo)
+    if (alchemyKey) {
+      try {
+        const url = `https://eth-sepolia.g.alchemy.com/nft/v3/${alchemyKey}/getNFTsForOwner?owner=${walletAddress}&contractAddresses[]=${contractAddress}&withMetadata=true&orderBy=transferTime&pageSize=100`;
+        const res = await fetch(url, {
+          method: "GET",
+          headers: { accept: "application/json" },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const formattedNfts: AchievedNft[] = (data.ownedNfts || []).map((nft: any) => {
+            const name = extractNftName(nft.description || nft.raw?.metadata?.description || "");
+            const contractAddr = nft.contract?.address;
+            const tokenId = nft.tokenId;
+            const openseaUrl = `https://testnets.opensea.io/assets/sepolia/${contractAddr}/${tokenId}`;
+            return {
+              walletAddress,
+              trailId: name,
+              ipfs: nft.raw?.metadata?.image || nft.image?.originalUrl || "",
+              createdAt: new Date(nft.timeLastUpdated),
+              openseaUrl,
+            };
+          });
+          setAchievedNfts(formattedNfts);
+          return;
+        }
+      } catch (error) {
+        console.error("Alchemy NFT API falhou, tentando fallback:", error);
+      }
+    }
+
+    // Fallback: busca dados de mint do Firestore via API
     try {
-      const res = await fetch(url, {
-        method: "GET",
-        headers: { accept: "application/json" },
-      });
-      const data = await res.json();
-
-      const formattedNfts: AchievedNft[] = data.ownedNfts.map((nft: any) => {
-        const name = extractNftName(nft.description);
-        const contractAddr = nft.contract?.address;
-        const tokenId = nft.tokenId;
-        const openseaUrl = `https://testnets.opensea.io/assets/sepolia/${contractAddr}/${tokenId}`;
-        return {
-          walletAddress,
-          trailId: name,
-          ipfs: nft.raw.metadata?.image || nft.image?.originalUrl || "",
-          createdAt: new Date(nft.timeLastUpdated),
-          openseaUrl,
-        };
-      });
-
-      setAchievedNfts(formattedNfts);
+      const res = await fetch(`/api/user/nfts?walletAddress=${walletAddress}`);
+      if (res.ok) {
+        const data = await res.json();
+        setAchievedNfts(data.nfts || []);
+      }
     } catch (error) {
       console.error("Erro ao buscar NFTs conquistados:", error);
     }
-  };
+  }, []);
 
   /** Extrai o nome da trilha ou programa a partir da description do NFT. */
   function extractNftName(description: string): string {
@@ -140,7 +168,7 @@ export const ContentProvider = ({
     return "desconhecido";
   }
 
-  const fetchTrailsList = async (uid: string) => {
+  const fetchTrailsList = useCallback(async (uid: string) => {
     try {
       const response = await fetch(`/api/trails?uid=${uid}`, { method: "GET" });
       const data = await response.json();
@@ -148,9 +176,9 @@ export const ContentProvider = ({
     } catch (error: any) {
       console.error("Erro ao buscar trilhas:", error);
     }
-  };
+  }, []);
 
-  const fetchProgramsList = async () => {
+  const fetchProgramsList = useCallback(async () => {
     try {
       const response = await fetch("/api/programs", { method: "GET" });
       const data = await response.json();
@@ -158,9 +186,9 @@ export const ContentProvider = ({
     } catch (error: any) {
       console.error("Erro ao buscar programas:", error);
     }
-  };
+  }, []);
 
-  const fetchTrail = async (trailIdRt: string) => {
+  const fetchTrail = useCallback(async (trailIdRt: string) => {
     try {
       const response = await fetch(`/api/trail?trailId=${trailIdRt}`, {
         method: "GET",
@@ -178,7 +206,7 @@ export const ContentProvider = ({
       console.error("Erro na requisição fetchTrail:", error);
       throw error;
     }
-  };
+  }, []);
 
   const fetchTrailSections = useCallback(async (trailIdRt: string, uid: string) => {
     try {
@@ -206,7 +234,7 @@ export const ContentProvider = ({
     }
   }, []);
 
-  const fetchSectionContent = async (
+  const fetchSectionContent = useCallback(async (
     trailId: string,
     sectionId: string,
     uid: string
@@ -231,9 +259,9 @@ export const ContentProvider = ({
       console.error("Erro na requisição fetchSectionContent:", error);
       throw error;
     }
-  };
+  }, []);
 
-  const fetchAiAnswerCheck = async (
+  const fetchAiAnswerCheck = useCallback(async (
     question: string,
     prompt: string
   ): Promise<AiAnswerProps> => {
@@ -257,14 +285,14 @@ export const ContentProvider = ({
       console.error("Erro na verificação pela IA:", error);
       throw error;
     }
-  };
+  }, []);
 
   // ─── IPFS helper (server-side) ─────────────────────────────────────────────────
 
-  const uploadToIpfs = async (content: object): Promise<string> => {
+  const uploadToIpfs = useCallback(async (content: object): Promise<string> => {
     const response = await fetch("/api/ipfs", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await authHeaders(),
       body: JSON.stringify({ content }),
     });
     if (!response.ok) {
@@ -274,11 +302,11 @@ export const ContentProvider = ({
     const { IpfsHash } = await response.json();
     if (!IpfsHash) throw new Error("IpfsHash não retornado pelo servidor");
     return IpfsHash;
-  };
+  }, []);
 
   // ─── Polling feedback mint blockchain ────────────────────────────────────────
 
-  const pollMintStatus = async (
+  const pollMintStatus = useCallback(async (
     uid: string,
     itemId: string,
     type: "trail" | "program"
@@ -287,8 +315,8 @@ export const ContentProvider = ({
       type === "trail"
         ? `/api/whitelist?uid=${uid}&trailId=${itemId}`
         : `/api/programWhitelist?uid=${uid}&programId=${itemId}`;
-    const MAX_ATTEMPTS = 12;
-    const INTERVAL_MS = 5000;
+    const MAX_ATTEMPTS = 30;
+    const INTERVAL_MS = 8000;
 
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       await new Promise((r) => setTimeout(r, INTERVAL_MS));
@@ -296,35 +324,48 @@ export const ContentProvider = ({
         const res = await fetch(endpoint);
         const data = await res.json();
         if (data.txHash) {
-          toast.success(
-            <span>
-              NFT mintado com sucesso! 🎉{" "}
-              <a
-                href={`https://sepolia.etherscan.io/tx/${data.txHash}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ textDecoration: "underline" }}
-              >
-                Ver na blockchain
-              </a>
-            </span>,
-            { autoClose: 12000 }
-          );
+          setMintStep("success");
+          setMintTxHash(data.txHash);
           return;
         }
-      } catch {
-        // retry silenciosamente
+      } catch (err) {
+        console.error("Erro no polling de mint:", err);
       }
     }
+    setMintStep("error");
     toast.info(
       "O mint está sendo processado. Verifique sua carteira em alguns minutos.",
       { autoClose: 8000 }
     );
-  };
+  }, []);
+
+  // ─── Retry/check único de status de mint ─────────────────────────────────
+
+  const retryMintStatusCheck = useCallback(async (
+    uid: string,
+    itemId: string,
+    type: "trail" | "program"
+  ) => {
+    const endpoint = type === "trail"
+      ? `/api/whitelist?uid=${uid}&trailId=${itemId}`
+      : `/api/programWhitelist?uid=${uid}&programId=${itemId}`;
+    try {
+      const res = await fetch(endpoint);
+      const data = await res.json();
+      if (data.txHash) {
+        setMintStep("success");
+        setMintTxHash(data.txHash);
+      } else {
+        toast.info("Mint ainda em processamento. Aguarde mais alguns minutos e tente novamente.", { autoClose: 6000 });
+      }
+    } catch {
+      toast.error("Erro ao verificar status do mint.");
+    }
+  }, []);
 
   // ─── Airdrop Trilha ──────────────────────────────────────────────────────────
 
-  const fetchTrailAirDrop = async (
+  const fetchTrailAirDrop = useCallback(async (
     trailIcon: string,
     uid: string,
     userName: string,
@@ -333,26 +374,39 @@ export const ContentProvider = ({
     trailName: string
   ) => {
     try {
-      // 1. Verifica elegibilidade
-      const eligibilityRes = await fetch(
-        `/api/whitelist?uid=${uid}&trailId=${trailId}`,
-        { method: "GET", headers: { "Content-Type": "application/json" } }
-      );
-      const { eligible } = await eligibilityRes.json();
-      if (!eligible) {
+      // 0. Pré-checagem: verifica se já foi mintado (ex: polling anterior expirou)
+      const preCheck = await fetch(`/api/whitelist?uid=${uid}&trailId=${trailId}`);
+      const preData = await preCheck.json();
+      if (preData.txHash) {
+        setMintStep("success");
+        setMintTxHash(preData.txHash);
+        return;
+      }
+      // pending = já registrado na whitelist mas CF ainda não mintou — retoma polling
+      if (preData.pending) {
+        setMintStep("polling");
+        pollMintStatus(uid, trailId, "trail");
+        return;
+      }
+      if (!preData.eligible) {
         toast.error("Certificado já foi resgatado para esta trilha");
         return;
       }
 
+      // 1. Elegibilidade confirmada — inicia o processo
+
       // 2. Upload do metadata para o IPFS (server-side, chave não exposta)
-      toast.info("Gerando certificado...");
+      setMintStep("uploading");
+      const appLink = process.env.NEXT_PUBLIC_APP_LINK || "";
+      const imageUrl = trailIcon.startsWith("http") ? trailIcon : `${appLink}${trailIcon}`;
       const IpfsHash = await uploadToIpfs({
-        image: trailIcon,
+        name: `Certificado — ${trailName}`,
+        image: imageUrl,
         description: `Este certificado é concedido a ${userName} em reconhecimento por completar com sucesso a trilha de aprendizagem ${trailName}, totalizando uma carga horária de 3 horas.`,
       });
-      toast.success("Certificado enviado para o IPFS com sucesso");
 
       // 3. Registra na whitelist do Firestore (dispara Cloud Function de mint)
+      setMintStep("minting");
       const whitelistRes = await fetch("/api/whitelist", {
         method: "POST",
         headers: await authHeaders(),
@@ -360,10 +414,10 @@ export const ContentProvider = ({
       });
       if (!whitelistRes.ok) {
         const errorData = await whitelistRes.json();
+        setMintStep("error");
         toast.error(`Erro ao registrar na whitelist: ${errorData.message}`);
         return;
       }
-      toast.success("Processando mint do NFT na blockchain...");
 
       // 4. Salva na subcoleção achievedNfts do usuário
       try {
@@ -381,16 +435,18 @@ export const ContentProvider = ({
       }
 
       // 5. Polling — aguarda txHash vindo da Cloud Function
+      setMintStep("polling");
       pollMintStatus(uid, trailId, "trail");
     } catch (error: any) {
+      setMintStep("error");
       toast.error(`Erro ao resgatar certificado: ${error.message}`);
       console.error("Erro em fetchTrailAirDrop:", error);
     }
-  };
+  }, [uploadToIpfs, pollMintStatus]);
 
   // ─── Airdrop Programa ────────────────────────────────────────────────────────
 
-  const fetchProgramAirDrop = async (
+  const fetchProgramAirDrop = useCallback(async (
     programIcon: string,
     uid: string,
     userName: string,
@@ -399,24 +455,36 @@ export const ContentProvider = ({
     programName: string
   ) => {
     try {
-      // 1. Verifica elegibilidade
-      const eligibilityRes = await fetch(
-        `/api/programWhitelist?uid=${uid}&programId=${programId}`,
-        { method: "GET", headers: { "Content-Type": "application/json" } }
-      );
-      const { eligible } = await eligibilityRes.json();
-      if (!eligible) {
+      // 0. Pré-checagem: verifica se já foi mintado
+      const preCheck = await fetch(`/api/programWhitelist?uid=${uid}&programId=${programId}`);
+      const preData = await preCheck.json();
+      if (preData.txHash) {
+        setMintStep("success");
+        setMintTxHash(preData.txHash);
+        return;
+      }
+      // pending = já registrado mas CF ainda não mintou — retoma polling
+      if (preData.pending) {
+        setMintStep("polling");
+        pollMintStatus(uid, programId, "program");
+        return;
+      }
+      if (!preData.eligible) {
         toast.error("Certificado já foi resgatado para este programa");
         return;
       }
 
+      // 1. Elegibilidade confirmada — inicia o processo
+
       // 2. Upload do metadata para o IPFS (server-side)
-      toast.info("Gerando certificado do programa...");
+      setMintStep("uploading");
+      const appLink = process.env.NEXT_PUBLIC_APP_LINK || "";
+      const imageUrl = programIcon.startsWith("http") ? programIcon : `${appLink}${programIcon}`;
       const IpfsHash = await uploadToIpfs({
-        image: programIcon,
+        name: `Certificado — ${programName}`,
+        image: imageUrl,
         description: `Este certificado é concedido a ${userName} em reconhecimento por completar com sucesso o programa ${programName}.`,
       });
-      toast.success("Certificado enviado para o IPFS com sucesso");
 
       // 3. Registra na programWhitelist (dispara Cloud Function de mint)
       const whitelistRes = await fetch("/api/programWhitelist", {
@@ -426,10 +494,11 @@ export const ContentProvider = ({
       });
       if (!whitelistRes.ok) {
         const errorData = await whitelistRes.json();
+        setMintStep("error");
         toast.error(`Erro ao registrar na whitelist: ${errorData.message}`);
         return;
       }
-      toast.success("Processando mint do certificado NFT na blockchain...");
+      setMintStep("minting");
 
       // 4. Salva na subcoleção achievedNfts do usuário
       try {
@@ -447,35 +516,61 @@ export const ContentProvider = ({
       }
 
       // 5. Polling — aguarda txHash vindo da Cloud Function
+      setMintStep("polling");
       pollMintStatus(uid, programId, "program");
     } catch (error: any) {
+      setMintStep("error");
       toast.error(`Erro ao resgatar certificado: ${error.message}`);
       console.error("Erro em fetchProgramAirDrop:", error);
     }
-  };
+  }, [uploadToIpfs, pollMintStatus]);
+
+  const contextValue = useMemo(() => ({
+    trail,
+    fetchTrailsList,
+    handleRewardContainer,
+    rewardContainerVisibility,
+    rewardData,
+    trailsList,
+    programsList,
+    achievedNfts,
+    fetchAchievedNfts,
+    fetchProgramsList,
+    fetchTrail,
+    fetchTrailAirDrop,
+    fetchProgramAirDrop,
+    fetchTrailSections,
+    fetchAiAnswerCheck,
+    fetchSectionContent,
+    trailSections,
+    mintStep,
+    mintTxHash,
+    retryMintStatusCheck,
+  }), [
+    trail,
+    fetchTrailsList,
+    handleRewardContainer,
+    rewardContainerVisibility,
+    rewardData,
+    trailsList,
+    programsList,
+    achievedNfts,
+    fetchAchievedNfts,
+    fetchProgramsList,
+    fetchTrail,
+    fetchTrailAirDrop,
+    fetchProgramAirDrop,
+    fetchTrailSections,
+    fetchAiAnswerCheck,
+    fetchSectionContent,
+    trailSections,
+    mintStep,
+    mintTxHash,
+    retryMintStatusCheck,
+  ]);
 
   return (
-    <ContentContext.Provider
-      value={{
-        trail,
-        fetchTrailsList,
-        handleRewardContainer,
-        rewardContainerVisibility,
-        rewardData,
-        trailsList,
-        programsList,
-        achievedNfts,
-        fetchAchievedNfts,
-        fetchProgramsList,
-        fetchTrail,
-        fetchTrailAirDrop,
-        fetchProgramAirDrop,
-        fetchTrailSections,
-        fetchAiAnswerCheck,
-        fetchSectionContent,
-        trailSections,
-      }}
-    >
+    <ContentContext.Provider value={contextValue}>
       {children}
     </ContentContext.Provider>
   );

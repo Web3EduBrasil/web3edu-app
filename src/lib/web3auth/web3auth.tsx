@@ -13,7 +13,7 @@ import {
   User,
   UserCredential,
 } from "firebase/auth";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { app } from "@/firebase/config";
 import { useLoading } from "../loading-context";
@@ -39,6 +39,8 @@ export default function useWeb3Auth() {
   const [user, setUser] = useState<User | null>(null);
   const [googleUserInfo, setGoogleUserInfo] = useState<any | null>(null);
   const [userDbInfo, setUserDbInfo] = useState<any>({});
+  const [isHydrated, setIsHydrated] = useState(false);
+  const authCheckedRef = useRef(false);
 
   // wagmi hooks
   const { address, isConnected, isReconnecting, status: wagmiStatus } = useAccount();
@@ -49,16 +51,16 @@ export default function useWeb3Auth() {
   const { openAccountModal } = useAccountModal();
 
   // userInfo compatível com o contrato anterior do contexto
-  const userInfo = user
+  const userInfo = useMemo(() => user
     ? {
       profileImage: user.photoURL || "",
       name: user.displayName || "",
       email: user.email || "",
     }
-    : null;
+    : null, [user]);
 
   // userAccount compatível com o contrato anterior
-  const userAccount: string[] = address ? [address] : [];
+  const userAccount: string[] = useMemo(() => address ? [address] : [], [address]);
 
   // Restaura googleUserInfo do localStorage na montagem
   useEffect(() => {
@@ -70,6 +72,7 @@ export default function useWeb3Auth() {
         localStorage.removeItem("googleUserInfo");
       }
     }
+    setIsHydrated(true);
   }, []);
 
   // Quando a carteira conecta → autentica no Firebase via custom token
@@ -184,7 +187,7 @@ export default function useWeb3Auth() {
     localStorage.removeItem("googleUserInfo");
   }, [wagmiStatus]);
 
-  const fetchUserDbData = async (
+  const fetchUserDbData = useCallback(async (
     uid: string,
     email?: string | null,
     googleName?: string | null
@@ -226,13 +229,14 @@ export default function useWeb3Auth() {
         })
       )
       .catch(() => { });
-  };
+  }, []);
 
   useEffect(() => {
     const auth = getAuth(app);
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
+      authCheckedRef.current = true;
       // Resolve o loading inicial (auth verificado pelo Firebase)
       setIsLoading(false);
       setLoadingMessage("");
@@ -248,6 +252,8 @@ export default function useWeb3Auth() {
       } else {
         // Só redireciona se wagmi não está reconectando (evita logout no reload)
         if (wagmiStatus === "reconnecting" || wagmiStatus === "connecting") return;
+        // Só redireciona após auth ter sido verificado pelo menos uma vez
+        if (!authCheckedRef.current) return;
         if (pathname !== "/") {
           router.push("/");
           toast.warning("Faça login para acessar esta tela");
@@ -257,7 +263,7 @@ export default function useWeb3Auth() {
 
     return () => unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router, pathname, wagmiStatus]);
+  }, [router, pathname, wagmiStatus, fetchUserDbData]);
 
   const signInWithGoogle = async (): Promise<UserCredential> => {
     const auth = getAuth(app);

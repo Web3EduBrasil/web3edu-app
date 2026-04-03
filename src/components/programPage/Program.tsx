@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { ProgramProps, ProgramContainerProps } from "@/interfaces/interfaces";
 import { useContent } from "@/providers/content-context";
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
@@ -18,6 +18,7 @@ export const Program = ({ programId }: ProgramProps) => {
   });
 
   const router = useRouter();
+  const trailsFetchedRef = useRef(false);
 
 
   useEffect(() => {
@@ -27,10 +28,11 @@ export const Program = ({ programId }: ProgramProps) => {
   }, [userInfo, router]);
 
   useEffect(() => {
-    if (Object.keys(userDbInfo).length !== 0) {
+    if (Object.keys(userDbInfo).length !== 0 && !trailsFetchedRef.current) {
+      trailsFetchedRef.current = true;
       fetchTrailsList(userDbInfo?.uid);
     }
-  }, [programId, userDbInfo, fetchTrailsList]);
+  }, [userDbInfo, fetchTrailsList]);
 
   useEffect(() => {
     const fetchProgram = async () => {

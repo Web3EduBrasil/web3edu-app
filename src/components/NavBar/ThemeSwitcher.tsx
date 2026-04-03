@@ -5,10 +5,12 @@ import { BsSun, BsMoon } from "react-icons/bs";
 
 export const ThemeSwitcher = () => {
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const current = document.documentElement.getAttribute("data-theme");
     if (current === "dark") setTheme("dark");
+    setMounted(true);
   }, []);
 
   const toggle = () => {
@@ -24,7 +26,9 @@ export const ThemeSwitcher = () => {
       aria-label={theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
       className="btn btn-ghost btn-sm text-neutral"
     >
-      {theme === "dark" ? (
+      {!mounted ? (
+        <span className="w-4 h-4" />
+      ) : theme === "dark" ? (
         <BsSun className="w-4 h-4" />
       ) : (
         <BsMoon className="w-4 h-4" />

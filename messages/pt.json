@@ -150,6 +150,7 @@
     "noCertificatesText": "Complete uma trilha ou programa para receber seu NFT certificado único."
   },
   "learn": {
+    "back": "Voltar",
     "enroll": "Inscrever-se",
     "enrollFree": "Inscrever-se Gratuitamente",
     "enrolling": "Inscrevendo...",
@@ -162,7 +163,9 @@
     "whatYouLearn": "O que você aprenderá",
     "connectWallet": "Conectar Carteira",
     "claimNft": "Resgatar NFT",
-    "claiming": "Resgatando..."
+    "claiming": "Resgatando...",
+    "trailCompleted": "Curso Concluído! 🎉",
+    "claimCertificate": "Resgatar Certificado NFT"
   },
   "reward": {
     "trailCompleted": "Parabéns, {name}! Você concluiu a trilha {trail}.",
@@ -170,6 +173,20 @@
     "bodyText": "Todo o seu empenho e dedicação não passaram despercebidos. Para celebrar essa conquista, você receberá um token NFT como recompensa! Esse token simboliza tudo o que você aprendeu e o seu compromisso em cada etapa.",
     "connectWarning": "⚠️ Conecte uma carteira para resgatar seu NFT.",
     "claimNow": "Resgatar Agora!",
-    "processing": "Processando..."
+    "processing": "Processando...",
+    "uploading": "Gerando certificado...",
+    "minting": "Registrando na blockchain...",
+    "polling": "Aguardando confirmação da rede...",
+    "success": "NFT mintado com sucesso! 🎉",
+    "viewOnChain": "Ver na blockchain",
+    "close": "Fechar",
+    "retryCheck": "Re-verificar status",
+    "certificateLabel": "Certificado NFT",
+    "nftMinted": "NFT mintado com sucesso!",
+    "mintTimeout": "Processamento em andamento",
+    "mintTimeoutHint": "O mint pode levar alguns minutos. Verifique sua carteira em breve.",
+    "stepUpload": "Enviando certificado para a rede",
+    "stepMint": "Registrando na blockchain",
+    "stepConfirm": "Aguardando confirmação"
   }
 }

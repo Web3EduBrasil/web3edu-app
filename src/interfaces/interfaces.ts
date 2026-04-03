@@ -106,6 +106,7 @@ export interface TrailSectionData<T> {
 }
 
 export interface Trail {
+  banner?: string;
   categories: string[];
   introVideo: string;
   createdAt: { seconds: number; nanoseconds: number };

@@ -13,7 +13,13 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
   // Força o Next.js a transpilar react-toastify pelo pipeline webpack/swc,
   // o que remove referências sourceMappingURL que causam 404 no browser.
-  transpilePackages: ["react-toastify"],
+  transpilePackages: [
+    "react-toastify",
+    "@web3auth/base",
+    "@web3auth/modal",
+    "@web3auth/ethereum-provider",
+    "@web3auth/web3auth-wagmi-connector",
+  ],
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   experimental: {
     optimizePackageImports: [

@@ -150,6 +150,7 @@
     "noCertificatesText": "Complete a trail or program to receive your unique NFT certificate."
   },
   "learn": {
+    "back": "Back",
     "enroll": "Enroll",
     "enrollFree": "Enroll for Free",
     "enrolling": "Enrolling...",
@@ -162,7 +163,9 @@
     "whatYouLearn": "What you will learn",
     "connectWallet": "Connect Wallet",
     "claimNft": "Claim NFT",
-    "claiming": "Claiming..."
+    "claiming": "Claiming...",
+    "trailCompleted": "Course Completed! 🎉",
+    "claimCertificate": "Claim NFT Certificate"
   },
   "reward": {
     "trailCompleted": "Congratulations, {name}! You completed the trail {trail}.",
@@ -170,6 +173,20 @@
     "bodyText": "All your effort and dedication did not go unnoticed. To celebrate this achievement, you will receive an NFT token as a reward! This token symbolizes everything you have learned and your commitment at every step.",
     "connectWarning": "⚠️ Connect a wallet to claim your NFT.",
     "claimNow": "Claim Now!",
-    "processing": "Processing..."
+    "processing": "Processing...",
+    "uploading": "Generating certificate...",
+    "minting": "Registering on blockchain...",
+    "polling": "Waiting for network confirmation...",
+    "success": "NFT minted successfully! 🎉",
+    "viewOnChain": "View on blockchain",
+    "close": "Close",
+    "retryCheck": "Check status again",
+    "certificateLabel": "NFT Certificate",
+    "nftMinted": "NFT minted successfully!",
+    "mintTimeout": "Processing in progress",
+    "mintTimeoutHint": "The mint may take a few minutes. Check your wallet shortly.",
+    "stepUpload": "Uploading certificate to network",
+    "stepMint": "Registering on blockchain",
+    "stepConfirm": "Waiting for confirmation"
   }
 }

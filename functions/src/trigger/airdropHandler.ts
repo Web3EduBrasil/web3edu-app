@@ -39,11 +39,12 @@ export const airdropNFT = onDocumentWritten(
                 try {
                     const walletAddress = newValue?.address;
                     const ipfsHash = airdrop.ipfsHash;
+                    const tokenURI = ipfsHash.startsWith("ipfs://") ? ipfsHash : `ipfs://${ipfsHash}`;
 
                     const contract = runContract(contractAddress, privateKey, rpcUrl);
 
-                    // Executa o mint no contrato com walletAddress e ipfsHash
-                    const tx = await contract.safeMint(walletAddress, ipfsHash);
+                    // Executa o mint no contrato com walletAddress e tokenURI
+                    const tx = await contract.safeMint(walletAddress, tokenURI);
                     await tx.wait();
 
                     // Atualiza o status do airdrop para mintado e define o txHash
@@ -52,8 +53,8 @@ export const airdropNFT = onDocumentWritten(
                     console.log(`Airdrop bem-sucedido para usuário ${uid} na categoria ${category} - Tx: ${tx.hash}`);
                 } catch (error) {
                     console.error(`Erro no airdrop para usuário ${uid} na categoria ${category}:`, error);
-                    // Em caso de erro, define o status como não mintado
-                    await updateAirdropStatus(uid, category, false, "");
+                    // NÃO re-escreve no Firestore para evitar loop infinito de triggers.
+                    // O documento permanece com eligible:true, minted:false para a próxima tentativa.
                 }
             }
         }
