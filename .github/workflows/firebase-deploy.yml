@@ -74,12 +74,16 @@ jobs:
 
       - name: Decode Firebase service account
         id: decode-sa
+        env:
+          SA_B64: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
-          DECODED=$(echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" | base64 --decode)
+          DECODED=$(printf '%s' "$SA_B64" | tr -d '[:space:]' | base64 -d)
           echo "::add-mask::$DECODED"
-          echo "value<<EOF" >> $GITHUB_OUTPUT
-          echo "$DECODED" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          {
+            echo "value<<EOF"
+            printf '%s\n' "$DECODED"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0

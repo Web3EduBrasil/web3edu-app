@@ -46,10 +46,10 @@ const TrailContext = createContext<TrailState>({
   programsList: [],
   trail: {},
   trailSections: [],
-  fetchTrailsList: async () => {},
-  fetchProgramsList: () => {},
-  fetchTrail: async () => {},
-  fetchTrailSections: async () => {},
+  fetchTrailsList: async () => { },
+  fetchProgramsList: () => { },
+  fetchTrail: async () => { },
+  fetchTrailSections: async () => { },
   fetchSectionContent: async () => ({}),
   fetchAiAnswerCheck: () => Promise.resolve({ explicacao: "", valido: false }),
 });
@@ -63,7 +63,7 @@ interface NftState {
 
 const NftContext = createContext<NftState>({
   achievedNfts: [],
-  fetchAchievedNfts: () => {},
+  fetchAchievedNfts: () => { },
 });
 
 // ─── Reward Context ────────────────────────────────────────────────────────────
@@ -91,9 +91,9 @@ const RewardContext = createContext<RewardState>({
   rewardData: null,
   mintStep: "idle",
   mintTxHash: null,
-  handleRewardContainer: () => {},
-  fetchAirDrop: async () => {},
-  retryMintStatusCheck: async () => {},
+  handleRewardContainer: () => { },
+  fetchAirDrop: async () => { },
+  retryMintStatusCheck: async () => { },
 });
 
 // ─── Trail Provider ────────────────────────────────────────────────────────────
