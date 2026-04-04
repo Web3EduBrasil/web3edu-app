@@ -79,8 +79,9 @@ jobs:
         run: |
           DECODED=$(python3 -c "
           import base64, os, sys
-          data = os.environ['SA_B64'].encode()
-          sys.stdout.write(base64.decodebytes(data).decode())
+          raw = ''.join(os.environ['SA_B64'].split())
+          raw += '=' * (-len(raw) % 4)
+          sys.stdout.write(base64.b64decode(raw).decode('utf-8'))
           ")
           echo "::add-mask::$DECODED"
           {
