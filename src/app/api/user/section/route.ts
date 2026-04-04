@@ -3,17 +3,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { levelFromXp, XP_REWARDS } from "@/lib/xp";
 import { verifyAuth } from "@/lib/auth-helper";
 
+export const dynamic = "force-dynamic";
+
 export const POST = async (req: NextRequest) => {
   let verifiedUid: string;
   try { verifiedUid = await verifyAuth(req); }
-  catch { return new NextResponse(JSON.stringify({ message: "Não autorizado" }), { status: 401 }); }
+  catch { return NextResponse.json({ message: "Não autorizado" }, { status: 401 }); }
   try {
     const { trailId, sectionId } = await req.json();
     const uid = verifiedUid;
 
     if (!trailId || !sectionId || !uid) {
-      return new NextResponse(
-        "Parâmetros trailId, sectionId e uid são obrigatórios",
+      return NextResponse.json(
+        { message: "Parâmetros trailId, sectionId e uid são obrigatórios" },
         { status: 400 }
       );
     }
@@ -98,20 +100,12 @@ export const POST = async (req: NextRequest) => {
         ...(xpGained > 0 ? { xp: newXp, level: newLevel } : {}),
       });
 
-      return new NextResponse(
-        JSON.stringify({ message: "Seção adicionada com sucesso" }),
-        { status: 200 }
-      );
+      return NextResponse.json({ message: "Seção adicionada com sucesso" }, { status: 200 });
     } else {
-      return new NextResponse("Usuário ou trilha não encontrado", {
-        status: 404,
-      });
+      return NextResponse.json({ message: "Usuário ou trilha não encontrado" }, { status: 404 });
     }
   } catch (error: any) {
     console.error(error.message);
-    return new NextResponse(
-      JSON.stringify({ message: "Internal Server Error" }),
-      { status: 500 }
-    );
+    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 };

@@ -21,15 +21,13 @@ export const POST = async (req: NextRequest) => {
   try {
     const uid = verifiedUid;
     if (!uid) {
-      return NextResponse.json({ error: "uid obrigatório" }, {
-        status: 400,
-      });
+      return NextResponse.json({ message: "uid obrigatório" }, { status: 400 });
     }
 
     const userDocRef = adminDb.collection("users").doc(uid);
     const snap = await userDocRef.get();
     if (!snap.exists) {
-      return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
+      return NextResponse.json({ message: "Usuário não encontrado" }, { status: 404 });
     }
 
     const data = snap.data() as any;

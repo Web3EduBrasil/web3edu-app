@@ -9,7 +9,7 @@ import {
 import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { wagmiConfig, upgradeConfigWithSocialWallets } from "./config";
-import { ReactNode, useState, useEffect, useRef } from "react";
+import { ReactNode, useState, useEffect, useMemo, useRef } from "react";
 
 const accentColor = "#1e3a5f";
 
@@ -59,11 +59,12 @@ export function WagmiProviders({ children }: { children: ReactNode }) {
       });
   }, []);
 
-  const rkTheme = mounted
-    ? isDark
+  const rkTheme = useMemo(() => {
+    if (!mounted) return lightTheme({ accentColor, accentColorForeground: "white", borderRadius: "medium" });
+    return isDark
       ? darkTheme({ accentColor, accentColorForeground: "white", borderRadius: "medium" })
-      : lightTheme({ accentColor, accentColorForeground: "white", borderRadius: "medium" })
-    : lightTheme({ accentColor, accentColorForeground: "white", borderRadius: "medium" });
+      : lightTheme({ accentColor, accentColorForeground: "white", borderRadius: "medium" });
+  }, [mounted, isDark]);
 
   return (
     <WagmiProvider config={config} reconnectOnMount={false}>

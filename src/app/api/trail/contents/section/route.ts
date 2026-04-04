@@ -1,7 +1,7 @@
 import { adminDb } from "@/lib/firebase-admin";
-export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
 
 export const GET = async (req: NextRequest) => {
   try {
@@ -10,11 +10,9 @@ export const GET = async (req: NextRequest) => {
     const uid = req.nextUrl.searchParams.get("uid");
 
     if (!trailId || !sectionId || !uid) {
-      return new NextResponse(
-        "Parâmetros trailId, sectionId e uid são obrigatórios",
-        {
-          status: 400,
-        }
+      return NextResponse.json(
+        { message: "Parâmetros trailId, sectionId e uid são obrigatórios" },
+        { status: 400 }
       );
     }
 
@@ -22,10 +20,10 @@ export const GET = async (req: NextRequest) => {
     const contentSnapshot = await contentRef.get();
 
     if (!contentSnapshot.exists) {
-      return new NextResponse("Conteúdo não encontrado", { status: 404 });
+      return NextResponse.json({ message: "Conteúdo não encontrado" }, { status: 404 });
     }
 
-    const content = {
+    const content: Record<string, any> = {
       id: contentSnapshot.id,
       done: false,
       isLast: false,
@@ -37,22 +35,15 @@ export const GET = async (req: NextRequest) => {
 
     if (userDocSnap.exists) {
       const userData = userDocSnap.data();
-
-      const trail = userData?.trails?.find(
-        (trail: any) => trail.trailId === trailId
-      );
-      const isDone = trail?.doneSections?.includes(sectionId);
-
-      if (isDone) {
+      const trail = userData?.trails?.find((t: any) => t.trailId === trailId);
+      if (trail?.doneSections?.includes(sectionId)) {
         content.done = true;
       }
     }
 
-    return new NextResponse(JSON.stringify(content), {
-      status: 200,
-    });
+    return NextResponse.json(content, { status: 200 });
   } catch (error) {
     console.error("Erro ao buscar dados:", error);
-    return new NextResponse("Erro ao buscar dados", { status: 500 });
+    return NextResponse.json({ message: "Erro ao buscar dados" }, { status: 500 });
   }
 };

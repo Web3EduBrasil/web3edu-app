@@ -2,6 +2,8 @@ import { adminDb } from "@/lib/firebase-admin";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth-helper";
 
+export const dynamic = "force-dynamic";
+
 export const POST = async (req: NextRequest) => {
   let verifiedUid: string;
   try { verifiedUid = await verifyAuth(req); }

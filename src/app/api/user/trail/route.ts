@@ -2,6 +2,8 @@ import { adminDb } from "@/lib/firebase-admin";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth-helper";
 
+export const dynamic = "force-dynamic";
+
 /**
  * POST /z/trail
  * Inscreve o usuário em uma trilha (adiciona à lista trails sem doneSections).

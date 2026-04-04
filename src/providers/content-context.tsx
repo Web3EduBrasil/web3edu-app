@@ -34,21 +34,14 @@ interface ContentState {
   fetchTrailSections: (trailIdRt: string, uid: string) => Promise<void>;
   fetchSectionContent: (trailId: string, sectionId: string, uid: string) => Promise<any>;
   fetchAiAnswerCheck: (question: string, prompt: string) => Promise<AiAnswerProps>;
-  fetchTrailAirDrop: (
-    trailIcon: string,
+  fetchAirDrop: (
+    type: "trail" | "program",
+    icon: string,
     uid: string,
     userName: string,
     walletAddress: string,
-    trailId: string,
-    trailName: string
-  ) => Promise<void>;
-  fetchProgramAirDrop: (
-    programIcon: string,
-    uid: string,
-    userName: string,
-    walletAddress: string,
-    programId: string,
-    programName: string
+    itemId: string,
+    itemName: string
   ) => Promise<void>;
   handleRewardContainer: (data?: RewardData) => void;
   mintStep: "idle" | "uploading" | "minting" | "polling" | "success" | "error";
@@ -74,8 +67,7 @@ const ContentContext = createContext<ContentState>({
   fetchProgramsList: () => { },
   fetchTrail: () => ({}),
   fetchTrailSections: async () => { },
-  fetchTrailAirDrop: async () => { },
-  fetchProgramAirDrop: async () => { },
+  fetchAirDrop: async () => { },
   fetchAiAnswerCheck: () => Promise.resolve({ explicacao: "", valido: false }),
   fetchSectionContent: async () => ({}),
   handleRewardContainer: () => { },
@@ -363,54 +355,57 @@ export const ContentProvider = ({
     }
   }, []);
 
-  // ─── Airdrop Trilha ──────────────────────────────────────────────────────────
+  // ─── Airdrop (Trilha e Programa unificados) ─────────────────────────────────
 
-  const fetchTrailAirDrop = useCallback(async (
-    trailIcon: string,
+  const fetchAirDrop = useCallback(async (
+    type: "trail" | "program",
+    icon: string,
     uid: string,
     userName: string,
     walletAddress: string,
-    trailId: string,
-    trailName: string
+    itemId: string,
+    itemName: string
   ) => {
+    const checkEndpoint = type === "trail"
+      ? `/api/whitelist?uid=${uid}&trailId=${itemId}`
+      : `/api/programWhitelist?uid=${uid}&programId=${itemId}`;
+    const registerEndpoint = type === "trail" ? "/api/whitelist" : "/api/programWhitelist";
+    const bodyKey = type === "trail" ? "trailId" : "programId";
+    const description = type === "trail"
+      ? `Este certificado é concedido a ${userName} em reconhecimento por completar com sucesso a trilha de aprendizagem ${itemName}, totalizando uma carga horária de 3 horas.`
+      : `Este certificado é concedido a ${userName} em reconhecimento por completar com sucesso o programa ${itemName}.`;
+
     try {
-      // 0. Pré-checagem: verifica se já foi mintado (ex: polling anterior expirou)
-      const preCheck = await fetch(`/api/whitelist?uid=${uid}&trailId=${trailId}`);
+      // 0. Pré-checagem: verifica se já foi mintado ou está pendente
+      const preCheck = await fetch(checkEndpoint);
       const preData = await preCheck.json();
       if (preData.txHash) {
         setMintStep("success");
         setMintTxHash(preData.txHash);
         return;
       }
-      // pending = já registrado na whitelist mas CF ainda não mintou — retoma polling
       if (preData.pending) {
         setMintStep("polling");
-        pollMintStatus(uid, trailId, "trail");
+        pollMintStatus(uid, itemId, type);
         return;
       }
       if (!preData.eligible) {
-        toast.error("Certificado já foi resgatado para esta trilha");
+        toast.error("Certificado já foi resgatado");
         return;
       }
 
-      // 1. Elegibilidade confirmada — inicia o processo
-
-      // 2. Upload do metadata para o IPFS (server-side, chave não exposta)
+      // 1. Upload do metadata para o IPFS
       setMintStep("uploading");
       const appLink = process.env.NEXT_PUBLIC_APP_LINK || "";
-      const imageUrl = trailIcon.startsWith("http") ? trailIcon : `${appLink}${trailIcon}`;
-      const IpfsHash = await uploadToIpfs({
-        name: `Certificado — ${trailName}`,
-        image: imageUrl,
-        description: `Este certificado é concedido a ${userName} em reconhecimento por completar com sucesso a trilha de aprendizagem ${trailName}, totalizando uma carga horária de 3 horas.`,
-      });
+      const imageUrl = icon.startsWith("http") ? icon : `${appLink}${icon}`;
+      const IpfsHash = await uploadToIpfs({ name: `Certificado — ${itemName}`, image: imageUrl, description });
 
-      // 3. Registra na whitelist do Firestore (dispara Cloud Function de mint)
+      // 2. Registra na whitelist (dispara Cloud Function de mint)
       setMintStep("minting");
-      const whitelistRes = await fetch("/api/whitelist", {
+      const whitelistRes = await fetch(registerEndpoint, {
         method: "POST",
         headers: await authHeaders(),
-        body: JSON.stringify({ walletAddress, trailId, ipfsHash: IpfsHash }),
+        body: JSON.stringify({ walletAddress, [bodyKey]: itemId, ipfsHash: IpfsHash }),
       });
       if (!whitelistRes.ok) {
         const errorData = await whitelistRes.json();
@@ -419,109 +414,24 @@ export const ContentProvider = ({
         return;
       }
 
-      // 4. Salva na subcoleção achievedNfts do usuário
+      // 3. Salva referência local na subcoleção achievedNfts
       try {
         const firestore = getFirestore();
         const userRef = doc(firestore, "users", uid);
         await addDoc(collection(userRef, "achievedNfts"), {
-          walletAddress,
-          trailId,
-          ipfs: trailIcon,
-          type: "trail",
-          createdAt: serverTimestamp(),
+          walletAddress, trailId: itemId, ipfs: icon, type, createdAt: serverTimestamp(),
         });
-      } catch (error) {
-        console.error("Erro ao registrar NFT em achievedNfts:", error);
+      } catch (err) {
+        console.error("Erro ao registrar NFT em achievedNfts:", err);
       }
 
-      // 5. Polling — aguarda txHash vindo da Cloud Function
+      // 4. Polling — aguarda txHash vindo da Cloud Function
       setMintStep("polling");
-      pollMintStatus(uid, trailId, "trail");
+      pollMintStatus(uid, itemId, type);
     } catch (error: any) {
       setMintStep("error");
       toast.error(`Erro ao resgatar certificado: ${error.message}`);
-      console.error("Erro em fetchTrailAirDrop:", error);
-    }
-  }, [uploadToIpfs, pollMintStatus]);
-
-  // ─── Airdrop Programa ────────────────────────────────────────────────────────
-
-  const fetchProgramAirDrop = useCallback(async (
-    programIcon: string,
-    uid: string,
-    userName: string,
-    walletAddress: string,
-    programId: string,
-    programName: string
-  ) => {
-    try {
-      // 0. Pré-checagem: verifica se já foi mintado
-      const preCheck = await fetch(`/api/programWhitelist?uid=${uid}&programId=${programId}`);
-      const preData = await preCheck.json();
-      if (preData.txHash) {
-        setMintStep("success");
-        setMintTxHash(preData.txHash);
-        return;
-      }
-      // pending = já registrado mas CF ainda não mintou — retoma polling
-      if (preData.pending) {
-        setMintStep("polling");
-        pollMintStatus(uid, programId, "program");
-        return;
-      }
-      if (!preData.eligible) {
-        toast.error("Certificado já foi resgatado para este programa");
-        return;
-      }
-
-      // 1. Elegibilidade confirmada — inicia o processo
-
-      // 2. Upload do metadata para o IPFS (server-side)
-      setMintStep("uploading");
-      const appLink = process.env.NEXT_PUBLIC_APP_LINK || "";
-      const imageUrl = programIcon.startsWith("http") ? programIcon : `${appLink}${programIcon}`;
-      const IpfsHash = await uploadToIpfs({
-        name: `Certificado — ${programName}`,
-        image: imageUrl,
-        description: `Este certificado é concedido a ${userName} em reconhecimento por completar com sucesso o programa ${programName}.`,
-      });
-
-      // 3. Registra na programWhitelist (dispara Cloud Function de mint)
-      const whitelistRes = await fetch("/api/programWhitelist", {
-        method: "POST",
-        headers: await authHeaders(),
-        body: JSON.stringify({ walletAddress, programId, ipfsHash: IpfsHash }),
-      });
-      if (!whitelistRes.ok) {
-        const errorData = await whitelistRes.json();
-        setMintStep("error");
-        toast.error(`Erro ao registrar na whitelist: ${errorData.message}`);
-        return;
-      }
-      setMintStep("minting");
-
-      // 4. Salva na subcoleção achievedNfts do usuário
-      try {
-        const firestore = getFirestore();
-        const userRef = doc(firestore, "users", uid);
-        await addDoc(collection(userRef, "achievedNfts"), {
-          walletAddress,
-          trailId: programId,
-          ipfs: programIcon,
-          type: "program",
-          createdAt: serverTimestamp(),
-        });
-      } catch (error) {
-        console.error("Erro ao registrar NFT em achievedNfts:", error);
-      }
-
-      // 5. Polling — aguarda txHash vindo da Cloud Function
-      setMintStep("polling");
-      pollMintStatus(uid, programId, "program");
-    } catch (error: any) {
-      setMintStep("error");
-      toast.error(`Erro ao resgatar certificado: ${error.message}`);
-      console.error("Erro em fetchProgramAirDrop:", error);
+      console.error("Erro em fetchAirDrop:", error);
     }
   }, [uploadToIpfs, pollMintStatus]);
 
@@ -537,8 +447,7 @@ export const ContentProvider = ({
     fetchAchievedNfts,
     fetchProgramsList,
     fetchTrail,
-    fetchTrailAirDrop,
-    fetchProgramAirDrop,
+    fetchAirDrop,
     fetchTrailSections,
     fetchAiAnswerCheck,
     fetchSectionContent,
@@ -558,8 +467,7 @@ export const ContentProvider = ({
     fetchAchievedNfts,
     fetchProgramsList,
     fetchTrail,
-    fetchTrailAirDrop,
-    fetchProgramAirDrop,
+    fetchAirDrop,
     fetchTrailSections,
     fetchAiAnswerCheck,
     fetchSectionContent,

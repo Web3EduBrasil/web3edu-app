@@ -15,8 +15,7 @@ export const RewardContainer = () => {
     handleRewardContainer,
     rewardContainerVisibility,
     rewardData,
-    fetchTrailAirDrop,
-    fetchProgramAirDrop,
+    fetchAirDrop,
     mintStep,
     mintTxHash,
     retryMintStatusCheck,
@@ -44,25 +43,15 @@ export const RewardContainer = () => {
       return;
     }
     const userName = (userDbInfo as any)?.displayName || googleUserInfo?.displayName || "";
-    if (rewardData.type === "trail") {
-      await fetchTrailAirDrop(
-        rewardData.icon,
-        googleUserInfo.uid,
-        userName,
-        userAccount[0],
-        rewardData.id,
-        rewardData.name
-      );
-    } else {
-      await fetchProgramAirDrop(
-        rewardData.icon,
-        googleUserInfo.uid,
-        userName,
-        userAccount[0],
-        rewardData.id,
-        rewardData.name
-      );
-    }
+    await fetchAirDrop(
+      rewardData.type,
+      rewardData.icon,
+      googleUserInfo.uid,
+      userName,
+      userAccount[0],
+      rewardData.id,
+      rewardData.name
+    );
   };
 
   const title =

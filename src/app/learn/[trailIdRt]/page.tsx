@@ -41,19 +41,16 @@ export default function TrailOverviewPage() {
     (async () => {
       setChecking(true);
       try {
-        const res = await fetch(
-          `/api/user/trail?uid=${googleUserInfo.uid}&trailId=${trailIdRt}`
-        );
-        const data = await res.json();
+        const [trailRes, sectionsRes] = await Promise.all([
+          fetch(`/api/user/trail?uid=${googleUserInfo.uid}&trailId=${trailIdRt}`),
+          fetch(`/api/trail/contents?trailId=${trailIdRt}&uid=${googleUserInfo.uid}`),
+        ]);
+        const [data, sections] = await Promise.all([trailRes.json(), sectionsRes.json()]);
+
         setEnrolled(data.enrolled);
         setPercentage(data.percentage || 0);
 
-        // Determina próxima seção: busca seções e encontra a primeira não concluída
-        if (data.enrolled) {
-          const sectionsRes = await fetch(
-            `/api/trail/contents?trailId=${trailIdRt}&uid=${googleUserInfo.uid}`
-          );
-          const sections = await sectionsRes.json();
+        if (data.enrolled && Array.isArray(sections)) {
           const sorted = [...sections].sort(
             (a: any, b: any) => Number(a.id) - Number(b.id)
           );
