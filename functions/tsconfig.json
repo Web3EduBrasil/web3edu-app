@@ -1,19 +1,22 @@
 {
   "compilerOptions": {
-    "target": "es2020",              // mais moderno e estável
-    "module": "commonjs",            // compatível com Firebase
-    "lib": ["es2020"],
+    "target": "es2020", // mais moderno e estável
+    "module": "commonjs", // compatível com Firebase
+    "lib": [
+      "es2020"
+    ],
     "outDir": "lib",
     "rootDir": "src",
     "strict": true,
     "esModuleInterop": true,
     "moduleResolution": "node",
-    "ignoreDeprecations": "6.0",
     "skipLibCheck": true,
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "sourceMap": true
   },
   "compileOnSave": true,
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }
