@@ -72,11 +72,20 @@ jobs:
           NEXT_PUBLIC_CONTRACT_ADDRESS: ${{ secrets.NEXT_PUBLIC_CONTRACT_ADDRESS }}
           ADMIN_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_ADMIN_SERVICE_ACCOUNT }}
 
+      - name: Decode Firebase service account
+        id: decode-sa
+        run: |
+          DECODED=$(echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" | base64 --decode)
+          echo "::add-mask::$DECODED"
+          echo "value<<EOF" >> $GITHUB_OUTPUT
+          echo "$DECODED" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          firebaseServiceAccount: ${{ steps.decode-sa.outputs.value }}
           channelId: live
           projectId: web3edu-57c7f
         env:

@@ -11,9 +11,12 @@ export const POST = async (req: NextRequest, res: NextResponse) => {
     const uid = verifiedUid;
     if (!trailId || !walletAddress || !ipfsHash) {
       return NextResponse.json(
-        { error: "Parâmetros trailId, walletAddress e ipfsHash são obrigatórios" },
+        { message: "Parâmetros trailId, walletAddress e ipfsHash são obrigatórios" },
         { status: 400 }
       );
+    }
+    if (!/^0x[0-9a-fA-F]{40}$/.test(walletAddress)) {
+      return NextResponse.json({ message: "walletAddress inválido" }, { status: 400 });
     }
     const whitelistDocRef = adminDb.collection("whitelist").doc(uid);
     const docSnap = await whitelistDocRef.get();

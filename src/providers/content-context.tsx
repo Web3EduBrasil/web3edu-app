@@ -19,21 +19,61 @@ export interface RewardData {
   icon: string;
 }
 
-interface ContentState {
+type MintStep = "idle" | "uploading" | "minting" | "polling" | "success" | "error";
+
+interface AiAnswerProps {
+  explicacao: string;
+  valido: boolean;
+}
+
+// ─── Trail Context ─────────────────────────────────────────────────────────────
+
+interface TrailState {
   trailsList: any;
   programsList: any;
   trail: any;
-  trailSections: any;
-  achievedNfts: AchievedNft[];
-  rewardContainerVisibility: boolean;
-  rewardData: RewardData | null;
-  fetchAchievedNfts: (walletAddress: string) => void;
+  trailSections: any[];
   fetchTrailsList: (uid: string) => Promise<void>;
   fetchProgramsList: () => void;
-  fetchTrail: (trailIdRt: string) => any;
+  fetchTrail: (trailIdRt: string) => Promise<void>;
   fetchTrailSections: (trailIdRt: string, uid: string) => Promise<void>;
   fetchSectionContent: (trailId: string, sectionId: string, uid: string) => Promise<any>;
   fetchAiAnswerCheck: (question: string, prompt: string) => Promise<AiAnswerProps>;
+}
+
+const TrailContext = createContext<TrailState>({
+  trailsList: [],
+  programsList: [],
+  trail: {},
+  trailSections: [],
+  fetchTrailsList: async () => {},
+  fetchProgramsList: () => {},
+  fetchTrail: async () => {},
+  fetchTrailSections: async () => {},
+  fetchSectionContent: async () => ({}),
+  fetchAiAnswerCheck: () => Promise.resolve({ explicacao: "", valido: false }),
+});
+
+// ─── Nft Context ──────────────────────────────────────────────────────────────
+
+interface NftState {
+  achievedNfts: AchievedNft[];
+  fetchAchievedNfts: (walletAddress: string) => void;
+}
+
+const NftContext = createContext<NftState>({
+  achievedNfts: [],
+  fetchAchievedNfts: () => {},
+});
+
+// ─── Reward Context ────────────────────────────────────────────────────────────
+
+interface RewardState {
+  rewardContainerVisibility: boolean;
+  rewardData: RewardData | null;
+  mintStep: MintStep;
+  mintTxHash: string | null;
+  handleRewardContainer: (data?: RewardData) => void;
   fetchAirDrop: (
     type: "trail" | "program",
     icon: string,
@@ -43,122 +83,26 @@ interface ContentState {
     itemId: string,
     itemName: string
   ) => Promise<void>;
-  handleRewardContainer: (data?: RewardData) => void;
-  mintStep: "idle" | "uploading" | "minting" | "polling" | "success" | "error";
-  mintTxHash: string | null;
   retryMintStatusCheck: (uid: string, itemId: string, type: "trail" | "program") => Promise<void>;
 }
 
-interface AiAnswerProps {
-  explicacao: string;
-  valido: boolean;
-}
-
-const ContentContext = createContext<ContentState>({
-  trail: {},
-  trailsList: [],
-  programsList: [],
-  trailSections: [],
-  achievedNfts: [],
+const RewardContext = createContext<RewardState>({
   rewardContainerVisibility: false,
   rewardData: null,
-  fetchTrailsList: async () => { },
-  fetchAchievedNfts: () => { },
-  fetchProgramsList: () => { },
-  fetchTrail: () => ({}),
-  fetchTrailSections: async () => { },
-  fetchAirDrop: async () => { },
-  fetchAiAnswerCheck: () => Promise.resolve({ explicacao: "", valido: false }),
-  fetchSectionContent: async () => ({}),
-  handleRewardContainer: () => { },
   mintStep: "idle",
   mintTxHash: null,
-  retryMintStatusCheck: async () => { },
+  handleRewardContainer: () => {},
+  fetchAirDrop: async () => {},
+  retryMintStatusCheck: async () => {},
 });
 
-export const ContentProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
+// ─── Trail Provider ────────────────────────────────────────────────────────────
+
+const TrailProvider = ({ children }: { children: React.ReactNode }) => {
   const [trailsList, setTrailsList] = useState<any>([]);
   const [programsList, setProgramsList] = useState<any>([]);
   const [trailSections, setTrailSections] = useState<any[]>([]);
-  const [achievedNfts, setAchievedNfts] = useState<AchievedNft[]>([]);
-  const [rewardContainerVisibility, setRewardContainerVisibility] =
-    useState(false);
-  const [rewardData, setRewardData] = useState<RewardData | null>(null);
   const [trail, setTrail] = useState<any>({});
-  const [mintStep, setMintStep] = useState<"idle" | "uploading" | "minting" | "polling" | "success" | "error">("idle");
-  const [mintTxHash, setMintTxHash] = useState<string | null>(null);
-
-  const handleRewardContainer = useCallback((data?: RewardData) => {
-    if (data) {
-      setRewardData(data);
-      setMintStep("idle");
-      setMintTxHash(null);
-    }
-    setRewardContainerVisibility((prev) => !prev);
-  }, []);
-
-  const fetchAchievedNfts = useCallback(async (walletAddress: string) => {
-    const contractAddress =
-      process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ||
-      "0x8984b78F102f85222E7fa9c43d37d84E087B1Be8";
-    const alchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
-
-    // Tenta buscar via Alchemy NFT API (dados on-chain, mais completo)
-    if (alchemyKey) {
-      try {
-        const url = `https://eth-sepolia.g.alchemy.com/nft/v3/${alchemyKey}/getNFTsForOwner?owner=${walletAddress}&contractAddresses[]=${contractAddress}&withMetadata=true&orderBy=transferTime&pageSize=100`;
-        const res = await fetch(url, {
-          method: "GET",
-          headers: { accept: "application/json" },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const formattedNfts: AchievedNft[] = (data.ownedNfts || []).map((nft: any) => {
-            const name = extractNftName(nft.description || nft.raw?.metadata?.description || "");
-            const contractAddr = nft.contract?.address;
-            const tokenId = nft.tokenId;
-            const openseaUrl = `https://testnets.opensea.io/assets/sepolia/${contractAddr}/${tokenId}`;
-            return {
-              walletAddress,
-              trailId: name,
-              ipfs: nft.raw?.metadata?.image || nft.image?.originalUrl || "",
-              createdAt: new Date(nft.timeLastUpdated),
-              openseaUrl,
-            };
-          });
-          setAchievedNfts(formattedNfts);
-          return;
-        }
-      } catch (error) {
-        console.error("Alchemy NFT API falhou, tentando fallback:", error);
-      }
-    }
-
-    // Fallback: busca dados de mint do Firestore via API
-    try {
-      const res = await fetch(`/api/user/nfts?walletAddress=${walletAddress}`);
-      if (res.ok) {
-        const data = await res.json();
-        setAchievedNfts(data.nfts || []);
-      }
-    } catch (error) {
-      console.error("Erro ao buscar NFTs conquistados:", error);
-    }
-  }, []);
-
-  /** Extrai o nome da trilha ou programa a partir da description do NFT. */
-  function extractNftName(description: string): string {
-    if (!description) return "desconhecido";
-    const trailMatch = description.match(/trilha de aprendizagem\s(.+)$/i);
-    if (trailMatch) return trailMatch[1].trim();
-    const programMatch = description.match(/programa\s(.+)$/i);
-    if (programMatch) return programMatch[1].trim();
-    return "desconhecido";
-  }
 
   const fetchTrailsList = useCallback(async (uid: string) => {
     try {
@@ -182,18 +126,12 @@ export const ContentProvider = ({
 
   const fetchTrail = useCallback(async (trailIdRt: string) => {
     try {
-      const response = await fetch(`/api/trail?trailId=${trailIdRt}`, {
-        method: "GET",
-      });
-
+      const response = await fetch(`/api/trail?trailId=${trailIdRt}`, { method: "GET" });
       if (!response.ok) {
         const errorData = await response.json();
-        const errorMessage = errorData.message || "Erro ao buscar trilha";
-        throw new Error(errorMessage);
+        throw new Error(errorData.message || "Erro ao buscar trilha");
       }
-
-      const data = await response.json();
-      setTrail(data);
+      setTrail(await response.json());
     } catch (error: any) {
       console.error("Erro na requisição fetchTrail:", error);
       throw error;
@@ -202,23 +140,13 @@ export const ContentProvider = ({
 
   const fetchTrailSections = useCallback(async (trailIdRt: string, uid: string) => {
     try {
-      const response = await fetch(
-        `/api/trail/contents?trailId=${trailIdRt}&uid=${uid}`,
-        {
-          method: "GET",
-        }
-      );
+      const response = await fetch(`/api/trail/contents?trailId=${trailIdRt}&uid=${uid}`, { method: "GET" });
       if (!response.ok) {
         const errorData = await response.json();
-        const errorMessage =
-          errorData.message || "Erro ao buscar secoes da trilha";
-        throw new Error(errorMessage);
+        throw new Error(errorData.message || "Erro ao buscar secoes da trilha");
       }
-
       const data = await response.json();
-      data.sort(
-        (a: { id: any }, b: { id: any }) => Number(a.id) - Number(b.id)
-      );
+      data.sort((a: { id: any }, b: { id: any }) => Number(a.id) - Number(b.id));
       setTrailSections(data);
     } catch (error: any) {
       console.error("Erro na requisição fetchTrailSections:", error);
@@ -226,37 +154,24 @@ export const ContentProvider = ({
     }
   }, []);
 
-  const fetchSectionContent = useCallback(async (
-    trailId: string,
-    sectionId: string,
-    uid: string
-  ) => {
+  const fetchSectionContent = useCallback(async (trailId: string, sectionId: string, uid: string) => {
     try {
       const response = await fetch(
         `/api/trail/contents/section?trailId=${trailId}&sectionId=${sectionId}&uid=${uid}`,
-        {
-          method: "GET",
-        }
+        { method: "GET" }
       );
       if (!response.ok) {
         const errorData = await response.json();
-        const errorMessage =
-          errorData.message || "Erro ao buscar conteudo da secao";
-        throw new Error(errorMessage);
+        throw new Error(errorData.message || "Erro ao buscar conteudo da secao");
       }
-
-      const data = await response.json();
-      return data;
+      return await response.json();
     } catch (error: any) {
       console.error("Erro na requisição fetchSectionContent:", error);
       throw error;
     }
   }, []);
 
-  const fetchAiAnswerCheck = useCallback(async (
-    question: string,
-    prompt: string
-  ): Promise<AiAnswerProps> => {
+  const fetchAiAnswerCheck = useCallback(async (question: string, prompt: string): Promise<AiAnswerProps> => {
     try {
       const response = await fetch("/api/ai", {
         method: "POST",
@@ -264,13 +179,11 @@ export const ContentProvider = ({
         body: JSON.stringify({ question, prompt }),
       });
       const data = await response.json();
-      const bodyString = data.body;
-      const jsonString = bodyString.replace(/`json|`/g, "").trim();
+      const jsonString = data.body.replace(/`json|`/g, "").trim();
       try {
         const obj = JSON.parse(jsonString);
         return { explicacao: obj.explicacao, valido: obj.valido };
-      } catch (parseError) {
-        console.error("Erro ao fazer parse do JSON:", parseError);
+      } catch {
         throw new Error("Formato de resposta inválido da API");
       }
     } catch (error: any) {
@@ -279,7 +192,91 @@ export const ContentProvider = ({
     }
   }, []);
 
-  // ─── IPFS helper (server-side) ─────────────────────────────────────────────────
+  const value = useMemo(() => ({
+    trailsList, programsList, trail, trailSections,
+    fetchTrailsList, fetchProgramsList, fetchTrail, fetchTrailSections, fetchSectionContent, fetchAiAnswerCheck,
+  }), [trailsList, programsList, trail, trailSections, fetchTrailsList, fetchProgramsList, fetchTrail, fetchTrailSections, fetchSectionContent, fetchAiAnswerCheck]);
+
+  return <TrailContext.Provider value={value}>{children}</TrailContext.Provider>;
+};
+
+// ─── Nft Provider ──────────────────────────────────────────────────────────────
+
+function extractNftName(description: string): string {
+  if (!description) return "desconhecido";
+  const trailMatch = description.match(/trilha de aprendizagem\s(.+)$/i);
+  if (trailMatch) return trailMatch[1].trim();
+  const programMatch = description.match(/programa\s(.+)$/i);
+  if (programMatch) return programMatch[1].trim();
+  return "desconhecido";
+}
+
+const NftProvider = ({ children }: { children: React.ReactNode }) => {
+  const [achievedNfts, setAchievedNfts] = useState<AchievedNft[]>([]);
+
+  const fetchAchievedNfts = useCallback(async (walletAddress: string) => {
+    const contractAddress =
+      process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ||
+      "0x8984b78F102f85222E7fa9c43d37d84E087B1Be8";
+    const alchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
+
+    if (alchemyKey) {
+      try {
+        const url = `https://eth-sepolia.g.alchemy.com/nft/v3/${alchemyKey}/getNFTsForOwner?owner=${walletAddress}&contractAddresses[]=${contractAddress}&withMetadata=true&orderBy=transferTime&pageSize=100`;
+        const res = await fetch(url, { headers: { accept: "application/json" } });
+        if (res.ok) {
+          const data = await res.json();
+          const formattedNfts: AchievedNft[] = (data.ownedNfts || []).map((nft: any) => {
+            const name = extractNftName(nft.description || nft.raw?.metadata?.description || "");
+            const openseaUrl = `https://testnets.opensea.io/assets/sepolia/${nft.contract?.address}/${nft.tokenId}`;
+            return {
+              walletAddress,
+              trailId: name,
+              ipfs: nft.raw?.metadata?.image || nft.image?.originalUrl || "",
+              createdAt: new Date(nft.timeLastUpdated),
+              openseaUrl,
+            };
+          });
+          setAchievedNfts(formattedNfts);
+          return;
+        }
+      } catch (error) {
+        console.error("Alchemy NFT API falhou, tentando fallback:", error);
+      }
+    }
+
+    try {
+      const res = await fetch(`/api/user/nfts?walletAddress=${walletAddress}`);
+      if (res.ok) {
+        const data = await res.json();
+        setAchievedNfts(data.nfts || []);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar NFTs conquistados:", error);
+    }
+  }, []);
+
+  const value = useMemo(() => ({ achievedNfts, fetchAchievedNfts }), [achievedNfts, fetchAchievedNfts]);
+
+  return <NftContext.Provider value={value}>{children}</NftContext.Provider>;
+};
+
+// ─── Reward Provider ────────────────────────────────────────────────────────────
+
+const RewardProvider = ({ children }: { children: React.ReactNode }) => {
+  const [rewardContainerVisibility, setRewardContainerVisibility] = useState(false);
+  const [rewardData, setRewardData] = useState<RewardData | null>(null);
+  const [mintStep, setMintStep] = useState<MintStep>("idle");
+  const [mintTxHash, setMintTxHash] = useState<string | null>(null);
+
+  const handleRewardContainer = useCallback((data?: RewardData) => {
+    if (data) {
+      setRewardData(data);
+      setMintStep("idle");
+      setMintTxHash(null);
+    }
+    setRewardContainerVisibility((prev) => !prev);
+  }, []);
 
   const uploadToIpfs = useCallback(async (content: object): Promise<string> => {
     const response = await fetch("/api/ipfs", {
@@ -296,22 +293,14 @@ export const ContentProvider = ({
     return IpfsHash;
   }, []);
 
-  // ─── Polling feedback mint blockchain ────────────────────────────────────────
-
-  const pollMintStatus = useCallback(async (
-    uid: string,
-    itemId: string,
-    type: "trail" | "program"
-  ) => {
+  const pollMintStatus = useCallback(async (uid: string, itemId: string, type: "trail" | "program") => {
     const endpoint =
       type === "trail"
         ? `/api/whitelist?uid=${uid}&trailId=${itemId}`
         : `/api/programWhitelist?uid=${uid}&programId=${itemId}`;
-    const MAX_ATTEMPTS = 30;
-    const INTERVAL_MS = 8000;
 
-    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-      await new Promise((r) => setTimeout(r, INTERVAL_MS));
+    for (let attempt = 0; attempt < 30; attempt++) {
+      await new Promise((r) => setTimeout(r, 8000));
       try {
         const res = await fetch(endpoint);
         const data = await res.json();
@@ -325,19 +314,10 @@ export const ContentProvider = ({
       }
     }
     setMintStep("error");
-    toast.info(
-      "O mint está sendo processado. Verifique sua carteira em alguns minutos.",
-      { autoClose: 8000 }
-    );
+    toast.info("O mint está sendo processado. Verifique sua carteira em alguns minutos.", { autoClose: 8000 });
   }, []);
 
-  // ─── Retry/check único de status de mint ─────────────────────────────────
-
-  const retryMintStatusCheck = useCallback(async (
-    uid: string,
-    itemId: string,
-    type: "trail" | "program"
-  ) => {
+  const retryMintStatusCheck = useCallback(async (uid: string, itemId: string, type: "trail" | "program") => {
     const endpoint = type === "trail"
       ? `/api/whitelist?uid=${uid}&trailId=${itemId}`
       : `/api/programWhitelist?uid=${uid}&programId=${itemId}`;
@@ -354,8 +334,6 @@ export const ContentProvider = ({
       toast.error("Erro ao verificar status do mint.");
     }
   }, []);
-
-  // ─── Airdrop (Trilha e Programa unificados) ─────────────────────────────────
 
   const fetchAirDrop = useCallback(async (
     type: "trail" | "program",
@@ -379,20 +357,9 @@ export const ContentProvider = ({
       // 0. Pré-checagem: verifica se já foi mintado ou está pendente
       const preCheck = await fetch(checkEndpoint);
       const preData = await preCheck.json();
-      if (preData.txHash) {
-        setMintStep("success");
-        setMintTxHash(preData.txHash);
-        return;
-      }
-      if (preData.pending) {
-        setMintStep("polling");
-        pollMintStatus(uid, itemId, type);
-        return;
-      }
-      if (!preData.eligible) {
-        toast.error("Certificado já foi resgatado");
-        return;
-      }
+      if (preData.txHash) { setMintStep("success"); setMintTxHash(preData.txHash); return; }
+      if (preData.pending) { setMintStep("polling"); pollMintStatus(uid, itemId, type); return; }
+      if (!preData.eligible) { toast.error("Certificado já foi resgatado"); return; }
 
       // 1. Upload do metadata para o IPFS
       setMintStep("uploading");
@@ -435,53 +402,38 @@ export const ContentProvider = ({
     }
   }, [uploadToIpfs, pollMintStatus]);
 
-  const contextValue = useMemo(() => ({
-    trail,
-    fetchTrailsList,
-    handleRewardContainer,
-    rewardContainerVisibility,
-    rewardData,
-    trailsList,
-    programsList,
-    achievedNfts,
-    fetchAchievedNfts,
-    fetchProgramsList,
-    fetchTrail,
-    fetchAirDrop,
-    fetchTrailSections,
-    fetchAiAnswerCheck,
-    fetchSectionContent,
-    trailSections,
-    mintStep,
-    mintTxHash,
-    retryMintStatusCheck,
-  }), [
-    trail,
-    fetchTrailsList,
-    handleRewardContainer,
-    rewardContainerVisibility,
-    rewardData,
-    trailsList,
-    programsList,
-    achievedNfts,
-    fetchAchievedNfts,
-    fetchProgramsList,
-    fetchTrail,
-    fetchAirDrop,
-    fetchTrailSections,
-    fetchAiAnswerCheck,
-    fetchSectionContent,
-    trailSections,
-    mintStep,
-    mintTxHash,
-    retryMintStatusCheck,
-  ]);
+  const value = useMemo(() => ({
+    rewardContainerVisibility, rewardData, mintStep, mintTxHash,
+    handleRewardContainer, fetchAirDrop, retryMintStatusCheck,
+  }), [rewardContainerVisibility, rewardData, mintStep, mintTxHash, handleRewardContainer, fetchAirDrop, retryMintStatusCheck]);
 
-  return (
-    <ContentContext.Provider value={contextValue}>
-      {children}
-    </ContentContext.Provider>
-  );
+  return <RewardContext.Provider value={value}>{children}</RewardContext.Provider>;
 };
 
-export const useContent = () => useContext(ContentContext);
+// ─── Combined Provider ─────────────────────────────────────────────────────────
+
+export const ContentProvider = ({ children }: { children: React.ReactNode }) => (
+  <TrailProvider>
+    <NftProvider>
+      <RewardProvider>{children}</RewardProvider>
+    </NftProvider>
+  </TrailProvider>
+);
+
+// ─── Hooks ─────────────────────────────────────────────────────────────────────
+
+/** Dados de trilhas, programas e seções. Só re-renderiza quando esses mudam. */
+export const useTrail = () => useContext(TrailContext);
+
+/** Dados de NFTs conquistados. Só re-renderiza quando NFTs mudam. */
+export const useNft = () => useContext(NftContext);
+
+/** Estado do modal de recompensa e flow de mint. Só re-renderiza quando esses mudam. */
+export const useReward = () => useContext(RewardContext);
+
+/** @deprecated Prefira useTrail(), useNft() ou useReward() para melhor performance. */
+export const useContent = () => ({
+  ...useContext(TrailContext),
+  ...useContext(NftContext),
+  ...useContext(RewardContext),
+});

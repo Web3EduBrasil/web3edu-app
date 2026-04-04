@@ -60,6 +60,9 @@ export const POST = async (req: NextRequest) => {
   catch { return NextResponse.json({ message: "Não autorizado" }, { status: 401 }); }
   try {
     const { walletAddress, programId, ipfsHash } = await req.json();
+    if (walletAddress && !/^0x[0-9a-fA-F]{40}$/.test(walletAddress)) {
+      return NextResponse.json({ message: "walletAddress inválido" }, { status: 400 });
+    }
     const uid = verifiedUid;
 
     if (!uid || !walletAddress || !programId || !ipfsHash) {

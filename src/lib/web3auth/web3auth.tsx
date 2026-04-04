@@ -17,6 +17,7 @@ import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { app } from "@/firebase/config";
 import { useLoading } from "../loading-context";
+import { clearIdTokenCache } from "../getIdToken";
 import { toast } from "react-toastify";
 import { authHeaders } from "@/lib/getIdToken";
 
@@ -181,6 +182,7 @@ export default function useWeb3Auth() {
     // UIDs de carteira são endereços ethereum (começam com 0x)
     if (!auth.currentUser.uid.startsWith("0x")) return;
 
+    clearIdTokenCache();
     signOut(auth).catch(() => { });
     setGoogleUserInfo(null);
     setUserDbInfo({});
@@ -337,6 +339,7 @@ export default function useWeb3Auth() {
 
   const logout = async () => {
     try {
+      clearIdTokenCache();
       await signOut(getAuth(app));
       disconnect();
       setUserDbInfo({});
