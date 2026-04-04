@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2020", // mais moderno e estável
-    "module": "commonjs", // compatível com Firebase
+    "module": "Node16",
     "lib": [
       "es2020"
     ],
@@ -9,7 +9,7 @@
     "rootDir": "src",
     "strict": true,
     "esModuleInterop": true,
-    "moduleResolution": "node10",
+    "moduleResolution": "node16",
     "skipLibCheck": true,
     "noImplicitReturns": true,
     "noUnusedLocals": true,
