@@ -77,7 +77,11 @@ jobs:
         env:
           SA_B64: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
-          DECODED=$(printf '%s' "$SA_B64" | tr -d '[:space:]' | base64 -d)
+          DECODED=$(python3 -c "
+          import base64, os, sys
+          data = os.environ['SA_B64'].encode()
+          sys.stdout.write(base64.decodebytes(data).decode())
+          ")
           echo "::add-mask::$DECODED"
           {
             echo "value<<EOF"
