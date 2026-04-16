@@ -1,3 +1,5 @@
+"use client";
+
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 import { IconButton } from "../ui/IconButton";
 import Image from "next/image";
@@ -25,9 +27,9 @@ export default function UserCard() {
       {/* Avatar com badge de nível */}
       <div className="absolute z-10 top-[12.5%] left-8">
         <div className="border border-gray rounded-full h-20 w-20 overflow-hidden bg-white relative">
-          {googleUserInfo !== null ? (
+          {googleUserInfo !== null && googleUserInfo?.photoURL ? (
             <Image
-              src={googleUserInfo?.photoURL || ""}
+              src={googleUserInfo.photoURL}
               alt="user avatar"
               fill
               sizes="80px"

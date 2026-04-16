@@ -16,7 +16,7 @@ export const NftsCard = ({ achievedNfts }: { achievedNfts: AchievedNft[] }) => {
       <div className="bg-neutralbg h-full w-full rounded-box flex flex-wrap justify-start items-start gap-2 overflow-y-auto">
         {achievedNfts.length === 0 ? (
           <div className="flex flex-col gap-2 items-center justify-center w-full h-full">
-            <Image src={NoNftIcon} alt="No NFTs icon" className="h-2/4" />
+            <Image src={NoNftIcon} alt="No NFTs icon" className="h-2/4" style={{ width: "auto" }} />
             <p className="text-base-content font-medium">
               {t("noCertifications")}
             </p>

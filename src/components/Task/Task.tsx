@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState, useCallback, useRef } from "react";
 import { RenderQuizV } from "./Quiz";
 import { useContent } from "@/providers/content-context";

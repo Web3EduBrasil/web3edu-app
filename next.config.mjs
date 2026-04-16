@@ -35,7 +35,6 @@ const nextConfig = {
       "react-icons/bs",
       "react-icons/cg",
       "@rainbow-me/rainbowkit",
-      "framer-motion",
     ],
   },
   images: {

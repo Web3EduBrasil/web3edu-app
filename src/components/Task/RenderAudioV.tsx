@@ -75,21 +75,27 @@ export const RenderAudioV = ({
       </div>
 
       {/* Action buttons */}
-      {done ? (
+      {!isLast ? (
         <MotionButton
           rightIcon={true}
-          label="Avançar"
+          label={listened ? "Avançar" : "Ouça o áudio primeiro"}
           type="button"
-          className="bg-blue text-neutral w-2/5 h-12 self-end"
-          func={() => {
+          className={`w-2/5 h-12 self-end ${listened ? "bg-blue text-neutral" : "bg-gray/30 text-gray cursor-not-allowed"
+            }`}
+          func={async () => {
+            if (!listened) {
+              toast.info("Ouça o áudio completo antes de avançar");
+              return;
+            }
+            if (!done) await fetchDone(false);
             const nextId = getNextSectionId();
             if (nextId) router.push(`/learn/${nextId}`);
           }}
         />
-      ) : (
+      ) : !done ? (
         <MotionButton
           rightIcon={true}
-          label={listened ? "Marcar como concluído" : "Ouça o áudio primeiro"}
+          label={listened ? "Concluir trilha" : "Ouça o áudio primeiro"}
           type="button"
           className={`w-2/5 h-12 self-end ${listened ? "bg-green text-neutral" : "bg-gray/30 text-gray cursor-not-allowed"
             }`}
@@ -98,14 +104,14 @@ export const RenderAudioV = ({
               toast.info("Ouça o áudio completo antes de avançar");
               return;
             }
-            toast.promise(fetchDone(isLast), {
+            toast.promise(fetchDone(true), {
               pending: "Salvando progresso...",
               success: "Seção concluída! 🎉",
               error: "Erro ao salvar progresso",
             });
           }}
         />
-      )}
+      ) : null}
     </div>
   );
 };

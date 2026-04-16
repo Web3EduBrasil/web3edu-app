@@ -16,8 +16,10 @@ export const Trails = () => {
   const [activeCategory, setActiveCategory] = useState("");
   const [isLoadingTrails, setIsLoadingTrails] = useState(true);
 
-  // Busca trilhas assim que uid estiver disponível (ou sem uid para listagem básica)
+  // Só busca trilhas quando uid estiver disponível
   useEffect(() => {
+    const uid = userDbInfo?.uid;
+    if (!uid) return; // aguarda auth completar
     if (trailsList.length > 0) {
       setIsLoadingTrails(false);
       return;
@@ -25,7 +27,7 @@ export const Trails = () => {
     setIsLoadingTrails(true);
     void (async () => {
       try {
-        await fetchTrailsList(userDbInfo?.uid || "");
+        await fetchTrailsList(uid);
       } finally {
         setIsLoadingTrails(false);
       }
@@ -45,7 +47,7 @@ export const Trails = () => {
   }, [searchTerm, activeCategory, trailsList]);
 
   const allCategories: string[] = Array.from(
-    new Set(trailsList.flatMap((t: any) => t.categories || []))
+    new Set((trailsList ?? []).flatMap((t: any) => t.categories || []))
   );
 
   return (

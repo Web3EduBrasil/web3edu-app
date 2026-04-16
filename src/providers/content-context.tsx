@@ -84,6 +84,7 @@ interface RewardState {
     itemName: string
   ) => Promise<void>;
   retryMintStatusCheck: (uid: string, itemId: string, type: "trail" | "program") => Promise<void>;
+  closeRewardContainer: () => void;
 }
 
 const RewardContext = createContext<RewardState>({
@@ -94,6 +95,7 @@ const RewardContext = createContext<RewardState>({
   handleRewardContainer: () => { },
   fetchAirDrop: async () => { },
   retryMintStatusCheck: async () => { },
+  closeRewardContainer: () => { },
 });
 
 // ─── Trail Provider ────────────────────────────────────────────────────────────
@@ -108,7 +110,7 @@ const TrailProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const response = await fetch(`/api/trails?uid=${uid}`, { method: "GET" });
       const data = await response.json();
-      setTrailsList(data.trails);
+      setTrailsList(data.trails ?? []);
     } catch (error: any) {
       console.error("Erro ao buscar trilhas:", error);
     }
@@ -278,6 +280,11 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
     setRewardContainerVisibility((prev) => !prev);
   }, []);
 
+  // Fecha o modal sem resetar o estado do mint (permite fechar durante o polling)
+  const closeRewardContainer = useCallback(() => {
+    setRewardContainerVisibility(false);
+  }, []);
+
   const uploadToIpfs = useCallback(async (content: object): Promise<string> => {
     const response = await fetch("/api/ipfs", {
       method: "POST",
@@ -302,19 +309,25 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
     for (let attempt = 0; attempt < 30; attempt++) {
       await new Promise((r) => setTimeout(r, 8000));
       try {
-        const res = await fetch(endpoint);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout por tentativa
+        const res = await fetch(endpoint, { signal: controller.signal });
+        clearTimeout(timeoutId);
         const data = await res.json();
         if (data.txHash) {
           setMintStep("success");
           setMintTxHash(data.txHash);
+          toast.success("🎉 Seu certificado NFT foi mintado com sucesso!", { autoClose: 8000 });
           return;
         }
-      } catch (err) {
-        console.error("Erro no polling de mint:", err);
+      } catch (err: any) {
+        if (err?.name !== "AbortError") {
+          console.error("Erro no polling de mint:", err);
+        }
       }
     }
     setMintStep("error");
-    toast.info("O mint está sendo processado. Verifique sua carteira em alguns minutos.", { autoClose: 8000 });
+    toast.info("O processamento está demorando mais que o esperado. Verifique sua carteira em alguns minutos.", { autoClose: 10000 });
   }, []);
 
   const retryMintStatusCheck = useCallback(async (uid: string, itemId: string, type: "trail" | "program") => {
@@ -404,8 +417,8 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
 
   const value = useMemo(() => ({
     rewardContainerVisibility, rewardData, mintStep, mintTxHash,
-    handleRewardContainer, fetchAirDrop, retryMintStatusCheck,
-  }), [rewardContainerVisibility, rewardData, mintStep, mintTxHash, handleRewardContainer, fetchAirDrop, retryMintStatusCheck]);
+    handleRewardContainer, fetchAirDrop, retryMintStatusCheck, closeRewardContainer,
+  }), [rewardContainerVisibility, rewardData, mintStep, mintTxHash, handleRewardContainer, fetchAirDrop, retryMintStatusCheck, closeRewardContainer]);
 
   return <RewardContext.Provider value={value}>{children}</RewardContext.Provider>;
 };

@@ -194,6 +194,10 @@ export default function useWeb3Auth() {
     email?: string | null,
     googleName?: string | null
   ) => {
+    // Para usuários de carteira (uid começa com 0x), usa endereço abreviado como nome
+    const displayName = googleName
+      || (uid.startsWith("0x") ? `${uid.slice(0, 6)}...${uid.slice(-4)}` : null);
+
     let response = await fetch(`/api/user?uid=${uid}`, { method: "GET" });
 
     if (response.status === 404) {
@@ -203,7 +207,7 @@ export default function useWeb3Auth() {
         body: JSON.stringify({
           uid,
           email: email || null,
-          displayName: googleName || null,
+          displayName,
           tutorialDone: false,
         }),
       });

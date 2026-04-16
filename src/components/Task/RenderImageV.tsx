@@ -61,32 +61,33 @@ export const RenderImageV = ({
       </div>
 
       {/* Action buttons */}
-      {done ? (
+      {!isLast ? (
         <MotionButton
           rightIcon={true}
           label="Avançar"
           type="button"
           className="bg-blue text-neutral w-2/5 h-12 self-end"
-          func={() => {
+          func={async () => {
+            if (!done) await fetchDone(false);
             const nextId = getNextSectionId();
             if (nextId) router.push(`/learn/${trailId}/${nextId}`);
           }}
         />
-      ) : (
+      ) : !done ? (
         <MotionButton
           rightIcon={true}
-          label="Marcar como concluído"
+          label="Concluir trilha"
           type="button"
           className="bg-green text-neutral w-2/5 h-12 self-end"
           func={() => {
-            toast.promise(fetchDone(isLast), {
+            toast.promise(fetchDone(true), {
               pending: "Salvando progresso...",
               success: "Seção concluída! 🎉",
               error: "Erro ao salvar progresso",
             });
           }}
         />
-      )}
+      ) : null}
     </div>
   );
 };

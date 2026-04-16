@@ -38,40 +38,47 @@ export const RenderQuizV = ({
     return String(sorted[currentIndex + 1].id);
   };
 
-  function HandleSubmit() {
-    if (isCorrect) {
-      toast.promise(fetchDone(isLast), {
-        pending: "Enviando...",
-        success: "Tarefa concluida com sucesso!",
-        error: "Erro ao concluir tarefa.",
-      });
-    } else {
-      if (options[selectedOpt].correct === true) {
-        setIsCorrect(true);
-        toast.success("Resposta correta!", {
-          position: "top-center",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-          transition: Bounce,
-        });
-      } else {
-        toast.error("Resposta Incorreta!", {
-          position: "top-center",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-          transition: Bounce,
+  async function HandleSubmit() {
+    if (isCorrect || done) {
+      // Já correta ou já concluída: avança
+      if (!isLast) {
+        if (!done) await fetchDone(false);
+        const nextId = getNextSectionId();
+        if (nextId) router.push(`/learn/${trailId}/${nextId}`);
+      } else if (!done) {
+        toast.promise(fetchDone(true), {
+          pending: "Enviando...",
+          success: "Trilha concluída! 🎉",
+          error: "Erro ao concluir tarefa.",
         });
       }
+      return;
+    }
+    if (options[selectedOpt].correct === true) {
+      setIsCorrect(true);
+      toast.success("Resposta correta!", {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+        transition: Bounce,
+      });
+    } else {
+      toast.error("Resposta Incorreta!", {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+        transition: Bounce,
+      });
     }
   }
   return (
@@ -91,10 +98,10 @@ export const RenderQuizV = ({
                 setSelectedOpt(index);
               }}
               className={`w-full h-24 justify-center bg-white flex flex-col p-5 shadow-lg rounded-box cursor-pointer ${isCorrect === true && e.correct === true
-                  ? "bg-green border-2 border-green shadow-green shadow"
-                  : selectedOpt === index
-                    ? "border-2"
-                    : ""
+                ? "bg-green border-2 border-green shadow-green shadow"
+                : selectedOpt === index
+                  ? "border-2"
+                  : ""
                 }`}
             >
               <p className="text-dblue md:text-lg text-base w-full text-center h-fit">
@@ -109,7 +116,7 @@ export const RenderQuizV = ({
           type="button"
           label="Avançar"
           className="w-fit bg-blue text-white"
-          func={() => {
+          func={async () => {
             const nextId = getNextSectionId();
             if (nextId) router.push(`/learn/${trailId}/${nextId}`);
           }}
@@ -117,13 +124,11 @@ export const RenderQuizV = ({
       ) : (
         <MotionButton
           rightIcon={true}
-          label={isCorrect === true ? "Marcar como concluído" : "Verificar"}
+          label={(isCorrect || done) ? (!isLast ? "Avançar" : "Concluir trilha") : "Verificar"}
           type="button"
-          className={`text-neutral w-fit h-12 self-end ${isCorrect ? "bg-green" : "bg-transparent border-2"
+          className={`text-neutral w-fit h-12 self-end ${isCorrect || done ? "bg-blue" : "bg-transparent border-2"
             }`}
-          func={() => {
-            HandleSubmit();
-          }}
+          func={HandleSubmit}
         />
       )}
     </>

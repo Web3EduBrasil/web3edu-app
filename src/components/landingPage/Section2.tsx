@@ -26,10 +26,9 @@ export default function Section2() {
       <div className="bg-cgreen w-full h-fit p-10 flex flex-col justify-center items-center gap-10 mt-[-1px]">
         <p className="text-neutral text-3xl font-bold">{t("title")}</p>
 
-        {/* container do scroll horizontal */}
-        <div className="w-full overflow-x-auto">
-          {/* linha de funções, centralizada na tela mas alinhando os itens à esquerda */}
-          <div className="flex justify-start items-center gap-10 py-10 h-fit text-justify max-w-7xl mx-auto px-4">
+        {/* grid responsivo: 1 coluna no mobile, 3 colunas a partir de md */}
+        <div className="w-full max-w-7xl mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-center items-center gap-8 py-10 h-fit text-justify">
             <MainFunctions
               functionName={t("rewards")}
               content={t("rewardsContent")}

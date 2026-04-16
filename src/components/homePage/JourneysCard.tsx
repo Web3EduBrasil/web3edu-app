@@ -1,5 +1,7 @@
+"use client";
+
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { FaCheck, FaXmark } from "react-icons/fa6";
 import KnowLedge from "../KYC/KnowYourCostumer";
 import { useRouter } from "next/navigation";
@@ -21,14 +23,14 @@ export const JourneysCard = () => {
               className="h-1/3 border-b-[1.5px] border-gray flex items-center px-7 justify-between cursor-pointer bg-cgray hover:bg-cgray/20 transition-colors duration-100"
               onClick={() =>
                 userDbInfo?.socialMedia?.discord ||
-                userDbInfo?.socialMedia?.linkedin
+                  userDbInfo?.socialMedia?.linkedin
                   ? null
                   : router.push(`/userPage`)
               }
             >
               <p className=" font-bold">{t("fillProfile")}</p>{" "}
               {userDbInfo?.socialMedia?.discord &&
-              userDbInfo?.socialMedia?.linkedin ? (
+                userDbInfo?.socialMedia?.linkedin ? (
                 <FaCheck className="h-8 w-auto" />
               ) : (
                 <FaXmark className="h-8 w-auto" />

@@ -71,47 +71,52 @@ export const RenderQuestionV = ({
       return;
     }
 
-    if (isCorrect) {
-      toast.promise(fetchDone(isLast), {
-        pending: "Enviando...",
-        success: "Tarefa concluida com sucesso!",
-        error: "Erro ao concluir tarefa.",
-      });
-      return;
-    } else {
-      const aiAnswer: AiAnswerProps = await toast.promise(
-        fetchAiAnswerCheck(question, answer),
-        {
-          pending: "Verificando...",
-        }
-      );
-      setAiExplanation(aiAnswer.explicacao);
-      if (aiAnswer.valido === true) {
-        setIsCorrect(true);
-        toast.success("Resposta correta!", {
-          position: "top-center",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-          transition: Bounce,
-        });
-      } else {
-        toast.error("Resposta Incorreta!", {
-          position: "top-center",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-          transition: Bounce,
+    if (isCorrect || done) {
+      // Já validada: avança
+      if (!isLast) {
+        if (!done) await fetchDone(false);
+        const nextId = getNextSectionId();
+        if (nextId) router.push(`/learn/${trailId}/${nextId}`);
+      } else if (!done) {
+        toast.promise(fetchDone(true), {
+          pending: "Enviando...",
+          success: "Trilha concluída! 🎉",
+          error: "Erro ao concluir.",
         });
       }
+      return;
+    }
+
+    const aiAnswer: AiAnswerProps = await toast.promise(
+      fetchAiAnswerCheck(question, answer),
+      { pending: "Verificando..." }
+    );
+    setAiExplanation(aiAnswer.explicacao);
+    if (aiAnswer.valido === true) {
+      setIsCorrect(true);
+      toast.success("Resposta correta!", {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+        transition: Bounce,
+      });
+    } else {
+      toast.error("Resposta Incorreta!", {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+        transition: Bounce,
+      });
     }
   }
   return (
@@ -136,13 +141,12 @@ export const RenderQuestionV = ({
       </div>
 
       <div className="flex gap-4">
-        {" "}
         {done && !isLast ? (
           <MotionButton
             type="button"
             label="Avançar"
             className="w-fit bg-blue text-white"
-            func={() => {
+            func={async () => {
               const nextId = getNextSectionId();
               if (nextId) router.push(`/learn/${trailId}/${nextId}`);
             }}
@@ -150,13 +154,11 @@ export const RenderQuestionV = ({
         ) : (
           <MotionButton
             rightIcon={true}
-            label={isCorrect === true ? "Marcar como concluído" : "Verificar"}
+            label={(isCorrect || done) ? (!isLast ? "Avançar" : "Concluir trilha") : "Verificar"}
             type="button"
-            className={`text-neutral w-fit h-12 self-end ${isCorrect ? "bg-green" : "bg-transparent border-2"
+            className={`text-neutral w-fit h-12 self-end ${isCorrect || done ? "bg-blue" : "bg-transparent border-2"
               }`}
-            func={() => {
-              HandleSubmit();
-            }}
+            func={HandleSubmit}
           />
         )}
       </div>

@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -28,7 +30,7 @@ function MainFunctions({
 
   return (
     <motion.div
-      className={`bg-[#F3F3F3] text-black flex flex-col md:min-w-96 min-w-80 max-w-96 rounded-3xl shadow-xl overflow-hidden transition-all ${className}`}
+      className={`bg-[#F3F3F3] text-black flex flex-col w-full md:w-96 md:min-w-0 rounded-3xl shadow-xl overflow-hidden transition-all ${className}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >

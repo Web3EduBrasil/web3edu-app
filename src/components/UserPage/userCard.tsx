@@ -134,13 +134,17 @@ export const UserSection = () => {
           <div className="flex flex-col gap-5">
             <div className="flex flex-row justify-start items-center gap-4">
               <div className="relative w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden">
-                <Image
-                  src={googleUserInfo?.photoURL || ""}
-                  alt={userDbInfo?.displayName || "Avatar"}
-                  fill
-                  sizes="64px"
-                  style={{ objectFit: "cover" }}
-                />
+                {googleUserInfo?.photoURL ? (
+                  <Image
+                    src={googleUserInfo.photoURL}
+                    alt={userDbInfo?.displayName || "Avatar"}
+                    fill
+                    sizes="64px"
+                    style={{ objectFit: "cover" }}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-base-300 rounded-full" />
+                )}
               </div>
               <p className="text-dgray font-medium text-sm md:text-lg">
                 {userDbInfo?.displayName || ""}

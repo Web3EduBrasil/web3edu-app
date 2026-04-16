@@ -63,28 +63,27 @@ export const RenderVideoV = ({
           />
         </div>
       </div>
-      {done ? (
+      {!isLast ? (
         <MotionButton
           rightIcon={true}
           label="Avançar"
           type="button"
           className="bg-blue text-neutral w-2/5 h-12 self-end"
-          func={() => {
-            if (!isLast) {
-              const nextId = getNextSectionId();
-              if (nextId) router.push(`/learn/${trailId}/${nextId}`);
-            }
+          func={async () => {
+            if (!done) await fetchDone(false);
+            const nextId = getNextSectionId();
+            if (nextId) router.push(`/learn/${trailId}/${nextId}`);
           }}
         />
-      ) : (
+      ) : !done ? (
         <MotionButton
           rightIcon={true}
-          label="Marcar como concluído"
+          label="Concluir trilha"
           type="button"
           className="bg-green text-neutral w-2/5 h-12 self-end"
-          func={() => fetchDone(isLast)}
+          func={() => fetchDone(true)}
         />
-      )}
+      ) : null}
     </>
   );
 };

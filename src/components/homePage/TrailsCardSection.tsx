@@ -1,3 +1,5 @@
+"use client";
+
 import { TrailCardHome } from "./TrailCardHome";
 import { useContent } from "@/providers/content-context";
 import { useEffect, useRef } from "react";

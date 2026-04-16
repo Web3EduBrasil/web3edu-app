@@ -1,4 +1,5 @@
-import { useState } from "react";
+"use client";
+
 import { TrailCardsLanding } from "./TrailCardLanding";
 import { useTranslations } from "next-intl";
 

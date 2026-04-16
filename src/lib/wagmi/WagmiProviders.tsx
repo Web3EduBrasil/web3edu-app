@@ -8,31 +8,32 @@ import {
 } from "@rainbow-me/rainbowkit";
 import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { wagmiConfig, upgradeConfigWithSocialWallets } from "./config";
-import { ReactNode, useState, useEffect, useMemo, useRef } from "react";
+import { buildWagmiConfig } from "./config";
+import { ReactNode, useState, useEffect, useMemo } from "react";
 
 const accentColor = "#1e3a5f";
 
-// Inicia o download do chunk Web3Auth imediatamente ao avaliar o módulo,
-// sem bloquear o render. Assim, quando o usuário clica em Login, o chunk
-// já está carregado (ou quase) em vez de começar a carregar só nesse momento.
-const web3authChunkPromise =
-  typeof window !== "undefined" ? import("./web3authWallet") : null;
+// Inicia o download do chunk Web3Auth imediatamente ao avaliar o módulo (browser-only).
+// @web3auth/modal usa browser globals — não pode ser importado estaticamente porque
+// WagmiProviders roda no servidor durante SSR mesmo com "use client".
+const socialWalletsPromise =
+  typeof window !== "undefined"
+    ? import("./web3authWallet")
+      .then(({ web3AuthWallet }) => [web3AuthWallet])
+      .catch(() => undefined)
+    : Promise.resolve(undefined);
 
 export function WagmiProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
   const [isDark, setIsDark] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [config, setConfig] = useState(wagmiConfig);
-  const socialLoaded = useRef(false);
+  // Config começa como null — WagmiProvider só monta após o config estar pronto
+  // com os connectors sociais incluídos (wagmi v2 ignora mudanças no prop config após mount).
+  const [config, setConfig] = useState<ReturnType<typeof buildWagmiConfig> | null>(null);
 
   useEffect(() => {
     const check = () =>
-      setIsDark(
-        document.documentElement.getAttribute("data-theme") === "dark"
-      );
+      setIsDark(document.documentElement.getAttribute("data-theme") === "dark");
     check();
-    setMounted(true);
     const observer = new MutationObserver(check);
     observer.observe(document.documentElement, {
       attributes: true,
@@ -41,30 +42,22 @@ export function WagmiProviders({ children }: { children: ReactNode }) {
     return () => observer.disconnect();
   }, []);
 
-  // Usa a promise já iniciada no topo do módulo — sem re-disparar o download
+  // Aguarda social wallets e monta o config UMA vez com tudo incluído
   useEffect(() => {
-    if (socialLoaded.current || !web3authChunkPromise) return;
-    socialLoaded.current = true;
-
-    web3authChunkPromise
-      .then(({ web3AuthGoogleWallet, web3AuthEmailWallet }) => {
-        const upgraded = upgradeConfigWithSocialWallets([
-          web3AuthGoogleWallet,
-          web3AuthEmailWallet,
-        ]);
-        setConfig(upgraded);
-      })
-      .catch((err) => {
-        console.error("Web3Auth wallets failed to load:", err);
-      });
+    socialWalletsPromise.then((socialWallets) => {
+      setConfig(buildWagmiConfig(socialWallets ?? []));
+    });
   }, []);
 
-  const rkTheme = useMemo(() => {
-    if (!mounted) return lightTheme({ accentColor, accentColorForeground: "white", borderRadius: "medium" });
-    return isDark
-      ? darkTheme({ accentColor, accentColorForeground: "white", borderRadius: "medium" })
-      : lightTheme({ accentColor, accentColorForeground: "white", borderRadius: "medium" });
-  }, [mounted, isDark]);
+  const rkTheme = useMemo(
+    () =>
+      isDark
+        ? darkTheme({ accentColor, accentColorForeground: "white", borderRadius: "medium" })
+        : lightTheme({ accentColor, accentColorForeground: "white", borderRadius: "medium" }),
+    [isDark]
+  );
+
+  if (!config) return null;
 
   return (
     <WagmiProvider config={config} reconnectOnMount={false}>

@@ -1,3 +1,5 @@
+"use client";
+
 import { motion } from "framer-motion";
 import { MotionDiv as MotionDivProps } from "@/interfaces/interfaces";
 

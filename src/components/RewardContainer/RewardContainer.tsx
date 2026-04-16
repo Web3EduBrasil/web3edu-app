@@ -19,13 +19,17 @@ export const RewardContainer = () => {
     mintStep,
     mintTxHash,
     retryMintStatusCheck,
+    closeRewardContainer,
   } = useContent();
   const { googleUserInfo, userAccount, userDbInfo } = useWeb3AuthContext();
   const { openConnectModal } = useConnectModal();
   const t = useTranslations("reward");
   const tLearn = useTranslations("learn");
 
-  const hasWallet = !!userAccount[0];
+  const hasWallet =
+    !!userAccount[0] || (googleUserInfo?.uid?.startsWith("0x") ?? false);
+  // Endereço efetivo: pode vir do wagmi ou do próprio UID (MetaMask)
+  const effectiveAddress = userAccount[0] ?? googleUserInfo?.uid ?? "";
   const isProcessing = mintStep === "uploading" || mintStep === "minting" || mintStep === "polling";
   const isDone = mintStep === "success" || mintStep === "error";
 
@@ -48,7 +52,7 @@ export const RewardContainer = () => {
       rewardData.icon,
       googleUserInfo.uid,
       userName,
-      userAccount[0],
+      effectiveAddress,
       rewardData.id,
       rewardData.name
     );
@@ -186,10 +190,21 @@ export const RewardContainer = () => {
         )}
 
         {isProcessing && (
-          <button disabled className="btn w-full h-12 bg-green/50 text-neutral font-semibold cursor-not-allowed border-0">
-            <span className="loading loading-spinner loading-sm" />
-            {t("processing")}
-          </button>
+          <div className="flex flex-col gap-3 w-full">
+            <p className="text-xs text-neutral/60 text-center">
+              O processamento pode levar alguns minutos. Você pode fechar e continuar navegando — será avisado quando o certificado estiver pronto.
+            </p>
+            <button disabled className="btn w-full h-12 bg-green/50 text-neutral font-semibold cursor-not-allowed border-0">
+              <span className="loading loading-spinner loading-sm" />
+              {t("processing")}
+            </button>
+            <button
+              onClick={closeRewardContainer}
+              className="btn w-full h-10 bg-transparent border border-neutral/20 text-neutral/70 font-medium text-sm"
+            >
+              Fechar e aguardar
+            </button>
+          </div>
         )}
 
         {isDone && mintStep === "success" && (

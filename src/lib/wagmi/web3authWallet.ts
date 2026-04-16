@@ -21,6 +21,12 @@ const chainConfig = {
   blockExplorerUrl: sepolia.blockExplorers.default.url,
 };
 
+// Usa rede de produção em prod, devnet em desenvolvimento
+const web3AuthNetwork =
+  process.env.NODE_ENV === "production"
+    ? WEB3AUTH_NETWORK.SAPPHIRE_MAINNET
+    : WEB3AUTH_NETWORK.SAPPHIRE_DEVNET;
+
 let privateKeyProvider: EthereumPrivateKeyProvider | null = null;
 let web3AuthInstance: Web3Auth | null = null;
 
@@ -35,7 +41,7 @@ function getWeb3AuthInstance(): Web3Auth {
       clientId,
       chainConfig,
       privateKeyProvider,
-      web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
+      web3AuthNetwork,
       uiConfig: {
         appName: "Web3EduBrasil",
         loginMethodsOrder: ["google", "email_passwordless"],
@@ -50,26 +56,21 @@ function getWeb3AuthInstance(): Web3Auth {
   return web3AuthInstance;
 }
 
-export const web3AuthGoogleWallet = (): Wallet => ({
-  id: "web3auth-google",
-  name: "Google",
+// Conector único sem loginParams → abre o modal completo do Web3Auth
+// (Google, Discord, Reddit, Email, etc.)
+export const web3AuthWallet = (): Wallet => ({
+  id: "web3auth",
+  name: "Login Social",
   iconUrl: "https://authjs.dev/img/providers/google.svg",
   iconBackground: "#ffffff",
   createConnector: () =>
     Web3AuthConnector({
+      id: "web3auth",
+      name: "Login Social",
       web3AuthInstance: getWeb3AuthInstance(),
-      loginParams: { loginProvider: "google" },
     }),
 });
 
-export const web3AuthEmailWallet = (): Wallet => ({
-  id: "web3auth-email",
-  name: "Email",
-  iconUrl: "https://img.icons8.com/fluency/96/email-open.png",
-  iconBackground: "#ffffff",
-  createConnector: () =>
-    Web3AuthConnector({
-      web3AuthInstance: getWeb3AuthInstance(),
-      loginParams: { loginProvider: "email_passwordless" },
-    }),
-});
+// Mantidos para compatibilidade com código existente que possa importá-los
+export const web3AuthGoogleWallet = web3AuthWallet;
+export const web3AuthEmailWallet = web3AuthWallet;
