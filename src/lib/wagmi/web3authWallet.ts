@@ -21,9 +21,9 @@ const chainConfig = {
   blockExplorerUrl: sepolia.blockExplorers.default.url,
 };
 
-// Usa rede de produção em prod, devnet em desenvolvimento
+// Usa a rede definida em NEXT_PUBLIC_WEB3AUTH_NETWORK (.env)
 const web3AuthNetwork =
-  process.env.NODE_ENV === "production"
+  process.env.NEXT_PUBLIC_WEB3AUTH_NETWORK === "sapphire_mainnet"
     ? WEB3AUTH_NETWORK.SAPPHIRE_MAINNET
     : WEB3AUTH_NETWORK.SAPPHIRE_DEVNET;
 

@@ -10,6 +10,9 @@ import { RenderVideoV } from "./RenderVideoV";
 import { RenderAudioV } from "./RenderAudioV";
 import { RenderImageV } from "./RenderImageV";
 import { authHeaders } from "@/lib/getIdToken";
+import { useRouter } from "next/navigation";
+import { FaMedal, FaTrophy } from "react-icons/fa";
+import { IoArrowBack } from "react-icons/io5";
 
 export const Task = ({
   sectionId,
@@ -27,6 +30,7 @@ export const Task = ({
   } = useContent();
   const [section, setSection] = useState<any>({});
   const { googleUserInfo } = useWeb3AuthContext();
+  const router = useRouter();
   const trailSectionsRef = useRef(trailSections);
   trailSectionsRef.current = trailSections;
 
@@ -45,9 +49,23 @@ export const Task = ({
 
   useEffect(() => {
     if (googleUserInfo && trailId && Object.keys(section).length === 0) {
+      // Seção virtual de conclusão — não busca do Firestore
+      const sectionMeta = trailSectionsRef.current.find(
+        (s: any) => String(s.id) === String(sectionId)
+      );
+      if (sectionMeta?.type === "conclusion") {
+        const sorted = [...trailSectionsRef.current].sort(
+          (a: any, b: any) => Number(a.id) - Number(b.id)
+        );
+        const isLast =
+          sorted.length > 0 &&
+          String(sorted[sorted.length - 1].id) === String(sectionId);
+        setSection({ ...sectionMeta, isLast });
+        return;
+      }
       fetchData();
     }
-  }, [googleUserInfo, trailId, section, fetchData]);
+  }, [googleUserInfo, trailId, section, fetchData, sectionId]);
 
   const fetchDone = async (isLast: Boolean) => {
     try {
@@ -140,6 +158,43 @@ export const Task = ({
               isLast={section.isLast}
               done={section.done}
             />
+          ) : section.type === "conclusion" ? (
+            <div className="flex flex-col gap-8 items-center justify-center h-full text-center">
+              <div className="w-20 h-20 rounded-full bg-yellow-100 flex items-center justify-center">
+                <FaTrophy className="w-10 h-10 text-yellow-500" />
+              </div>
+              <div className="flex flex-col gap-2">
+                <h2 className="text-2xl font-bold text-neutral">Trilha concluída!</h2>
+                <p className="text-neutral/60 text-sm">
+                  Parabéns! Você finalizou{" "}
+                  <span className="font-semibold text-neutral">{trail?.name}</span>{" "}
+                  com sucesso.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
+                <button
+                  onClick={() =>
+                    handleRewardContainer({
+                      type: "trail",
+                      id: trailId,
+                      name: trail?.name || trailId,
+                      icon: trail?.banner || "",
+                    })
+                  }
+                  className="btn flex-1 h-12 bg-yellow-500 hover:bg-yellow-400 text-white border-0 gap-2 font-semibold"
+                >
+                  <FaMedal className="w-4 h-4" />
+                  Resgatar certificado
+                </button>
+                <button
+                  onClick={() => router.push("/trailsPage")}
+                  className="btn flex-1 h-12 bg-transparent border border-neutral/20 text-neutral/70 font-medium gap-2"
+                >
+                  <IoArrowBack className="w-4 h-4" />
+                  Ver outros cursos
+                </button>
+              </div>
+            </div>
           ) : (
             <>
               <div className="flex w-full flex-col gap-4">
