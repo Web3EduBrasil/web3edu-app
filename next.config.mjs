@@ -1,11 +1,44 @@
 import createMDX from "@next/mdx";
+import createNextIntlPlugin from "next-intl/plugin";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  productionBrowserSourceMaps: false,
+  // Força o Next.js a transpilar react-toastify pelo pipeline webpack/swc,
+  // o que remove referências sourceMappingURL que causam 404 no browser.
+  transpilePackages: [
+    "react-toastify",
+    "@web3auth/base",
+    "@web3auth/modal",
+    "@web3auth/ethereum-provider",
+    "@web3auth/web3auth-wagmi-connector",
+  ],
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
+  experimental: {
+    optimizePackageImports: [
+      "react-icons/fa",
+      "react-icons/fa6",
+      "react-icons/fi",
+      "react-icons/md",
+      "react-icons/rx",
+      "react-icons/ci",
+      "react-icons/gr",
+      "react-icons/si",
+      "react-icons/io5",
+      "react-icons/bs",
+      "react-icons/cg",
+      "@rainbow-me/rainbowkit",
+      "framer-motion",
+    ],
+  },
   images: {
-    domains: ["ipfs.io", "lh3.googleusercontent.com", "firebasestorage.googleapis.com"],
     remotePatterns: [
       {
         protocol: "https",
@@ -27,11 +60,37 @@ const nextConfig = {
       },
     ],
   },
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.module.rules.push({
       test: /\.json$/,
       type: 'json'
     });
+
+    // Pacotes nativos (React Native / node-only) que não existem no browser
+    // mas são importados transitivamente por @metamask/sdk e pino
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      "@react-native-async-storage/async-storage": false,
+      "pino-pretty": false,
+      "encoding": false,
+    };
+
+    // Suprimir avisos de source maps ausentes de pacotes de terceiros
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings || []),
+      { message: /Failed to parse source map/ },
+    ];
+
+    // No servidor (SSR), idb-keyval usa indexedDB que não existe no Node.js.
+    // O WalletConnect tenta inicializá-lo durante setup(), quebrando o SSR.
+    // Redirecionamos para um stub no-op que não acessa indexedDB.
+    if (isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        "idb-keyval": path.resolve(__dirname, "src/stubs/idb-keyval.js"),
+      };
+    }
+
     return config;
   }
 };
@@ -41,4 +100,4 @@ const withMDX = createMDX({
 });
 
 // Merge MDX config with Next.js config
-export default withMDX(nextConfig);
+export default withNextIntl(withMDX(nextConfig));

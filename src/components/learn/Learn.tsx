@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { LearnProps } from "@/interfaces/interfaces";
 import { TaskList } from "./TaskList";
 import { useContent } from "@/providers/content-context";
 import { Task } from "../Task/Task";
@@ -14,12 +15,14 @@ export const Learn = ({ trailIdRt, sectionId }: LearnProps) => {
   const hasRedirectedRef = useRef(false);
 
   const { fetchTrail, trail, trailsList, fetchTrailsList } = useContent();
+  const trailsFetchedRef = useRef(false);
 
   useEffect(() => {
     if (!googleUserInfo) return;
 
     // Garante que trailsList está carregada (ex: refresh direto na página)
-    if (!trailsList || trailsList.length === 0) {
+    if ((!trailsList || trailsList.length === 0) && !trailsFetchedRef.current) {
+      trailsFetchedRef.current = true;
       fetchTrailsList(googleUserInfo.uid);
       return;
     }
@@ -30,6 +33,7 @@ export const Learn = ({ trailIdRt, sectionId }: LearnProps) => {
 
     if (
       trailIdRt &&
+      trailsList.length > 0 &&
       !trailsList.some((t: { id: string }) => t.id === trailIdRt) &&
       !hasRedirectedRef.current
     ) {

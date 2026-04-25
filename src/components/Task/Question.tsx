@@ -6,6 +6,7 @@ import { Bounce, toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import { TextArea } from "../ui/TextArea";
 import { useContent } from "@/providers/content-context";
+import { AiAnswerProps } from "@/interfaces/interfaces";
 
 interface RenderQuestionProps {
   description: string;

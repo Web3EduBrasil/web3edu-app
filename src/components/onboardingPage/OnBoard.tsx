@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { HandleScreenProps } from "@/interfaces/interfaces";
 import { ObCommu } from "./Obcommu";
 import { ObIntro } from "./ObIntro";
 

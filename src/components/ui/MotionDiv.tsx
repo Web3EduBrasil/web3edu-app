@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
+import { MotionDiv as MotionDivProps } from "@/interfaces/interfaces";
 
-export const MotionDiv = ({ className, func, children }: MotionDiv<void>) => {
+export const MotionDiv = ({ className, func, children }: MotionDivProps<void>) => {
   if (func) {
     return (
       <motion.div

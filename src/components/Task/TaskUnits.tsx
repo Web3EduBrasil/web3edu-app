@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { TaskUnitsProps } from "@/interfaces/interfaces";
 import { useParams, useRouter } from "next/navigation";
 import { MotionDiv } from "../ui/MotionDiv";
 import { FaCircleCheck } from "react-icons/fa6";

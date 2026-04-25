@@ -2,16 +2,21 @@
 
 import web3EduLogo from "../../../public/assets/images/Web3EduBrasil_logo.png";
 import Image from "next/image";
+import Link from "next/link";
 import { UserMenu } from "./UserMenu";
 import { LoginButton } from "./LoginButton";
+import { LanguageSwitcher } from "./LanguageSwitcher";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 import { useRouter } from "next/navigation";
 import { MotionDiv } from "../ui/MotionDiv";
+import { useTranslations } from "next-intl";
 import { toast } from "react-toastify";
 
 export default function NavBar({ }) {
   const router = useRouter();
   const { userInfo } = useWeb3AuthContext();
+  const t = useTranslations("navbar");
 
   return (
     <div className="flex w-full bg-neutralbg justify-between items-center sm:px-10 h-fit p-[0.5rem]">
@@ -41,13 +46,13 @@ export default function NavBar({ }) {
             >
               <>
                 <li>
-                  <a onClick={() => router.push("/homePage")}>Home</a>
+                  <Link href="/homePage">{t("home")}</Link>
                 </li>
                 <li onClick={() => toast.info("Em breve.")}>
-                  <a>Mentorias</a>
+                  <a>{t("mentoring")}</a>
                 </li>
                 <li>
-                  <a onClick={() => router.push("/trailsPage")}>Trilhas</a>
+                  <Link href="/trailsPage">{t("trails")}</Link>
                 </li>
               </>
             </ul>
@@ -66,19 +71,23 @@ export default function NavBar({ }) {
           <div className="navbar-center hidden lg:flex bg-[#F0F0F0] rounded-box h-12 justify-center flex-col">
             <ul className="menu menu-horizontal px-3 text-neutral font-medium bg-cgray rounded-box">
               <li>
-                <a onClick={() => router.push("/homePage")}>Home</a>
+                <Link href="/homePage">{t("home")}</Link>
               </li>
               <li onClick={() => toast.info("Em breve.")}>
-                <a>Mentorias</a>
+                <a>{t("mentoring")}</a>
               </li>
               <li>
-                <a onClick={() => router.push("/trailsPage")}>Trilhas</a>
+                <Link href="/trailsPage">{t("trails")}</Link>
               </li>
             </ul>
           </div>
         )}
       </div>
-      {userInfo ? <UserMenu /> : <LoginButton />}
+      <div className="flex items-center gap-1">
+        <ThemeSwitcher />
+        <LanguageSwitcher />
+        {userInfo ? <UserMenu /> : <LoginButton />}
+      </div>
     </div>
   );
 }

@@ -1,32 +1,27 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@plugin "@tailwindcss/typography";
 
-
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+/* ── Variáveis de tema — RGB channels para suportar opacidade (ex: bg-neutral/50) ── */
+:root,
+[data-theme="light"] {
+  --neutralbg: 255 255 255;
+  --neutral: 0 0 0;
+  --cgray: 248 246 246;
+  --ccgray: 255 250 250;
+  --dgray: 55 65 81;
+  --gray: 154 154 154;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+[data-theme="dark"] {
+  --neutralbg: 15 23 42;
+  --neutral: 241 245 249;
+  --cgray: 30 41 59;
+  --ccgray: 23 32 51;
+  --dgray: 148 163 184;
+  --gray: 100 116 139;
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
-}
 
 @layer utilities {
   .text-balance {
@@ -38,6 +33,7 @@ ul.mdx {
   list-style-type: disc;
   margin-left: 15px !important;
 }
+
 ol.mdx {
   list-style-type: decimal;
   list-style-position: inside;

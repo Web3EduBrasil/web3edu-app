@@ -10,6 +10,8 @@ import { MotionDiv } from "@/components/ui/MotionDiv";
 import { MotionButton } from "@/components/ui/Button";
 import web3EduLogo from "../../../../public/assets/images/Web3EduBrasil_logo.png";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
+import { OnboardingProps } from "../../../interfaces/interfaces";
 
 const linkDiscord = () => {
   window.open("https://discord.com/invite/GJk58TPaDx", "_blank");
@@ -41,6 +43,7 @@ const linkLinkedin = () => {
 export const ObCommuContainers = ({
   handleTabClick,
 }: OnboardingProps<void>) => {
+  const t = useTranslations("onboarding");
   return (
     <div className=" flex md:flex-row flex-col">
       <div className="md:w-3/6 w-full h-full bg-cgray flex p-10">
@@ -48,16 +51,14 @@ export const ObCommuContainers = ({
           <Image alt="ss" src={web3EduLogo} className="w-28 h-auto" />
           <div className="font-semibold flex flex-col gap-8">
             <p className="md:text-5xl text-3xl leading-loose text-dblue">
-              Participe das nossas <br></br> comunidades
+              {t("communities.title")}
             </p>
             <p className="md:text-2xl text-base">
-              Junte-se às nossas comunidades e fique por dentro de tudo!
-              Siga-nos nas redes sociais, compartilhe experiências e aprenda
-              junto com a gente. Não perca as novidades!
+              {t("communities.text")}
             </p>
           </div>
           <MotionButton
-            label="Avançar"
+            label={t("next")}
             type="button"
             func={() => handleTabClick("ObTutorial")}
             className="bg-cgreen w-28 text-neutral font-bold"
@@ -68,24 +69,24 @@ export const ObCommuContainers = ({
         <div className="w-full md:h-[60vh] h-fit p-2 flex flex-col gap-10 justify-center items-center">
           <MotionDiv
             func={() => linkDiscord()}
-            className="md:w-3/5 w-full  transform bg-cgray rounded-box md:text-2xl text-xl flex flex-row p-5 justify-center items-center font-semibold text-2xl md:cursor-pointer"
+            className="md:w-3/5 w-full  transform bg-cgray rounded-box md:text-2xl text-xl flex flex-row p-5 justify-center items-center font-semibold md:cursor-pointer"
           >
             <p className="flex flex-row gap-2 justify-center items-center">
               <FaDiscord className="w-12 h-auto text-[#536BF2]" /> Servidor no
-              <p className="text-[#536BF2]"> Discord</p>
+              <span className="text-[#536BF2]"> {t("communities.discord")}</span>
             </p>
           </MotionDiv>
 
           <MotionDiv
             func={() => linkTelegram()}
-            className="md:w-3/5 w-full bg-cgray rounded-box md:text-2xl text-xl flex flex-row p-5 justify-center items-center font-semibold text-2xl md:cursor-pointer"
+            className="md:w-3/5 w-full bg-cgray rounded-box md:text-2xl text-xl flex flex-row p-5 justify-center items-center font-semibold md:cursor-pointer"
           >
             <p className="flex flex-row gap-2 justify-center items-center">
               <FaTelegram className="w-12 h-auto text-[#24A1DD]" />
-              Grupo no <p className="text-[#24A1DD]"> Telegram</p>
+              Grupo no <span className="text-[#24A1DD]"> {t("communities.telegram")}</span>
             </p>
           </MotionDiv>
-          <p className="font-semibold text-xl">E acompanhe as nossas redes!</p>
+          <p className="font-semibold text-xl">{t("communities.followSocials")}</p>
         </div>
         <div className="md:w-full w-fit h-fit flex flex-row gap-10 justify-center items-center ">
           <MotionDiv

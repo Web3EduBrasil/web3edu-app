@@ -1,12 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, ReactNode } from "react";
+import React, { createContext, useContext, ReactNode, useMemo } from "react";
 import useWeb3Auth from "./web3auth";
-// import { web3authConfig } from "./web3auth.config";
 
 interface Web3AuthContextProps {
   login: () => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
+  loginWithMetaMask: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   WalletUi: () => Promise<void>;
@@ -27,6 +27,7 @@ export const Web3AuthProvider = ({ children }: { children: ReactNode }) => {
   const {
     login,
     loginWithEmail,
+    loginWithMetaMask,
     resetPassword,
     logout,
     WalletUi,
@@ -39,23 +40,36 @@ export const Web3AuthProvider = ({ children }: { children: ReactNode }) => {
     googleUserInfo,
   } = useWeb3Auth();
 
-  return (
-    <Web3AuthContext.Provider
-      value={{
-        login,
-        loginWithEmail,
-        resetPassword,
-        logout,
-        WalletUi,
+  const contextValue = useMemo(() => ({
+    login,
+    loginWithEmail,
+    loginWithMetaMask,
+    resetPassword,
+    logout,
+    WalletUi,
+    userInfo,
+    userDbInfo,
+    fetchUserDbData,
+    setUserDbInfo,
+    userAccount,
+    googleUserInfo,
+  }), [
+    login,
+    loginWithEmail,
+    loginWithMetaMask,
+    resetPassword,
+    logout,
+    WalletUi,
+    userInfo,
+    userDbInfo,
+    fetchUserDbData,
+    setUserDbInfo,
+    userAccount,
+    googleUserInfo,
+  ]);
 
-        userInfo,
-        userDbInfo,
-        fetchUserDbData,
-        setUserDbInfo,
-        userAccount,
-        googleUserInfo,
-      }}
-    >
+  return (
+    <Web3AuthContext.Provider value={contextValue}>
       {children}
     </Web3AuthContext.Provider>
   );

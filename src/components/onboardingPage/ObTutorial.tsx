@@ -1,6 +1,7 @@
 "use client";
 
 import { ObTutorialContainer } from "./components/ObTutorialContainer";
+import { OnboardingProps } from "@/interfaces/interfaces";
 
 export const ObTutorial = ({ handleTabClick }: OnboardingProps<void>) => {
   return (

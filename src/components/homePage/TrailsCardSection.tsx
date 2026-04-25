@@ -1,17 +1,19 @@
 import { TrailCardHome } from "./TrailCardHome";
 import { useContent } from "@/providers/content-context";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 
 export const TrailsCardSection = () => {
   const { fetchTrailsList, trailsList } = useContent();
   const { googleUserInfo } = useWeb3AuthContext();
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
-    if (Object.keys(trailsList).length === 0 && googleUserInfo !== null) {
+    if (trailsList.length === 0 && googleUserInfo !== null && !fetchedRef.current) {
+      fetchedRef.current = true;
       fetchTrailsList(googleUserInfo?.uid);
     }
-  }, [trailsList, googleUserInfo, fetchTrailsList]);
+  }, [trailsList.length, googleUserInfo, fetchTrailsList]);
 
   return (
     <div className="flex flex-col lg:h-full h-80 w-full lg:col-span-3 lg:row-span-3 gap-3">

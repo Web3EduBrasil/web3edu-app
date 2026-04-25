@@ -29,6 +29,6 @@ export const GET = async (req: NextRequest) => {
       }
     );
   } catch (error) {
-    return new NextResponse("Arquivo não encontrado", { status: 500 });
+    return NextResponse.json({ error: "Arquivo não encontrado" }, { status: 404 });
   }
 };

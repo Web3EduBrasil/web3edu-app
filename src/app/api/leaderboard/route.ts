@@ -1,13 +1,10 @@
 export const dynamic = "force-dynamic";
-import { collection, getDocs, orderBy, query, limit } from "firebase/firestore";
-import { db } from "@/firebase/config";
+import { adminDb } from "@/lib/firebase-admin";
 import { NextResponse } from "next/server";
 
 export const GET = async () => {
   try {
-    const usersRef = collection(db, "users");
-    const q = query(usersRef, orderBy("xp", "desc"), limit(10));
-    const snap = await getDocs(q);
+    const snap = await adminDb.collection("users").orderBy("xp", "desc").limit(10).get();
 
     const top = snap.docs.map((d) => ({
       uid: d.id,
@@ -17,11 +14,9 @@ export const GET = async () => {
       photoURL: d.data().photoURL || null,
     }));
 
-    return new NextResponse(JSON.stringify({ top }), { status: 200 });
+    return NextResponse.json({ top }, { status: 200 });
   } catch (error: any) {
     console.error("leaderboard error:", error.message);
-    return new NextResponse(JSON.stringify({ message: "Erro interno" }), {
-      status: 500,
-    });
+    return NextResponse.json({ message: "Erro interno" }, { status: 500 });
   }
 };

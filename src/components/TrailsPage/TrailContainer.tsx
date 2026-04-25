@@ -1,13 +1,9 @@
 "use client";
 
-import { motion } from "framer-motion";
-import Image from "next/image";
-import { CiStar } from "react-icons/ci";
-
+import { TrailsPageProps } from "@/interfaces/interfaces";
 import { useRouter } from "next/navigation";
 import { MotionDiv } from "../ui/MotionDiv";
-import { logEvent } from "firebase/analytics";
-// import { analytics } from "@/firebase/config";
+import { SafeImage } from "../ui/SafeImage";
 
 export const TrailCards = ({
   image,
@@ -21,13 +17,12 @@ export const TrailCards = ({
     <MotionDiv
       className="w-full h-80 max-w-80"
       func={() => {
-        router.push(`/learn/${id}/1`);
-        // logEvent(analytics, `trail_start_${title}`);
+        router.push(`/learn/${id}`);
       }}
     >
       <div className="card bg-cgray w-full h-full shadow-xl border-2 border-gray overflow-hidden text-left">
         <div className="relative min-h-[40%] w-full">
-          <Image
+          <SafeImage
             src={image || ""}
             alt={title || "trail image"}
             fill

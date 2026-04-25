@@ -15,16 +15,13 @@ export const POST = async (req: NextRequest) => {
   try {
     verifiedUid = await verifyAuth(req);
   } catch {
-    return new NextResponse(
-      JSON.stringify({ message: "Não autorizado" }),
-      { status: 401 },
-    );
+    return NextResponse.json({ message: "Não autorizado" }, { status: 401 });
   }
 
   try {
     const uid = verifiedUid;
     if (!uid) {
-      return new NextResponse(JSON.stringify({ error: "uid obrigatório" }), {
+      return NextResponse.json({ error: "uid obrigatório" }, {
         status: 400,
       });
     }
@@ -32,10 +29,7 @@ export const POST = async (req: NextRequest) => {
     const userDocRef = adminDb.collection("users").doc(uid);
     const snap = await userDocRef.get();
     if (!snap.exists) {
-      return new NextResponse(
-        JSON.stringify({ error: "Usuário não encontrado" }),
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
     }
 
     const data = snap.data() as any;
@@ -46,7 +40,7 @@ export const POST = async (req: NextRequest) => {
 
     if (lastActive === today) {
       // Já registrado hoje — sem alteração
-      return new NextResponse(JSON.stringify({ streak }), { status: 200 });
+      return NextResponse.json({ streak }, { status: 200 });
     }
 
     if (lastActive === yesterday) {
@@ -56,12 +50,9 @@ export const POST = async (req: NextRequest) => {
     }
 
     await userDocRef.update({ streak, lastActiveAt: today });
-    return new NextResponse(JSON.stringify({ streak }), { status: 200 });
+    return NextResponse.json({ streak }, { status: 200 });
   } catch (error: any) {
     console.error("streak error:", error.message || error);
-    return new NextResponse(
-      JSON.stringify({ message: "Internal Server Error" }),
-      { status: 500 },
-    );
+    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 };

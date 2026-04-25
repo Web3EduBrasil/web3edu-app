@@ -1,7 +1,5 @@
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/firebase/config";
+import { adminDb } from "@/lib/firebase-admin";
 export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
 
 export const GET = async (req: NextRequest) => {
@@ -9,35 +7,29 @@ export const GET = async (req: NextRequest) => {
     const programId = req.nextUrl.searchParams.get("programId");
 
     if (!programId) {
-      return new NextResponse("Parâmetro programId é obrigatório", {
-        status: 400,
-      });
+      return NextResponse.json({ message: "Parâmetro programId é obrigatório" }, { status: 400 });
     }
 
-    const programDocRef = doc(db, "programs", programId);
-    const programDocSnap = await getDoc(programDocRef);
+    const programDocSnap = await adminDb.collection("programs").doc(programId).get();
 
-    if (programDocSnap.exists()) {
-      const programData = programDocSnap.data();
-
-      return new NextResponse(
-        JSON.stringify({
+    if (programDocSnap.exists) {
+      const programData = programDocSnap.data()!;
+      return NextResponse.json(
+        {
           programId,
           title: programData.title,
           description: programData.description,
           banner: programData.banner,
           estimatedTime: programData.estimatedTime,
           requirements: programData.requirements,
-        }),
-        {
-          status: 200,
-        }
+        },
+        { status: 200 }
       );
     } else {
-      return new NextResponse("Programa não encontrado", { status: 404 });
+      return NextResponse.json({ message: "Programa não encontrado" }, { status: 404 });
     }
   } catch (error) {
     console.error("Erro ao buscar dados:", error);
-    return new NextResponse("Erro ao buscar dados", { status: 500 });
+    return NextResponse.json({ message: "Erro ao buscar dados" }, { status: 500 });
   }
 };

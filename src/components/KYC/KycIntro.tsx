@@ -1,6 +1,7 @@
 import Image from "next/image";
 import web3EduLogo from "../../../public/assets/images/Web3EduBrasil_logo.png";
 import { MotionButton } from "../ui/Button";
+import { KycIntroProps } from "@/interfaces/interfaces";
 
 export default function KycIntro({ handleTabClick }: KycIntroProps<void>) {
   return (

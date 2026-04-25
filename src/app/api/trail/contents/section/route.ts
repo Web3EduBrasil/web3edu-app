@@ -1,5 +1,4 @@
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/firebase/config";
+import { adminDb } from "@/lib/firebase-admin";
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
@@ -19,10 +18,10 @@ export const GET = async (req: NextRequest) => {
       );
     }
 
-    const contentRef = doc(db, `trails/${trailId}/contents/${sectionId}`);
-    const contentSnapshot = await getDoc(contentRef);
+    const contentRef = adminDb.collection(`trails/${trailId}/contents`).doc(sectionId);
+    const contentSnapshot = await contentRef.get();
 
-    if (!contentSnapshot.exists()) {
+    if (!contentSnapshot.exists) {
       return new NextResponse("Conteúdo não encontrado", { status: 404 });
     }
 
@@ -33,10 +32,10 @@ export const GET = async (req: NextRequest) => {
       ...contentSnapshot.data(),
     };
 
-    const userDocRef = doc(db, "users", uid);
-    const userDocSnap = await getDoc(userDocRef);
+    const userDocRef = adminDb.collection("users").doc(uid);
+    const userDocSnap = await userDocRef.get();
 
-    if (userDocSnap.exists()) {
+    if (userDocSnap.exists) {
       const userData = userDocSnap.data();
 
       const trail = userData?.trails?.find(

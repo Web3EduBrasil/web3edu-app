@@ -1,5 +1,4 @@
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { db } from "@/firebase/config";
+import { adminDb } from "@/lib/firebase-admin";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth-helper";
 
@@ -13,44 +12,39 @@ export const GET = async (req: NextRequest) => {
     const programId = req.nextUrl.searchParams.get("programId");
 
     if (!uid || !programId) {
-      return new NextResponse(
-        JSON.stringify({ error: "Parâmetros uid e programId são obrigatórios" }),
+      return NextResponse.json(
+        { error: "Parâmetros uid e programId são obrigatórios" },
         { status: 400 }
       );
     }
 
-    const docRef = doc(db, "programWhitelist", uid);
-    const docSnap = await getDoc(docRef);
+    const docRef = adminDb.collection("programWhitelist").doc(uid);
+    const docSnap = await docRef.get();
 
-    // Documento não existe — primeira vez, elegível
-    if (!docSnap.exists()) {
-      return new NextResponse(JSON.stringify({ eligible: true }), {
-        status: 200,
-      });
+    if (!docSnap.exists) {
+      return NextResponse.json({ eligible: true }, { status: 200 });
     }
 
     const userData = docSnap.data();
     const programStatus = userData?.status?.[programId];
 
-    // Programa nunca solicitado — elegível
     if (!programStatus) {
-      return new NextResponse(JSON.stringify({ eligible: true }), {
-        status: 200,
-      });
+      return NextResponse.json({ eligible: true }, { status: 200 });
     }
 
-    // Já mintado ou com txHash — não elegível
     const alreadyMinted = programStatus.minted === true;
     const hasTxHash = programStatus.txHash && programStatus.txHash !== "";
     const isEligible = !alreadyMinted && !hasTxHash;
+    const isPending = isEligible && !!programStatus;
 
-    return new NextResponse(JSON.stringify({ eligible: isEligible, txHash: programStatus.txHash || null }), {
-      status: 200,
-    });
+    return NextResponse.json(
+      { eligible: isEligible, pending: isPending, txHash: programStatus.txHash || null },
+      { status: 200 }
+    );
   } catch (error: any) {
     console.error(error.message);
-    return new NextResponse(
-      JSON.stringify({ message: "Internal Server Error" }),
+    return NextResponse.json(
+      { message: "Internal Server Error" },
       { status: 500 }
     );
   }
@@ -63,26 +57,23 @@ export const GET = async (req: NextRequest) => {
 export const POST = async (req: NextRequest) => {
   let verifiedUid: string;
   try { verifiedUid = await verifyAuth(req); }
-  catch { return new NextResponse(JSON.stringify({ message: "Não autorizado" }), { status: 401 }); }
+  catch { return NextResponse.json({ message: "Não autorizado" }, { status: 401 }); }
   try {
     const { walletAddress, programId, ipfsHash } = await req.json();
     const uid = verifiedUid;
 
     if (!uid || !walletAddress || !programId || !ipfsHash) {
-      return new NextResponse(
-        JSON.stringify({
-          error:
-            "Parâmetros uid, walletAddress, programId e ipfsHash são obrigatórios",
-        }),
+      return NextResponse.json(
+        { error: "Parâmetros uid, walletAddress, programId e ipfsHash são obrigatórios" },
         { status: 400 }
       );
     }
 
-    const docRef = doc(db, "programWhitelist", uid);
-    const docSnap = await getDoc(docRef);
+    const docRef = adminDb.collection("programWhitelist").doc(uid);
+    const docSnap = await docRef.get();
 
-    if (docSnap.exists()) {
-      await updateDoc(docRef, {
+    if (docSnap.exists) {
+      await docRef.update({
         address: walletAddress,
         [`status.${programId}`]: {
           eligible: true,
@@ -91,14 +82,12 @@ export const POST = async (req: NextRequest) => {
           txHash: "",
         },
       });
-      return new NextResponse(
-        JSON.stringify({
-          message: "Status do programa atualizado na whitelist com sucesso",
-        }),
+      return NextResponse.json(
+        { message: "Status do programa atualizado na whitelist com sucesso" },
         { status: 200 }
       );
     } else {
-      await setDoc(docRef, {
+      await docRef.set({
         address: walletAddress,
         status: {
           [programId]: {
@@ -109,17 +98,15 @@ export const POST = async (req: NextRequest) => {
           },
         },
       });
-      return new NextResponse(
-        JSON.stringify({
-          message: "Usuário adicionado à whitelist de programas com sucesso",
-        }),
+      return NextResponse.json(
+        { message: "Usuário adicionado à whitelist de programas com sucesso" },
         { status: 201 }
       );
     }
   } catch (error: any) {
     console.error(error.message);
-    return new NextResponse(
-      JSON.stringify({ message: "Internal Server Error" }),
+    return NextResponse.json(
+      { message: "Internal Server Error" },
       { status: 500 }
     );
   }

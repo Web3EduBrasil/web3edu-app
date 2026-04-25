@@ -5,7 +5,7 @@ import * as admin from "firebase-admin";
  * Suporta service account via variável de ambiente (JSON em base64 ou JSON direto).
  */
 if (!admin.apps.length) {
-  const serviceAccountEnv = process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT;
+  const serviceAccountEnv = process.env.ADMIN_SERVICE_ACCOUNT;
 
   if (serviceAccountEnv) {
     try {

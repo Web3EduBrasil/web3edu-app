@@ -1,5 +1,4 @@
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { db } from "@/firebase/config";
+import { adminDb } from "@/lib/firebase-admin";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth-helper";
 
@@ -27,11 +26,11 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
-    const userDocRef = doc(db, "users", uid);
-    const docSnap = await getDoc(userDocRef);
+    const userDocRef = adminDb.collection("users").doc(uid);
+    const docSnap = await userDocRef.get();
 
-    if (docSnap.exists()) {
-      await updateDoc(userDocRef, {
+    if (docSnap.exists) {
+      await userDocRef.update({
         displayName,
         socialMedia,
       });
@@ -41,7 +40,7 @@ export const POST = async (req: NextRequest) => {
         { status: 200 }
       );
     } else {
-      await setDoc(userDocRef, {
+      await userDocRef.set({
         displayName,
         socialMedia,
       });

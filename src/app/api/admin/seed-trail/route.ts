@@ -1,5 +1,4 @@
-import { doc, setDoc, getDoc } from "firebase/firestore";
-import { db } from "@/firebase/config";
+import { adminDb } from "@/lib/firebase-admin";
 import { NextRequest, NextResponse } from "next/server";
 
 const TRAIL_ID = "IntroducaoWeb3";
@@ -11,7 +10,7 @@ const TRAIL_META = {
     "Aprenda os fundamentos da Web3, blockchain, NFTs e criptomoedas de forma prática e acessível. Explore as gerações da internet, como funciona a tecnologia blockchain, suas aplicações reais e como se proteger no mundo cripto.",
   estimatedTime: 3,
   banner:
-    "https://firebasestorage.googleapis.com/v0/b/web3edubrasil.firebasestorage.app/o/imagens%2Fintrodu%C3%A7%C3%A3o%20%C3%A0%20Web3.png?alt=media&token=420a423a-fe0d-472a-bd1c-2b9f17fadb31",
+    "/assets/images/trails/IntroducaoWeb3/banner.svg",
   categories: ["blockchain", "web3", "nft", "iniciante"],
   topics: ["Web3", "Blockchain", "Criptomoedas", "NFTs", "Segurança"],
   introVideo: "",
@@ -110,17 +109,16 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
-    const trailRef = doc(db, "trails", TRAIL_ID);
+    const trailRef = adminDb.collection("trails").doc(TRAIL_ID);
 
     // Cria / atualiza o documento da trilha
-    await setDoc(trailRef, TRAIL_META, { merge: !force });
+    await trailRef.set(TRAIL_META, { merge: !force });
 
     // Cria / atualiza cada seção
     const results: string[] = [];
     for (const [sectionId, sectionData] of Object.entries(SECTIONS)) {
-      const sectionRef = doc(db, `trails/${TRAIL_ID}/contents`, sectionId);
-      await setDoc(
-        sectionRef,
+      const sectionRef = adminDb.collection(`trails/${TRAIL_ID}/contents`).doc(sectionId);
+      await sectionRef.set(
         { ...sectionData, trailName: TRAIL_META.name },
         { merge: !force }
       );
@@ -158,13 +156,13 @@ export const GET = async (req: NextRequest) => {
       );
     }
 
-    const trailRef = doc(db, "trails", TRAIL_ID);
-    const trailSnap = await getDoc(trailRef);
+    const trailRef = adminDb.collection("trails").doc(TRAIL_ID);
+    const trailSnap = await trailRef.get();
 
     return new NextResponse(
       JSON.stringify({
-        exists: trailSnap.exists(),
-        data: trailSnap.exists() ? trailSnap.data() : null,
+        exists: trailSnap.exists,
+        data: trailSnap.exists ? trailSnap.data() : null,
         expectedSections: Object.keys(SECTIONS).length,
       }),
       { status: 200 }

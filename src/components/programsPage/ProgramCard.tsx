@@ -4,6 +4,7 @@ import { CiStar } from "react-icons/ci";
 import Image from "next/image";
 
 import { useRouter } from "next/navigation";
+import { TrailsPageProps } from "@/interfaces/interfaces";
 import { MotionDiv } from "../ui/MotionDiv";
 
 export const ProgramCard = ({

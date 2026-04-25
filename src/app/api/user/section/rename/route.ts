@@ -1,11 +1,4 @@
-import {
-  collection,
-  getDocs,
-  doc,
-  setDoc,
-  deleteDoc,
-} from "firebase/firestore";
-import { db } from "@/firebase/config";
+import { adminDb } from "@/lib/firebase-admin";
 import { NextRequest, NextResponse } from "next/server";
 
 export const POST = async (req: NextRequest) => {
@@ -18,11 +11,10 @@ export const POST = async (req: NextRequest) => {
       });
     }
 
-    const trailDocRef = doc(db, "trails", trailId);
-    const contentsCollectionRef = collection(trailDocRef, "contents");
+    const contentsCollectionRef = adminDb.collection(`trails/${trailId}/contents`);
 
     // Obter todos os documentos de "contents"
-    const contentsSnap = await getDocs(contentsCollectionRef);
+    const contentsSnap = await contentsCollectionRef.get();
 
     if (contentsSnap.empty) {
       return new NextResponse("Nenhum documento encontrado em contents", {
@@ -39,11 +31,11 @@ export const POST = async (req: NextRequest) => {
       const newDocId = count.toString();
 
       // Cria o novo documento com o novo ID
-      const newDocRef = doc(contentsCollectionRef, newDocId);
-      await setDoc(newDocRef, contentData);
+      const newDocRef = contentsCollectionRef.doc(newDocId);
+      await newDocRef.set(contentData);
 
       // Opcional: Apagar o documento antigo após a criação do novo
-      await deleteDoc(contentDoc.ref);
+      await contentDoc.ref.delete();
 
       count++; // Incrementa o contador
     }

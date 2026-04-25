@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 import { useContent } from "@/providers/content-context";
 import { RewardContainer } from "../RewardContainer/RewardContainer";
+import { ProgramContainerProps } from "@/interfaces/interfaces";
 
 export const ProgramContainer = ({
   program,
