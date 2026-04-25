@@ -1,6 +1,41 @@
 import { onDocumentWritten, FirestoreEvent, DocumentSnapshot, Change } from "firebase-functions/v2/firestore";
 import { runContract } from "../utils/wallet";
-import { updateProgramAirdropStatus } from "../utils/firestoreScripts";
+import {
+  updateProgramAirdropStatus,
+  updateProgramAirdropTerminalFailureStatus,
+  TerminalErrorCode,
+} from "../utils/firestoreScripts";
+
+function classifyTerminalError(error: unknown): { errorCode: TerminalErrorCode; errorMessage: string } {
+  const err = error as {
+    message?: string;
+    shortMessage?: string;
+    reason?: { message?: string };
+  };
+
+  const rawMessage =
+    err?.reason?.message ||
+    err?.shortMessage ||
+    err?.message ||
+    "Unknown mint error";
+
+  const sanitizedMessage = rawMessage.replace(/\s+/g, " ").trim().slice(0, 300);
+  const normalizedMessage = sanitizedMessage.toLowerCase();
+
+  if (/(accesscontrol|missing role|minter_role|not authorized|unauthorized|permission)/i.test(normalizedMessage)) {
+    return { errorCode: "ACCESS_CONTROL", errorMessage: sanitizedMessage };
+  }
+
+  if (/(invalid address|unsupported addressable value|bad address checksum|invalid argument.*address)/i.test(normalizedMessage)) {
+    return { errorCode: "INVALID_ADDRESS", errorMessage: sanitizedMessage };
+  }
+
+  if (/(rpc|network|timeout|timed out|429|rate limit|could not coalesce error|socket|connection|econn|etimedout)/i.test(normalizedMessage)) {
+    return { errorCode: "RPC_ERROR", errorMessage: sanitizedMessage };
+  }
+
+  return { errorCode: "UNKNOWN", errorMessage: sanitizedMessage || "Unknown mint error" };
+}
 
 /**
  * Cloud Function disparada quando um documento em programWhitelist/{uid} é criado ou atualizado.
@@ -25,16 +60,24 @@ export const airdropProgramNFT = onDocumentWritten(
     const privateKey = process.env.PRIVATE_KEY;
     const rpcUrl = process.env.RPC_URL;
 
-    if (!contractAddress || !privateKey || !rpcUrl) {
-      throw new Error(
-        "Missing required environment variables: CONTRACT_ADDRESS, PRIVATE_KEY, or RPC_URL"
-      );
+    const missingSecrets = !contractAddress || !privateKey || !rpcUrl;
+    if (missingSecrets) {
+      const errorMessage = "Missing required function secrets for minting";
+      console.error(errorMessage);
+
+      for (const programId in programCategories) {
+        const airdrop = programCategories[programId];
+        if (airdrop?.eligible && !airdrop?.minted && !airdrop?.terminalError) {
+          await updateProgramAirdropTerminalFailureStatus(uid, programId, "UNKNOWN", errorMessage);
+        }
+      }
+      return;
     }
 
     for (const programId in programCategories) {
       const airdrop = programCategories[programId];
 
-      if (airdrop.eligible && !airdrop.minted) {
+      if (airdrop.eligible && !airdrop.minted && !airdrop.terminalError) {
         try {
           const walletAddress = newValue?.address;
           const ipfsHash = airdrop.ipfsHash;
@@ -53,7 +96,8 @@ export const airdropProgramNFT = onDocumentWritten(
             `Erro ao mintar certificado de programa para usuário ${uid}, programa ${programId}:`,
             error
           );
-          // NÃO re-escreve para evitar loop infinito de triggers.
+          const { errorCode, errorMessage } = classifyTerminalError(error);
+          await updateProgramAirdropTerminalFailureStatus(uid, programId, errorCode, errorMessage);
         }
       }
     }

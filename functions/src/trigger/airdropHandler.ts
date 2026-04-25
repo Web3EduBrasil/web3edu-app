@@ -2,7 +2,42 @@
 
 import { onDocumentWritten, FirestoreEvent, DocumentSnapshot, Change } from "firebase-functions/v2/firestore";
 import { runContract } from "../utils/wallet";
-import { updateAirdropStatus } from "../utils/firestoreScripts";
+import {
+    updateAirdropStatus,
+    updateAirdropTerminalFailureStatus,
+    TerminalErrorCode,
+} from "../utils/firestoreScripts";
+
+function classifyTerminalError(error: unknown): { errorCode: TerminalErrorCode; errorMessage: string } {
+    const err = error as {
+        message?: string;
+        shortMessage?: string;
+        reason?: { message?: string };
+    };
+
+    const rawMessage =
+        err?.reason?.message ||
+        err?.shortMessage ||
+        err?.message ||
+        "Unknown mint error";
+
+    const sanitizedMessage = rawMessage.replace(/\s+/g, " ").trim().slice(0, 300);
+    const normalizedMessage = sanitizedMessage.toLowerCase();
+
+    if (/(accesscontrol|missing role|minter_role|not authorized|unauthorized|permission)/i.test(normalizedMessage)) {
+        return { errorCode: "ACCESS_CONTROL", errorMessage: sanitizedMessage };
+    }
+
+    if (/(invalid address|unsupported addressable value|bad address checksum|invalid argument.*address)/i.test(normalizedMessage)) {
+        return { errorCode: "INVALID_ADDRESS", errorMessage: sanitizedMessage };
+    }
+
+    if (/(rpc|network|timeout|timed out|429|rate limit|could not coalesce error|socket|connection|econn|etimedout)/i.test(normalizedMessage)) {
+        return { errorCode: "RPC_ERROR", errorMessage: sanitizedMessage };
+    }
+
+    return { errorCode: "UNKNOWN", errorMessage: sanitizedMessage || "Unknown mint error" };
+}
 
 export const airdropNFT = onDocumentWritten(
     {
@@ -24,10 +59,18 @@ export const airdropNFT = onDocumentWritten(
         const privateKey = process.env.PRIVATE_KEY;
         const rpcUrl = process.env.RPC_URL;
 
-        if (!contractAddress || !privateKey || !rpcUrl) {
-            throw new Error(
-                "Missing required environment variables: CONTRACT_ADDRESS, PRIVATE_KEY, or RPC_URL"
-            );
+        const missingSecrets = !contractAddress || !privateKey || !rpcUrl;
+        if (missingSecrets) {
+            const errorMessage = "Missing required function secrets for minting";
+            console.error(errorMessage);
+
+            for (const category in airdropCategories) {
+                const airdrop = airdropCategories[category];
+                if (airdrop?.eligible && !airdrop?.minted && !airdrop?.terminalError) {
+                    await updateAirdropTerminalFailureStatus(uid, category, "UNKNOWN", errorMessage);
+                }
+            }
+            return;
         }
 
         // Itera sobre cada categoria de airdrop no campo 'status'
@@ -35,7 +78,7 @@ export const airdropNFT = onDocumentWritten(
             const airdrop = airdropCategories[category];
 
             // Verifica se o usuário é elegível e o NFT ainda não foi mintado
-            if (airdrop.eligible && !airdrop.minted) {
+            if (airdrop.eligible && !airdrop.minted && !airdrop.terminalError) {
                 try {
                     const walletAddress = newValue?.address;
                     const ipfsHash = airdrop.ipfsHash;
@@ -53,8 +96,8 @@ export const airdropNFT = onDocumentWritten(
                     console.log(`Airdrop bem-sucedido para usuário ${uid} na categoria ${category} - Tx: ${tx.hash}`);
                 } catch (error) {
                     console.error(`Erro no airdrop para usuário ${uid} na categoria ${category}:`, error);
-                    // NÃO re-escreve no Firestore para evitar loop infinito de triggers.
-                    // O documento permanece com eligible:true, minted:false para a próxima tentativa.
+                    const { errorCode, errorMessage } = classifyTerminalError(error);
+                    await updateAirdropTerminalFailureStatus(uid, category, errorCode, errorMessage);
                 }
             }
         }

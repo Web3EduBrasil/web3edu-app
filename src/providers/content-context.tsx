@@ -61,6 +61,14 @@ interface AiAnswerProps {
   valido: boolean;
 }
 
+interface MintStatusResponse {
+  txHash?: string | null;
+  pending?: boolean;
+  terminalError?: boolean;
+  errorCode?: string | null;
+  errorMessage?: string | null;
+}
+
 const ContentContext = createContext<ContentState>({
   trail: {},
   trailsList: [],
@@ -304,6 +312,17 @@ export const ContentProvider = ({
     return IpfsHash;
   }, []);
 
+  const buildTerminalErrorToastMessage = useCallback((status: MintStatusResponse) => {
+    const code = typeof status.errorCode === "string" && status.errorCode.length > 0
+      ? status.errorCode
+      : null;
+    const message = typeof status.errorMessage === "string" && status.errorMessage.length > 0
+      ? status.errorMessage
+      : "Não foi possível concluir o mint do certificado.";
+
+    return code ? `[${code}] ${message}` : message;
+  }, []);
+
   // ─── Polling feedback mint blockchain ────────────────────────────────────────
 
   const pollMintStatus = useCallback(async (
@@ -322,10 +341,17 @@ export const ContentProvider = ({
       await new Promise((r) => setTimeout(r, INTERVAL_MS));
       try {
         const res = await fetch(endpoint);
-        const data = await res.json();
+        const data = (await res.json()) as MintStatusResponse;
         if (data.txHash) {
           setMintStep("success");
           setMintTxHash(data.txHash);
+          return;
+        }
+
+        if (data.terminalError) {
+          setMintStep("error");
+          setMintTxHash(null);
+          toast.error(buildTerminalErrorToastMessage(data), { autoClose: 8000 });
           return;
         }
       } catch (err) {
@@ -337,7 +363,7 @@ export const ContentProvider = ({
       "O mint está sendo processado. Verifique sua carteira em alguns minutos.",
       { autoClose: 8000 }
     );
-  }, []);
+  }, [buildTerminalErrorToastMessage]);
 
   // ─── Retry/check único de status de mint ─────────────────────────────────
 
@@ -351,17 +377,21 @@ export const ContentProvider = ({
       : `/api/programWhitelist?uid=${uid}&programId=${itemId}`;
     try {
       const res = await fetch(endpoint);
-      const data = await res.json();
+      const data = (await res.json()) as MintStatusResponse;
       if (data.txHash) {
         setMintStep("success");
         setMintTxHash(data.txHash);
+      } else if (data.terminalError) {
+        setMintStep("error");
+        setMintTxHash(null);
+        toast.error(buildTerminalErrorToastMessage(data), { autoClose: 8000 });
       } else {
         toast.info("Mint ainda em processamento. Aguarde mais alguns minutos e tente novamente.", { autoClose: 6000 });
       }
     } catch {
       toast.error("Erro ao verificar status do mint.");
     }
-  }, []);
+  }, [buildTerminalErrorToastMessage]);
 
   // ─── Airdrop Trilha ──────────────────────────────────────────────────────────
 
@@ -376,10 +406,16 @@ export const ContentProvider = ({
     try {
       // 0. Pré-checagem: verifica se já foi mintado (ex: polling anterior expirou)
       const preCheck = await fetch(`/api/whitelist?uid=${uid}&trailId=${trailId}`);
-      const preData = await preCheck.json();
+      const preData = (await preCheck.json()) as MintStatusResponse;
       if (preData.txHash) {
         setMintStep("success");
         setMintTxHash(preData.txHash);
+        return;
+      }
+      if (preData.terminalError) {
+        setMintStep("error");
+        setMintTxHash(null);
+        toast.error(buildTerminalErrorToastMessage(preData), { autoClose: 8000 });
         return;
       }
       // pending = já registrado na whitelist mas CF ainda não mintou — retoma polling
@@ -442,7 +478,7 @@ export const ContentProvider = ({
       toast.error(`Erro ao resgatar certificado: ${error.message}`);
       console.error("Erro em fetchTrailAirDrop:", error);
     }
-  }, [uploadToIpfs, pollMintStatus]);
+  }, [uploadToIpfs, pollMintStatus, buildTerminalErrorToastMessage]);
 
   // ─── Airdrop Programa ────────────────────────────────────────────────────────
 
@@ -457,10 +493,16 @@ export const ContentProvider = ({
     try {
       // 0. Pré-checagem: verifica se já foi mintado
       const preCheck = await fetch(`/api/programWhitelist?uid=${uid}&programId=${programId}`);
-      const preData = await preCheck.json();
+      const preData = (await preCheck.json()) as MintStatusResponse;
       if (preData.txHash) {
         setMintStep("success");
         setMintTxHash(preData.txHash);
+        return;
+      }
+      if (preData.terminalError) {
+        setMintStep("error");
+        setMintTxHash(null);
+        toast.error(buildTerminalErrorToastMessage(preData), { autoClose: 8000 });
         return;
       }
       // pending = já registrado mas CF ainda não mintou — retoma polling
@@ -523,7 +565,7 @@ export const ContentProvider = ({
       toast.error(`Erro ao resgatar certificado: ${error.message}`);
       console.error("Erro em fetchProgramAirDrop:", error);
     }
-  }, [uploadToIpfs, pollMintStatus]);
+  }, [uploadToIpfs, pollMintStatus, buildTerminalErrorToastMessage]);
 
   const contextValue = useMemo(() => ({
     trail,

@@ -8,6 +8,12 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore();
 
+export type TerminalErrorCode =
+  | "ACCESS_CONTROL"
+  | "INVALID_ADDRESS"
+  | "RPC_ERROR"
+  | "UNKNOWN";
+
 /**
  * Atualiza o status do airdrop no Firestore para o usuário especificado.
  *
@@ -26,6 +32,10 @@ export async function updateAirdropStatus(
   await userRef.update({
     [`status.${category}.minted`]: status,
     [`status.${category}.txHash`]: txHash,
+    [`status.${category}.terminalError`]: false,
+    [`status.${category}.errorCode`]: null,
+    [`status.${category}.errorMessage`]: null,
+    [`status.${category}.errorAt`]: null,
   });
 }
 
@@ -47,5 +57,49 @@ export async function updateProgramAirdropStatus(
   await userRef.update({
     [`status.${programId}.minted`]: status,
     [`status.${programId}.txHash`]: txHash,
+    [`status.${programId}.terminalError`]: false,
+    [`status.${programId}.errorCode`]: null,
+    [`status.${programId}.errorMessage`]: null,
+    [`status.${programId}.errorAt`]: null,
   });
+}
+
+function sanitizeTerminalErrorMessage(message: string): string {
+  return message.replace(/\s+/g, " ").trim().slice(0, 300);
+}
+
+async function updateTerminalFailureStatus(
+  collectionName: "whitelist" | "programWhitelist",
+  uid: string,
+  itemId: string,
+  errorCode: TerminalErrorCode,
+  errorMessage: string
+): Promise<void> {
+  const userRef = db.collection(collectionName).doc(uid);
+  await userRef.update({
+    [`status.${itemId}.minted`]: false,
+    [`status.${itemId}.txHash`]: "",
+    [`status.${itemId}.terminalError`]: true,
+    [`status.${itemId}.errorCode`]: errorCode,
+    [`status.${itemId}.errorMessage`]: sanitizeTerminalErrorMessage(errorMessage),
+    [`status.${itemId}.errorAt`]: admin.firestore.FieldValue.serverTimestamp(),
+  });
+}
+
+export async function updateAirdropTerminalFailureStatus(
+  uid: string,
+  category: string,
+  errorCode: TerminalErrorCode,
+  errorMessage: string
+): Promise<void> {
+  await updateTerminalFailureStatus("whitelist", uid, category, errorCode, errorMessage);
+}
+
+export async function updateProgramAirdropTerminalFailureStatus(
+  uid: string,
+  programId: string,
+  errorCode: TerminalErrorCode,
+  errorMessage: string
+): Promise<void> {
+  await updateTerminalFailureStatus("programWhitelist", uid, programId, errorCode, errorMessage);
 }
