@@ -2,7 +2,7 @@
 
 import { TrailCards } from "./TrailContainer";
 import { useContent } from "@/providers/content-context";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 import { useOnboardingGuard } from "@/lib/useOnboardingGuard";
 import { FiSearch } from "react-icons/fi";
@@ -10,6 +10,7 @@ import { FiSearch } from "react-icons/fi";
 export const Trails = () => {
   useOnboardingGuard();
   const { fetchTrailsList, trailsList } = useContent();
+  const trails = useMemo(() => (Array.isArray(trailsList) ? trailsList : []), [trailsList]);
   const { userDbInfo } = useWeb3AuthContext();
   const [filteredTrails, setFilteredTrails] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -20,7 +21,7 @@ export const Trails = () => {
   useEffect(() => {
     const uid = userDbInfo?.uid;
     if (!uid) return; // aguarda auth completar
-    if (trailsList.length > 0) {
+    if (trails.length > 0) {
       setIsLoadingTrails(false);
       return;
     }
@@ -36,18 +37,18 @@ export const Trails = () => {
   }, [userDbInfo?.uid]);
 
   useEffect(() => {
-    if (trailsList.length > 0) {
-      const filtered = trailsList.filter((trail: any) => {
+    if (trails.length > 0) {
+      const filtered = trails.filter((trail: any) => {
         const matchName = trail.name.toLowerCase().includes(searchTerm.toLowerCase());
         const matchCat = activeCategory === "" || (trail.categories && trail.categories.includes(activeCategory));
         return matchName && matchCat;
       });
       setFilteredTrails(filtered);
     }
-  }, [searchTerm, activeCategory, trailsList]);
+  }, [searchTerm, activeCategory, trails]);
 
   const allCategories: string[] = Array.from(
-    new Set((trailsList ?? []).flatMap((t: any) => t.categories || []))
+    new Set(trails.flatMap((t: any) => t.categories || []))
   );
 
   return (

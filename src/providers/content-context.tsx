@@ -26,6 +26,14 @@ interface AiAnswerProps {
   valido: boolean;
 }
 
+interface MintStatusResponse {
+  txHash?: string | null;
+  pending?: boolean;
+  terminalError?: boolean;
+  errorCode?: string | null;
+  errorMessage?: string | null;
+}
+
 // ─── Trail Context ─────────────────────────────────────────────────────────────
 
 interface TrailState {
@@ -300,7 +308,24 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
     return IpfsHash;
   }, []);
 
-  const pollMintStatus = useCallback(async (uid: string, itemId: string, type: "trail" | "program") => {
+  const buildTerminalErrorToastMessage = useCallback((status: MintStatusResponse) => {
+    const code = typeof status.errorCode === "string" && status.errorCode.length > 0
+      ? status.errorCode
+      : null;
+    const message = typeof status.errorMessage === "string" && status.errorMessage.length > 0
+      ? status.errorMessage
+      : "Não foi possível concluir o mint do certificado.";
+
+    return code ? `[${code}] ${message}` : message;
+  }, []);
+
+  // ─── Polling feedback mint blockchain ────────────────────────────────────────
+
+  const pollMintStatus = useCallback(async (
+    uid: string,
+    itemId: string,
+    type: "trail" | "program"
+  ) => {
     const endpoint =
       type === "trail"
         ? `/api/whitelist?uid=${uid}&trailId=${itemId}`
@@ -313,11 +338,18 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
         const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout por tentativa
         const res = await fetch(endpoint, { signal: controller.signal });
         clearTimeout(timeoutId);
-        const data = await res.json();
+        const data = (await res.json()) as MintStatusResponse;
         if (data.txHash) {
           setMintStep("success");
           setMintTxHash(data.txHash);
           toast.success("🎉 Seu certificado NFT foi mintado com sucesso!", { autoClose: 8000 });
+          return;
+        }
+
+        if (data.terminalError) {
+          setMintStep("error");
+          setMintTxHash(null);
+          toast.error(buildTerminalErrorToastMessage(data), { autoClose: 8000 });
           return;
         }
       } catch (err: any) {
@@ -327,8 +359,11 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
       }
     }
     setMintStep("error");
-    toast.info("O processamento está demorando mais que o esperado. Verifique sua carteira em alguns minutos.", { autoClose: 10000 });
-  }, []);
+    toast.info(
+      "O processamento está demorando mais que o esperado. Verifique sua carteira em alguns minutos.",
+      { autoClose: 8000 }
+    );
+  }, [buildTerminalErrorToastMessage]);
 
   const retryMintStatusCheck = useCallback(async (uid: string, itemId: string, type: "trail" | "program") => {
     const endpoint = type === "trail"
@@ -336,17 +371,21 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
       : `/api/programWhitelist?uid=${uid}&programId=${itemId}`;
     try {
       const res = await fetch(endpoint);
-      const data = await res.json();
+      const data = (await res.json()) as MintStatusResponse;
       if (data.txHash) {
         setMintStep("success");
         setMintTxHash(data.txHash);
+      } else if (data.terminalError) {
+        setMintStep("error");
+        setMintTxHash(null);
+        toast.error(buildTerminalErrorToastMessage(data), { autoClose: 8000 });
       } else {
         toast.info("Mint ainda em processamento. Aguarde mais alguns minutos e tente novamente.", { autoClose: 6000 });
       }
     } catch {
       toast.error("Erro ao verificar status do mint.");
     }
-  }, []);
+  }, [buildTerminalErrorToastMessage]);
 
   const fetchAirDrop = useCallback(async (
     type: "trail" | "program",
@@ -367,12 +406,30 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
       : `Este certificado é concedido a ${userName} em reconhecimento por completar com sucesso o programa ${itemName}.`;
 
     try {
-      // 0. Pré-checagem: verifica se já foi mintado ou está pendente
+      // 0. Pré-checagem: verifica se já foi mintado ou se há erro terminal
       const preCheck = await fetch(checkEndpoint);
-      const preData = await preCheck.json();
-      if (preData.txHash) { setMintStep("success"); setMintTxHash(preData.txHash); return; }
-      if (preData.pending) { setMintStep("polling"); pollMintStatus(uid, itemId, type); return; }
-      if (!preData.eligible) { toast.error("Certificado já foi resgatado"); return; }
+      const preData = (await preCheck.json()) as MintStatusResponse;
+      if (preData.txHash) {
+        setMintStep("success");
+        setMintTxHash(preData.txHash);
+        toast.success("🎉 Seu certificado NFT foi mintado com sucesso!", { autoClose: 8000 });
+        return;
+      }
+      if (preData.terminalError) {
+        setMintStep("error");
+        setMintTxHash(null);
+        toast.error(buildTerminalErrorToastMessage(preData), { autoClose: 8000 });
+        return;
+      }
+      if (preData.pending) {
+        setMintStep("polling");
+        pollMintStatus(uid, itemId, type);
+        return;
+      }
+      if (preData.eligible === false) {
+        toast.error(type === "trail" ? "Certificado já foi resgatado para esta trilha" : "Certificado já foi resgatado para este programa");
+        return;
+      }
 
       // 1. Upload do metadata para o IPFS
       setMintStep("uploading");
@@ -413,7 +470,7 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
       toast.error(`Erro ao resgatar certificado: ${error.message}`);
       console.error("Erro em fetchAirDrop:", error);
     }
-  }, [uploadToIpfs, pollMintStatus]);
+  }, [uploadToIpfs, pollMintStatus, buildTerminalErrorToastMessage]);
 
   const value = useMemo(() => ({
     rewardContainerVisibility, rewardData, mintStep, mintTxHash,

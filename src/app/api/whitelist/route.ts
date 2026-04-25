@@ -29,6 +29,10 @@ export const POST = async (req: NextRequest, res: NextResponse) => {
           ipfsHash: ipfsHash,
           minted: false,
           txHash: "",
+          terminalError: false,
+          errorCode: null,
+          errorMessage: null,
+          errorAt: null,
         },
       });
 
@@ -44,6 +48,11 @@ export const POST = async (req: NextRequest, res: NextResponse) => {
             eligible: true,
             ipfsHash: ipfsHash,
             minted: false,
+            txHash: "",
+            terminalError: false,
+            errorCode: null,
+            errorMessage: null,
+            errorAt: null,
           },
         },
       });
@@ -77,24 +86,53 @@ export const GET = async (req: NextRequest) => {
     const docSnap = await whitelistDocRef.get();
 
     if (!docSnap.exists) {
-      return NextResponse.json({ eligible: true }, { status: 200 });
+      return NextResponse.json(
+        {
+          eligible: true,
+          pending: false,
+          txHash: null,
+          terminalError: false,
+          errorCode: null,
+          errorMessage: null,
+        },
+        { status: 200 }
+      );
     }
 
     const userData = docSnap.data();
     const trailStatus = userData?.status?.[trailId];
 
     if (!trailStatus) {
-      return NextResponse.json({ eligible: true }, { status: 200 });
+      return NextResponse.json(
+        {
+          eligible: true,
+          pending: false,
+          txHash: null,
+          terminalError: false,
+          errorCode: null,
+          errorMessage: null,
+        },
+        { status: 200 }
+      );
     }
 
+    const isMarkedEligible = trailStatus.eligible === true;
     const alreadyMinted = trailStatus.minted === true;
-    const hasTxHash = trailStatus.txHash && trailStatus.txHash !== "";
-    const isEligible = !alreadyMinted && !hasTxHash;
-    // pending = registrado na whitelist mas CF ainda não mintou
+    const hasTxHash = typeof trailStatus.txHash === "string" && trailStatus.txHash !== "";
+    const hasTerminalError = trailStatus.terminalError === true;
+    const isEligible = isMarkedEligible && !alreadyMinted && !hasTxHash && !hasTerminalError;
+    // pending = registrado na whitelist, sem txHash e sem erro terminal
     const isPending = isEligible && !!trailStatus;
 
     return NextResponse.json(
-      { eligible: isEligible, pending: isPending, txHash: trailStatus.txHash || null },
+      {
+        eligible: isEligible,
+        pending: isPending,
+        txHash: trailStatus.txHash || null,
+        terminalError: hasTerminalError,
+        errorCode: trailStatus.errorCode || null,
+        errorMessage: trailStatus.errorMessage || null,
+      },
       { status: 200 }
     );
   } catch (error: any) {

@@ -22,23 +22,52 @@ export const GET = async (req: NextRequest) => {
     const docSnap = await docRef.get();
 
     if (!docSnap.exists) {
-      return NextResponse.json({ eligible: true }, { status: 200 });
+      return NextResponse.json(
+        {
+          eligible: true,
+          pending: false,
+          txHash: null,
+          terminalError: false,
+          errorCode: null,
+          errorMessage: null,
+        },
+        { status: 200 }
+      );
     }
 
     const userData = docSnap.data();
     const programStatus = userData?.status?.[programId];
 
     if (!programStatus) {
-      return NextResponse.json({ eligible: true }, { status: 200 });
+      return NextResponse.json(
+        {
+          eligible: true,
+          pending: false,
+          txHash: null,
+          terminalError: false,
+          errorCode: null,
+          errorMessage: null,
+        },
+        { status: 200 }
+      );
     }
 
+    const isMarkedEligible = programStatus.eligible === true;
     const alreadyMinted = programStatus.minted === true;
-    const hasTxHash = programStatus.txHash && programStatus.txHash !== "";
-    const isEligible = !alreadyMinted && !hasTxHash;
+    const hasTxHash = typeof programStatus.txHash === "string" && programStatus.txHash !== "";
+    const hasTerminalError = programStatus.terminalError === true;
+    const isEligible = isMarkedEligible && !alreadyMinted && !hasTxHash && !hasTerminalError;
     const isPending = isEligible && !!programStatus;
 
     return NextResponse.json(
-      { eligible: isEligible, pending: isPending, txHash: programStatus.txHash || null },
+      {
+        eligible: isEligible,
+        pending: isPending,
+        txHash: programStatus.txHash || null,
+        terminalError: hasTerminalError,
+        errorCode: programStatus.errorCode || null,
+        errorMessage: programStatus.errorMessage || null,
+      },
       { status: 200 }
     );
   } catch (error: any) {
@@ -83,6 +112,10 @@ export const POST = async (req: NextRequest) => {
           ipfsHash: ipfsHash,
           minted: false,
           txHash: "",
+          terminalError: false,
+          errorCode: null,
+          errorMessage: null,
+          errorAt: null,
         },
       });
       return NextResponse.json(
@@ -98,6 +131,10 @@ export const POST = async (req: NextRequest) => {
             ipfsHash: ipfsHash,
             minted: false,
             txHash: "",
+            terminalError: false,
+            errorCode: null,
+            errorMessage: null,
+            errorAt: null,
           },
         },
       });
