@@ -12,7 +12,7 @@ export const Trails = () => {
   const { fetchTrailsList, trailsList } = useContent();
   const trails = useMemo(() => (Array.isArray(trailsList) ? trailsList : []), [trailsList]);
   const { userDbInfo } = useWeb3AuthContext();
-  const [filteredTrails, setFilteredTrails] = useState([]);
+  const [filteredTrails, setFilteredTrails] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("");
   const [isLoadingTrails, setIsLoadingTrails] = useState(true);

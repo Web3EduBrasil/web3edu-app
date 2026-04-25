@@ -27,6 +27,7 @@ interface AiAnswerProps {
 }
 
 interface MintStatusResponse {
+  eligible?: boolean;
   txHash?: string | null;
   pending?: boolean;
   terminalError?: boolean;
