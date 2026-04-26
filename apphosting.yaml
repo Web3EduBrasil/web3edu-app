@@ -81,7 +81,7 @@ env:
 
   # ALCHEMY (NFT API — opcional, fallback lê do Firestore)
   - variable: NEXT_PUBLIC_ALCHEMY_API_KEY
-    secret: ALCHEMY_API_KEY
+    value: "llOtwCI9RPR1O7I1D0b0O"
     availability:
       - BUILD
       - RUNTIME
