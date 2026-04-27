@@ -83,6 +83,24 @@ export default function useWeb3Auth() {
       walletAuthAttempted.current = null;
       return;
     }
+
+    if (chainId !== sepolia.id) {
+      (async () => {
+        try {
+          setLoadingMessage("Trocando para rede Sepolia...");
+          setIsLoading(true);
+          await switchChainAsync({ chainId: sepolia.id });
+        } catch {
+          toast.error("Troque para a rede Sepolia para continuar.");
+          disconnect();
+        } finally {
+          setIsLoading(false);
+          setLoadingMessage("");
+        }
+      })();
+      return;
+    }
+
     if (walletAuthAttempted.current === address) return;
 
     (async () => {
@@ -99,17 +117,6 @@ export default function useWeb3Auth() {
       try {
         setLoadingMessage("Conectando carteira...");
         setIsLoading(true);
-
-        if (chainId !== sepolia.id) {
-          try {
-            setLoadingMessage("Trocando para rede Sepolia...");
-            await switchChainAsync({ chainId: sepolia.id });
-          } catch {
-            toast.error("Troque para a rede Sepolia para continuar.");
-            disconnect();
-            return;
-          }
-        }
 
         const timestamp = Date.now();
         const message = `Web3EduBrasil Authentication\n\nEndereço: ${address}\nTimestamp: ${timestamp}`;
