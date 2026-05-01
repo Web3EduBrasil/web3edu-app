@@ -18,11 +18,12 @@ export default function Section1() {
           <a
             href="https://discord.gg/GJk58TPaDx"
             target="_blank"
+            rel="noopener noreferrer"
             className="underline cursor-pointer"
           >
             {t("communityLink")}
           </a>
-          <FaDiscord size={30}/>
+          <FaDiscord size={30} />
         </div>
       </div>
       <div className="md:h-full w-full px-5 md:py-20 py-10 flex md:flex-row flex-col md:justify-around items-center gap-10 text-neutral">

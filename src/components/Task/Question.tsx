@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MotionButton } from "../ui/Button";
-import { Bounce, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import { TextArea } from "../ui/TextArea";
 import { useContent } from "@/providers/content-context";
@@ -16,6 +16,7 @@ interface RenderQuestionProps {
   done: boolean;
   trailId: string;
   id: string;
+  lessonRange?: number[];
 }
 
 export const RenderQuestionV = ({
@@ -26,10 +27,13 @@ export const RenderQuestionV = ({
   id,
   trailId,
   done,
+  lessonRange,
 }: RenderQuestionProps) => {
   const [answer, setAnswer] = useState("");
   const [aiExplanation, setAiExplanation] = useState("");
+  const [showError, setShowError] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { fetchAiAnswerCheck, trailSections } = useContent();
   const router = useRouter();
 
@@ -40,95 +44,115 @@ export const RenderQuestionV = ({
     return String(sorted[currentIndex + 1].id);
   };
 
-  async function HandleSubmit() {
-    if (answer.length === 0) {
-      toast.warning("Preencha todos os campos!", {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
-        transition: Bounce,
+  async function fetchAiCheck(q: string, a: string): Promise<AiAnswerProps> {
+    // Se tiver lessonRange, usa a rota contextual com MDX
+    if (lessonRange && lessonRange.length > 0) {
+      const res = await fetch("/api/ai/quiz", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trailId, question: q, answer: a, lessonRange }),
       });
+      if (!res.ok) throw new Error("Erro na validação com IA");
+      const data = await res.json();
+      return {
+        valido: Boolean(data?.valido),
+        explicacao:
+          typeof data?.explicacao === "string" && data.explicacao.trim().length > 0
+            ? data.explicacao
+            : "Não foi possível validar com segurança. Tente novamente.",
+      };
+    }
+    return fetchAiAnswerCheck(q, a);
+  }
+
+  async function HandleSubmit() {
+    if (answer.trim().length === 0) {
+      toast.warning("Preencha sua resposta!");
       return;
     }
 
-    if (answer.length > 500) {
-      toast.warning("Resposta muito longa! (max 500 caracteres)", {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
-        transition: Bounce,
-      });
+    if (answer.length > 800) {
+      toast.warning("Resposta muito longa! (máx 800 caracteres)");
       return;
     }
 
     if (isCorrect || done) {
-      // Já validada: avança
       if (!isLast) {
         if (!done) await fetchDone(false);
         const nextId = getNextSectionId();
         if (nextId) router.push(`/learn/${trailId}/${nextId}`);
       } else if (!done) {
-        toast.promise(fetchDone(true), {
-          pending: "Enviando...",
-          success: "Trilha concluída! 🎉",
-          error: "Erro ao concluir.",
-        });
+        await fetchDone(true);
       }
       return;
     }
 
-    const aiAnswer: AiAnswerProps = await toast.promise(
-      fetchAiAnswerCheck(question, answer),
-      { pending: "Verificando..." }
-    );
-    setAiExplanation(aiAnswer.explicacao);
-    if (aiAnswer.valido === true) {
-      setIsCorrect(true);
-      toast.success("Resposta correta!", {
-        position: "top-center",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
-        transition: Bounce,
-      });
-    } else {
-      toast.error("Resposta Incorreta!", {
-        position: "top-center",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
-        transition: Bounce,
-      });
+    setIsLoading(true);
+    try {
+      const aiAnswer: AiAnswerProps = await fetchAiCheck(question, answer);
+      setAiExplanation(aiAnswer.explicacao);
+      if (aiAnswer.valido === true) {
+        setIsCorrect(true);
+        setShowError(false);
+      } else {
+        setShowError(true);
+      }
+    } catch {
+      toast.error("Erro ao verificar resposta. Tente novamente.");
+    } finally {
+      setIsLoading(false);
     }
   }
+
+  // Estado de acerto: mostra parabéns + explicação + botão avançar
+  if (isCorrect && aiExplanation) {
+    return (
+      <div className="w-full flex flex-col gap-5">
+        <div className="w-full bg-green-50 border border-green-300 rounded-box p-8 flex flex-col gap-4">
+          <p className="text-green-600 font-bold text-lg">Resposta correta! 🎉</p>
+          <p className="text-neutral text-sm leading-relaxed">{aiExplanation}</p>
+          <div className="flex justify-end">
+            <MotionButton
+              rightIcon={true}
+              label={!isLast ? "Avançar" : "Concluir trilha"}
+              type="button"
+              className="bg-blue text-neutral w-fit h-12"
+              func={HandleSubmit}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Estado de erro: esconde pergunta/campo e mostra explicação + retry
+  if (showError) {
+    return (
+      <div className="w-full flex flex-col gap-5">
+        <div className="w-full bg-orange-50 border border-orange-300 rounded-box p-8 flex flex-col gap-4">
+          <p className="text-orange-600 font-bold text-lg">Resposta incorreta!</p>
+          <p className="text-neutral text-sm leading-relaxed">{aiExplanation}</p>
+          <button
+            onClick={() => { setShowError(false); setAnswer(""); setAiExplanation(""); }}
+            className="btn btn-outline btn-sm w-fit border-orange-400 text-orange-600 hover:bg-orange-100 hover:border-orange-400 hover:text-orange-700"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
-      <div className="w-full md:h-fit bg-ccblue rounded-box flex flex-col justify-start items-start p-8 gap-5">
-        <p className="md:text-lg text-base">{description}</p>
-        {aiExplanation ? (
-          <p className={isCorrect ? "text-dgreen" : "text-[#FF0000]"}>
-            {aiExplanation} {isCorrect ? "🎉😊" : "🤨"}
-          </p>
-        ) : (
-          <></>
+      <div className="w-full md:h-fit bg-ccblue rounded-box flex flex-col justify-start items-start p-8 gap-3">
+        <p className="text-cblue md:text-xl text-lg font-semibold">Responda a pergunta a seguir</p>
+        <p className="md:text-lg text-base font-medium">{question}</p>
+        {description && (
+          <p className="text-sm text-neutral/70 leading-relaxed">{description}</p>
+        )}
+        {isCorrect && aiExplanation && (
+          <p className="text-dgreen">{aiExplanation} 🎉😊</p>
         )}
       </div>
       <div className="w-full h-full justify-center gap-5">
@@ -140,7 +164,7 @@ export const RenderQuestionV = ({
         />
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex justify-end">
         {done && !isLast ? (
           <MotionButton
             type="button"
@@ -154,10 +178,9 @@ export const RenderQuestionV = ({
         ) : (
           <MotionButton
             rightIcon={true}
-            label={(isCorrect || done) ? (!isLast ? "Avançar" : "Concluir trilha") : "Verificar"}
+            label={isLoading ? "Verificando..." : (isCorrect || done) ? (!isLast ? "Avançar" : "Concluir trilha") : "Verificar"}
             type="button"
-            className={`text-neutral w-fit h-12 self-end ${isCorrect || done ? "bg-blue" : "bg-transparent border-2"
-              }`}
+            className={`text-neutral w-fit h-12 ${isCorrect || done ? "bg-blue" : "bg-transparent border-2"}`}
             func={HandleSubmit}
           />
         )}

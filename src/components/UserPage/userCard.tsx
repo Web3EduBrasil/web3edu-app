@@ -1,10 +1,11 @@
 "use client";
 
 import { FaSave } from "react-icons/fa";
+import { FiCamera } from "react-icons/fi";
 import Image from "next/image";
 import { MotionButton } from "../ui/Button";
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bounce, toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import { IoChevronBack } from "react-icons/io5";
@@ -13,6 +14,8 @@ import { authHeaders } from "@/lib/getIdToken";
 import { useContent } from "@/providers/content-context";
 import { FaExternalLinkAlt } from "react-icons/fa";
 import { useTranslations } from "next-intl";
+import { storage } from "@/firebase/config";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export const UserSection = () => {
   const { userDbInfo, googleUserInfo, fetchUserDbData, userAccount } = useWeb3AuthContext();
@@ -36,14 +39,59 @@ export const UserSection = () => {
   const [userName, setUserName] = useState("");
   const [linkedin, setLinkedin] = useState("");
   const [discord, setDiscord] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setUserName(userDbInfo?.displayName);
+    setAvatarUrl((userDbInfo as any)?.photoURL || googleUserInfo?.photoURL || "");
     if (userDbInfo.socialMedia) {
       setLinkedin(userDbInfo?.socialMedia?.linkedin);
       setDiscord(userDbInfo?.socialMedia?.discord);
     }
-  }, [userDbInfo]);
+  }, [userDbInfo, googleUserInfo?.photoURL]);
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!googleUserInfo?.uid) return;
+    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!validTypes.includes(file.type)) {
+      toast.warning("Formato inválido. Use JPG, PNG, WEBP ou GIF.", { theme: "colored" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.warning("Imagem muito grande. Máximo 5 MB.", { theme: "colored" });
+      return;
+    }
+    setUploadingAvatar(true);
+    try {
+      const storageRef = ref(storage, `avatars/${googleUserInfo.uid}`);
+      await uploadBytes(storageRef, file);
+      const downloadUrl = await getDownloadURL(storageRef);
+      setAvatarUrl(downloadUrl);
+      const response = await fetch("/api/user/edit", {
+        method: "POST",
+        headers: await authHeaders(),
+        body: JSON.stringify({
+          displayName: userName || userDbInfo?.displayName,
+          photoURL: downloadUrl,
+          socialMedia: {
+            linkedin: linkedin || "",
+            discord: discord || "",
+          },
+        }),
+      });
+      if (response.ok) {
+        fetchUserDbData(googleUserInfo.uid);
+        toast.success("Foto de perfil atualizada!", { theme: "colored" });
+      }
+    } catch (error: any) {
+      console.error("Erro ao fazer upload do avatar:", error);
+      toast.error("Erro ao enviar imagem.", { theme: "colored" });
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   useEffect(() => {
     if (activeTab === "certificados" && userAccount[0]) {
@@ -52,7 +100,7 @@ export const UserSection = () => {
   }, [activeTab, userAccount, fetchAchievedNfts]);
 
   const linkedinRegex =
-    /((https?:\/\/)?((www|\w\w)\.)?linkedin\.com\/)((([\w]{2,3})?)|([^\/]+\/(([\w|\d-&#?=])+\/?){1,}))$/;
+    /^(https?:\/\/)?(www\.|[\w]{2,3}\.)?linkedin\.com\/.+$/i;
 
   const fetchUserEdit = async () => {
     try {
@@ -86,7 +134,7 @@ export const UserSection = () => {
           pauseOnHover: true,
           draggable: true,
           progress: undefined,
-          theme: "light",
+          theme: "colored",
           transition: Bounce,
         });
         return;
@@ -132,11 +180,28 @@ export const UserSection = () => {
         {/* Aba: Dados Pessoais */}
         {activeTab === "dados" && (
           <div className="flex flex-col gap-5">
+            {/* Avatar clicável com overlay de câmera */}
             <div className="flex flex-row justify-start items-center gap-4">
-              <div className="relative w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden">
-                {googleUserInfo?.photoURL ? (
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleAvatarUpload(file);
+                  e.target.value = "";
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="relative w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden group cursor-pointer shrink-0"
+                title="Alterar foto de perfil"
+              >
+                {avatarUrl ? (
                   <Image
-                    src={googleUserInfo.photoURL}
+                    src={avatarUrl}
                     alt={userDbInfo?.displayName || "Avatar"}
                     fill
                     sizes="64px"
@@ -145,7 +210,13 @@ export const UserSection = () => {
                 ) : (
                   <div className="w-full h-full bg-base-300 rounded-full" />
                 )}
-              </div>
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+                  {uploadingAvatar
+                    ? <span className="loading loading-spinner loading-xs text-white" />
+                    : <FiCamera className="text-white w-5 h-5" />
+                  }
+                </div>
+              </button>
               <p className="text-dgray font-medium text-sm md:text-lg">
                 {userDbInfo?.displayName || ""}
               </p>
@@ -158,14 +229,14 @@ export const UserSection = () => {
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
                   type="text"
-                  className="input input-bordered w-full h-9 bg-white text-sm rounded-lg border-2 border-gray text-dgray"
+                  className="input input-bordered w-full h-9 bg-base-100 text-sm rounded-lg border-2 border-gray text-neutral"
                 />
                 <span className="text-xs md:text-sm text-dgray mt-2">{t("email")}</span>
                 <input
                   value={userDbInfo.email || ""}
                   type="text"
                   disabled
-                  className="input input-bordered w-full h-9 bg-white text-sm rounded-lg border-2 border-gray text-dgray opacity-60"
+                  className="input input-bordered w-full h-9 bg-base-100 text-sm rounded-lg border-2 border-gray text-neutral opacity-60"
                 />
               </div>
               <div className="flex flex-col w-full gap-1">
@@ -175,7 +246,7 @@ export const UserSection = () => {
                   onChange={(e) => setDiscord(e.target.value)}
                   type="text"
                   placeholder={t("discordPlaceholder")}
-                  className="input input-bordered w-full h-9 bg-white text-sm rounded-lg border-2 border-gray text-dgray"
+                  className="input input-bordered w-full h-9 bg-base-100 text-sm rounded-lg border-2 border-gray text-neutral"
                 />
                 <span className="text-xs md:text-sm text-dgray mt-2">{t("linkedin")}</span>
                 <input
@@ -183,7 +254,7 @@ export const UserSection = () => {
                   onChange={(e) => setLinkedin(e.target.value)}
                   type="text"
                   placeholder={t("linkedinPlaceholder")}
-                  className="input input-bordered w-full h-9 bg-white text-sm rounded-lg border-2 border-gray text-dgray"
+                  className="input input-bordered w-full h-9 bg-base-100 text-sm rounded-lg border-2 border-gray text-neutral"
                 />
               </div>
             </div>
@@ -219,7 +290,7 @@ export const UserSection = () => {
                     href={nft.openseaUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex flex-col rounded-xl overflow-hidden border-2 border-gray bg-white hover:shadow-lg transition-shadow group"
+                    className="flex flex-col rounded-xl overflow-hidden border-2 border-gray bg-base-100 hover:shadow-lg transition-shadow group"
                   >
                     <div className="w-full aspect-square relative">
                       <Image

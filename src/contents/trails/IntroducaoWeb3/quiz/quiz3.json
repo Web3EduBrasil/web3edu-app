@@ -1,0 +1,13 @@
+{
+  "id": "9.5",
+  "title": "Quiz 3 — Aplicações e Segurança",
+  "type": "quiz",
+  "question": "Qual das opções abaixo é um exemplo de golpe comum no mundo cripto (\"rug pull\")?",
+  "options": [
+    { "option": "Comprar Bitcoin em uma exchange regulamentada", "correct": false },
+    { "option": "Participar de uma carteira DeFi com código auditado", "correct": false },
+    { "option": "Investir em um projeto onde os criadores somem com os fundos após lançamento", "correct": true },
+    { "option": "Utilizar uma hardware wallet para guardar seus ativos", "correct": false }
+  ],
+  "explanation": "O \"rug pull\" ocorre quando criadores de um projeto de criptomoeda ou NFT desaparecem com os fundos dos investidores. É um dos golpes mais comuns no ecossistema cripto."
+}

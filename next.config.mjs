@@ -72,6 +72,7 @@ const nextConfig = {
       "@react-native-async-storage/async-storage": false,
       "pino-pretty": false,
       "encoding": false,
+      "bs58": false,
     };
 
     // Suprimir avisos de source maps ausentes de pacotes de terceiros

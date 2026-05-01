@@ -8,7 +8,7 @@ import { IoWalletOutline } from "react-icons/io5";
 import { useTranslations } from "next-intl";
 
 export const UserMenu = () => {
-  const { googleUserInfo, logout, userInfo, WalletUi } = useWeb3AuthContext();
+  const { googleUserInfo, logout, userInfo, WalletUi, userDbInfo } = useWeb3AuthContext();
   const router = useRouter();
   const t = useTranslations("userMenu");
 
@@ -22,8 +22,7 @@ export const UserMenu = () => {
       >
         {userInfo ? (
           <IoWalletOutline
-            className="w-8 h-8 black content-center"
-            style={{ color: "black" }}
+            className="w-8 h-8 text-neutral"
           />
         ) : null}
       </div>
@@ -34,9 +33,9 @@ export const UserMenu = () => {
           className="btn btn-ghost btn-circle avatar"
         >
           <div className="w-9 rounded-full relative overflow-hidden">
-            {userInfo?.profileImage ? (
+            {(userDbInfo as any)?.photoURL || userInfo?.profileImage ? (
               <Image
-                src={userInfo.profileImage}
+                src={(userDbInfo as any)?.photoURL || userInfo?.profileImage}
                 alt="User Image"
                 fill
                 sizes="36px"
@@ -53,7 +52,7 @@ export const UserMenu = () => {
           className="menu menu-md dropdown-content bg-neutralbg rounded-box z-[1] mt-1 w-52 p-2 shadow py-2 text-neutral"
         >
           <li>
-            <a onClick={() => router.push("/userPage")}>{t("profile")}</a>
+            <a onClick={() => router.push("/homePage")}>{t("profile")}</a>
           </li>
           <li>
             <a onClick={() => router.push("/onboarding")}>{t("help")}</a>

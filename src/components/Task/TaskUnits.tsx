@@ -7,6 +7,7 @@ import { FaCircleCheck } from "react-icons/fa6";
 import { useContent } from "@/providers/content-context";
 import { toast } from "react-toastify";
 import { FaLock } from "react-icons/fa";
+import { FaBrain } from "react-icons/fa6";
 
 export const TaskUnits = ({
   text,
@@ -18,6 +19,9 @@ export const TaskUnits = ({
   const router = useRouter();
   const { sectionId } = useParams();
   const { trailSections } = useContent();
+
+  const isQuiz = !Number.isInteger(Number(id));
+  const lessonNumber = isQuiz ? null : Number(id);
 
   return (
     <MotionDiv
@@ -43,7 +47,14 @@ export const TaskUnits = ({
             : ""
           }`}
       >
-        {text}
+        {isQuiz ? (
+          <span className="flex items-center gap-2">
+            <FaBrain className="min-w-4 text-cblue" />
+            {text}
+          </span>
+        ) : (
+          <span>{lessonNumber}. {text}</span>
+        )}
       </p>
       {trailSections && trailSections[index - 1]?.done === false ? (
         <FaLock className="h-auto min-w-6 text-ddblue" />

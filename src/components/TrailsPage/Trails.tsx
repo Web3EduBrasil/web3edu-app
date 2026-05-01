@@ -64,7 +64,7 @@ export const Trails = () => {
             placeholder="Buscar trilha..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="input input-bordered input-sm w-full pl-9 bg-white text-dgray border-gray"
+            className="input input-bordered input-sm w-full pl-9 bg-base-100 text-neutral border-gray"
           />
         </div>
       </div>
@@ -102,6 +102,7 @@ export const Trails = () => {
               image={e.banner}
               title={e.name}
               description={e.resumedDescription}
+              percentage={e.percentage}
             />
           ))
         ) : (

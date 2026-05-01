@@ -40,6 +40,7 @@
       "soonContent": "Ofrecemos un foro para que nuestros usuarios puedan compartir experiencias y relatos sobre blockchain"
     },
     "explore": {
+      "loginRequired": "Inicia sesión para acceder a esta área de la plataforma.",
       "accessing": "Accediendo al Futuro",
       "with": "con",
       "title": "Explora la Plataforma",

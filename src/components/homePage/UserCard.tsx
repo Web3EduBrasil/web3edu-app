@@ -5,7 +5,7 @@ import { IconButton } from "../ui/IconButton";
 import Image from "next/image";
 import { FaDiscord, FaLinkedin } from "react-icons/fa6";
 import { MotionDiv } from "../ui/MotionDiv";
-import { levelFromXp, xpProgressPercent } from "@/lib/xp";
+import { levelFromXp, xpProgressPercent, xpToNextLevel } from "@/lib/xp";
 
 export default function UserCard() {
   const { googleUserInfo, userDbInfo } = useWeb3AuthContext();
@@ -20,16 +20,21 @@ export default function UserCard() {
   const xp: number = (userDbInfo as any)?.xp || 0;
   const level: number = levelFromXp(xp);
   const progress: number = xpProgressPercent(xp);
+  const toNext: number = xpToNextLevel(xp);
   const streak: number = (userDbInfo as any)?.streak || 0;
+  const photoURL = (userDbInfo as any)?.photoURL || googleUserInfo?.photoURL || null;
+  const displayName = (userDbInfo as any)?.displayName || googleUserInfo?.displayName || googleUserInfo?.uid?.slice(0, 10) || "";
+  const initial = displayName?.[0]?.toUpperCase() ?? "?";
+
   return (
-    <div className="bg-white w-full lg:h-full h-72 lg:row-span-2 flex flex-col rounded-box lg:col-span-2 border-[1.5px] border-gray relative">
-      <div className="h-1/4 bg-ddblue rounded-t-box"></div>
+    <div className="bg-base-100 w-full min-h-56 lg:min-h-60 lg:row-span-2 flex flex-col rounded-box lg:col-span-2 border-[1.5px] border-gray relative">
+      <div className="h-14 bg-ddblue rounded-t-box"></div>
       {/* Avatar com badge de nível */}
-      <div className="absolute z-10 top-[12.5%] left-8">
-        <div className="border border-gray rounded-full h-20 w-20 overflow-hidden bg-white relative">
-          {googleUserInfo !== null && googleUserInfo?.photoURL ? (
+      <div className="absolute z-10 top-7 left-8">
+        <div className="border border-gray rounded-full h-20 w-20 overflow-hidden bg-base-200 relative flex items-center justify-center">
+          {photoURL ? (
             <Image
-              src={googleUserInfo.photoURL}
+              src={photoURL}
               alt="user avatar"
               fill
               sizes="80px"
@@ -37,20 +42,20 @@ export default function UserCard() {
               priority
             />
           ) : (
-            <div className="skeleton h-full w-full"></div>
+            <span className="text-2xl font-bold text-ddblue">{initial}</span>
           )}
         </div>
         <div className="absolute -bottom-1 -right-1 bg-ddblue text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-white">
           Nv {level}
         </div>
       </div>
-      <div className="text-neutral px-8 pt-14 pb-3 h-3/4 flex flex-col justify-between">
-        <h2 className="font-bold text-xl">{(userDbInfo as any)?.displayName}</h2>
+      <div className="text-neutral px-8 pt-14 pb-3 flex-1 flex flex-col justify-between gap-3">
+        <h2 className="font-bold text-xl truncate">{displayName}</h2>
         {/* XP Bar */}
         <div className="flex flex-col gap-0.5 w-full">
           <div className="flex justify-between text-xs text-gray">
             <span>{xp} XP</span>
-            <span>Nível {level + 1} em {level * 100} XP</span>
+            <span>Faltam {toNext} XP para o Nv {level + 1}</span>
           </div>
           <div className="w-full bg-gray/20 rounded-full h-2">
             <div

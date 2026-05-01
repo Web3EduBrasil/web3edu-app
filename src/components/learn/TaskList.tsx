@@ -15,7 +15,7 @@ export const TaskList = ({ uid }: { uid: string }) => {
   }, [trailIdRt, uid, fetchTrailSections]);
 
   return (
-    <div className="md:w-3/12 md:min-w-80 w-full h-full bg-cgray md:rounded-box p-8 md:overflow-y-auto gap-2 flex flex-col justify-start items-start">
+    <div className="md:w-3/12 md:min-w-80 w-full min-h-[28rem] md:h-full bg-cgray md:rounded-box p-8 overflow-y-auto gap-2 flex flex-col justify-start items-start">
       {Object.keys(trailSections).length !== 0 ? (
         trailSections.map((section: any, index: any) => (
           <TaskUnits

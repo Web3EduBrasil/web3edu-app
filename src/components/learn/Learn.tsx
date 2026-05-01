@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { useOnboardingGuard } from "@/lib/useOnboardingGuard";
 import { IoArrowBack } from "react-icons/io5";
+import { LearnBottomTabs } from "./LearnBottomTabs";
 
 export const Learn = ({ trailIdRt, sectionId }: LearnProps) => {
   useOnboardingGuard();
@@ -78,8 +79,8 @@ export const Learn = ({ trailIdRt, sectionId }: LearnProps) => {
         )}
       </div>
 
-      {/* Conteúdo principal */}
-      <div className="flex-1 min-h-0 w-full flex flex-col md:flex-row sm:px-10 sm:pb-6 md:gap-10 md:pt-6">
+      {/* Conteúdo principal: aula + lista de aulas restantes */}
+      <div className="w-full flex flex-col md:flex-row sm:px-10 md:gap-10 md:pt-6 pb-4 md:h-[72vh]">
         {!googleUserInfo || !trailIdRt || Object.keys(trail).length === 0 ? (
           <div className="md:w-3/5 w-full md:h-full flex flex-col justify-start items-start bg-cgray md:rounded-box p-10 md:gap-3 gap-6 md:overflow-y-auto">
             <div className="flex w-full flex-col gap-4">
@@ -96,6 +97,10 @@ export const Learn = ({ trailIdRt, sectionId }: LearnProps) => {
         )}
         <TaskList uid={googleUserInfo?.uid} />
       </div>
+
+      {googleUserInfo && trailIdRt && Object.keys(trail).length > 0 && (
+        <LearnBottomTabs trail={trail} trailId={trailIdRt} sectionId={sectionId} />
+      )}
     </div>
   );
 };

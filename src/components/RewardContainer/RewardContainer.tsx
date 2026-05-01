@@ -2,13 +2,14 @@
 
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 import { RxCross2 } from "react-icons/rx";
-import { FaCheck, FaMedal } from "react-icons/fa";
+import { FaCheck, FaMedal, FaExternalLinkAlt, FaDownload } from "react-icons/fa";
 import { IconButton } from "../ui/IconButton";
 import { useContent } from "@/providers/content-context";
 import "react-toastify/dist/ReactToastify.css";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
+import { useEffect } from "react";
 
 export const RewardContainer = () => {
   const {
@@ -18,6 +19,7 @@ export const RewardContainer = () => {
     fetchAirDrop,
     mintStep,
     mintTxHash,
+    mintCheckLoading,
     retryMintStatusCheck,
     closeRewardContainer,
   } = useContent();
@@ -28,10 +30,30 @@ export const RewardContainer = () => {
 
   const hasWallet =
     !!userAccount[0] || (googleUserInfo?.uid?.startsWith("0x") ?? false);
-  // Endereço efetivo: pode vir do wagmi ou do próprio UID (MetaMask)
   const effectiveAddress = userAccount[0] ?? googleUserInfo?.uid ?? "";
   const isProcessing = mintStep === "uploading" || mintStep === "minting" || mintStep === "polling";
   const isDone = mintStep === "success" || mintStep === "error";
+
+  const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "";
+
+  // Verifica automaticamente se o NFT já foi mintado ao abrir o modal
+  useEffect(() => {
+    if (!rewardContainerVisibility || !rewardData || !googleUserInfo?.uid || mintStep !== "idle") return;
+
+    const uid = googleUserInfo.uid;
+    const endpoint = rewardData.type === "trail"
+      ? `/api/whitelist?uid=${uid}&trailId=${rewardData.id}`
+      : `/api/programWhitelist?uid=${uid}&programId=${rewardData.id}`;
+
+    fetch(endpoint)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.txHash) {
+          retryMintStatusCheck(uid, rewardData.id, rewardData.type);
+        }
+      })
+      .catch(() => { /* silencioso */ });
+  }, [rewardContainerVisibility, rewardData, googleUserInfo?.uid, mintStep, retryMintStatusCheck]);
 
   const stepLabel =
     mintStep === "uploading" ? t("uploading") :
@@ -208,12 +230,34 @@ export const RewardContainer = () => {
         )}
 
         {isDone && mintStep === "success" && (
-          <button
-            onClick={() => handleRewardContainer()}
-            className="btn w-full h-12 bg-dblue text-white font-semibold border-0"
-          >
-            {t("close")}
-          </button>
+          <div className="flex flex-col gap-2 w-full">
+            <a
+              href={`https://testnets.opensea.io/assets/sepolia/${contractAddress}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn w-full h-12 bg-dblue text-white font-semibold border-0 flex items-center gap-2"
+            >
+              <FaExternalLinkAlt className="w-4 h-4" />
+              Ver no OpenSea
+            </a>
+            {mintTxHash && (
+              <a
+                href={`https://sepolia.etherscan.io/tx/${mintTxHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn w-full h-10 bg-transparent border border-neutral/20 text-neutral/70 font-medium text-sm flex items-center gap-2"
+              >
+                <FaExternalLinkAlt className="w-3 h-3" />
+                Ver transação no Etherscan
+              </a>
+            )}
+            <button
+              onClick={() => handleRewardContainer()}
+              className="btn w-full h-10 bg-transparent border border-neutral/20 text-neutral/70 font-medium text-sm"
+            >
+              {t("close")}
+            </button>
+          </div>
         )}
 
         {isDone && mintStep === "error" && (

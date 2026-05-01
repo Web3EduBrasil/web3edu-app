@@ -77,16 +77,18 @@ export default function MdxSection({
         </div>
       )}
       {!isLast ? (
-        <MotionButton
-          type="button"
-          label="Avançar"
-          className="w-fit bg-blue text-white"
-          func={async () => {
-            if (!done) await fetchDone(false);
-            const nextId = getNextSectionId();
-            if (nextId) router.push(`/learn/${trailId}/${nextId}`);
-          }}
-        />
+        <div className="flex justify-end">
+          <MotionButton
+            type="button"
+            label="Avançar"
+            className="w-fit bg-blue text-white"
+            func={async () => {
+              if (!done) await fetchDone(false);
+              const nextId = getNextSectionId();
+              if (nextId) router.push(`/learn/${trailId}/${nextId}`);
+            }}
+          />
+        </div>
       ) : !done ? (
         <MotionButton
           type="button"

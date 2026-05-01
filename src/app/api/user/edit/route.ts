@@ -9,7 +9,7 @@ export const POST = async (req: NextRequest) => {
   try { verifiedUid = await verifyAuth(req); }
   catch { return NextResponse.json({ message: "Não autorizado" }, { status: 401 }); }
   try {
-    const { displayName, socialMedia } = await req.json();
+    const { displayName, socialMedia, photoURL } = await req.json();
     const uid = verifiedUid;
 
     if (
@@ -25,14 +25,19 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
+    const updateData: Record<string, any> = { displayName, socialMedia };
+    if (photoURL && typeof photoURL === "string" && photoURL.startsWith("https://")) {
+      updateData.photoURL = photoURL;
+    }
+
     const userDocRef = adminDb.collection("users").doc(uid);
     const docSnap = await userDocRef.get();
 
     if (docSnap.exists) {
-      await userDocRef.update({ displayName, socialMedia });
+      await userDocRef.update(updateData);
       return NextResponse.json({ message: "Usuário atualizado com sucesso" }, { status: 200 });
     } else {
-      await userDocRef.set({ displayName, socialMedia });
+      await userDocRef.set(updateData);
       return NextResponse.json({ message: "Usuário adicionado com sucesso" }, { status: 201 });
     }
   } catch (error: any) {

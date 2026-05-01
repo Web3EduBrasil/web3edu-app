@@ -100,8 +100,8 @@ export const Task = ({
 
   return (
     <div className="md:w-3/5 w-full h-full flex flex-col gap-2">
-      <div className="w-full md:h-full h-fit bg-neutralbg flex md:gap-3 md:flex-row flex-col">
-        <div className="w-full h-full bg-cgray relative md:rounded-box flex flex-col text-neutral justify-between md:overflow-y-auto p-8 font-medium text-medium gap-5">
+      <div className="w-full h-fit md:h-full bg-neutralbg">
+        <div className="w-full min-h-[28rem] md:h-full bg-cgray relative md:rounded-box flex flex-col text-neutral justify-between overflow-y-auto p-8 font-medium text-medium gap-5">
           {section.type === "text" ? (
             <MdxSection
               fetchDone={fetchDone}
@@ -114,6 +114,7 @@ export const Task = ({
             <RenderQuizV
               options={section.options}
               question={section.question}
+              explanation={section.explanation}
               fetchDone={fetchDone}
               isLast={section.isLast}
               id={section.id}
@@ -124,11 +125,12 @@ export const Task = ({
             <RenderQuestionV
               description={section.description}
               isLast={section.isLast}
-              question={section.title}
+              question={section.question || section.title}
               fetchDone={fetchDone}
               trailId={trailId}
               done={section.done}
               id={section.id}
+              lessonRange={section.lessonRange}
             />
           ) : section.type === "video" ? (
             <RenderVideoV

@@ -6,18 +6,30 @@ import GiftIcon from "../../../public/assets/icons/gift.svg";
 import TrailIcon from "../../../public/assets/icons/trail-icon.svg";
 import { MotionButton } from "../ui/Button";
 import AnimationFuture from "../../../public/assets/animations/FuturoAnimado.json";
+import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 
 const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
 
-import { useState } from "react";
-
 import { useTranslations } from "next-intl";
+
+/** Vídeo em destaque na landing — formato embed do YouTube. */
+const LANDING_VIDEO_EMBED =
+  "https://www.youtube.com/embed/VwxhixqyYt4?rel=0";
 
 export const Section3 = () => {
   const t = useTranslations("landing.explore");
-  const [videoLink, setVideoLink] = useState(
-    "https://www.youtube.com/embed/LDWxrrl21AM"
-  );
+  const { googleUserInfo } = useWeb3AuthContext();
+  const router = useRouter();
+
+  const requireLoginAndGo = (path: string) => {
+    if (!googleUserInfo?.uid) {
+      toast.warning(t("loginRequired"));
+      return;
+    }
+    router.push(path);
+  };
 
   return (
     <div className="h-fit w-full flex md:flex-row flex-col bg-neutralbg md:p-20 p-10 md:gap-28 gap-4">
@@ -47,9 +59,7 @@ export const Section3 = () => {
           <MotionButton
             className="bg-cgreen w-full min-w-[10rem] text-neutral rounded-full"
             type="button"
-            func={() =>
-              setVideoLink("https://www.youtube.com/embed/LDWxrrl21AM")
-            }
+            func={() => requireLoginAndGo("/homePage")}
             label={t("rewards")}
             Icon={() => (
               <Image src={GiftIcon} alt="Trail Icon" className="w-4 h-4" />
@@ -59,9 +69,7 @@ export const Section3 = () => {
           <MotionButton
             className="bg-cgreen w-full min-w-[10rem] text-neutral rounded-full"
             type="button"
-            func={() =>
-              setVideoLink("https://www.youtube.com/embed/AWrs8B5_K34")
-            }
+            func={() => requireLoginAndGo("/trailsPage")}
             label={t("trails")}
             Icon={() => (
               <Image src={TrailIcon} alt="Trail Icon" className="w-4 h-4" />
@@ -72,10 +80,13 @@ export const Section3 = () => {
 
       <div className="flex flex-col md:w-2/4 w-full min-h-full justify-between items-center">
         <iframe
-          src={videoLink}
-          frameBorder="0"
+          src={LANDING_VIDEO_EMBED}
+          title="Web3EduBrasil — vídeo de apresentação"
+          loading="lazy"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerPolicy="strict-origin-when-cross-origin"
           allowFullScreen
-          className="aspect-video md:h-full w-full h-auto rounded-box"
+          className="aspect-video md:h-full w-full h-auto rounded-box border-0 bg-black"
         />
       </div>
     </div>

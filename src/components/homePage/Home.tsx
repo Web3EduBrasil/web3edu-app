@@ -32,7 +32,7 @@ export const Home = () => {
   }, [userDbInfo, userAccount, fetchAchievedNfts]);
 
   return (
-    <div className="h-full w-full grid items-center grid-cols-1 lg:grid-rows-5 pb-6 lg:grid-cols-5 lg:px-40 px-10 justify-center gap-10">
+    <div className="w-full grid items-start grid-cols-1 pb-6 lg:grid-cols-5 lg:[grid-template-rows:repeat(5,minmax(90px,auto))] lg:px-40 px-10 justify-center gap-6">
       <UserCard />
       <NftsCard achievedNfts={achievedNfts} />
       <JourneysCard />

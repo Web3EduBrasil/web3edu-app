@@ -13,7 +13,7 @@ export const MotionButton = ({
 }: MotionButtonProps<void>) => {
   return (
     <motion.button
-      className={` px-3 py-[0.125rem] h-9 rounded-[0.7rem] text-base-content shadow-lg ${className} `}
+      className={`flex items-center justify-center gap-2 px-3 py-[0.125rem] h-9 rounded-[0.7rem] text-base-content shadow-lg ${className}`}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       transition={{
@@ -24,29 +24,9 @@ export const MotionButton = ({
       type={type}
       onClick={() => func()}
     >
-      {rightIcon ? (
-        <>
-          {Icon ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="truncate">{label}</span>
-              <Icon className="w-4 h-4" />
-            </span>
-          ) : (
-            <span className="truncate">{label}</span>
-          )}
-        </>
-      ) : (
-        <>
-          {Icon ? (
-            <span className="flex items-center justify-center gap-2">
-              <Icon className="w-4 h-4" />
-              <span className="truncate">{label}</span>
-            </span>
-          ) : (
-            <span className="truncate">{label}</span>
-          )}
-        </>
-      )}
+      {Icon && !rightIcon && <Icon className="w-4 h-4 shrink-0" />}
+      <span className="truncate">{label}</span>
+      {Icon && rightIcon && <Icon className="w-4 h-4 shrink-0" />}
     </motion.button>
   );
 };

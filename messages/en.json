@@ -40,6 +40,7 @@
       "soonContent": "We offer a forum for our users to share experiences and stories about blockchain"
     },
     "explore": {
+      "loginRequired": "Please sign in to access this area of the platform.",
       "accessing": "Accessing the Future",
       "with": "with",
       "title": "Explore the Platform",

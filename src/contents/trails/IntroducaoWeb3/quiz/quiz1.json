@@ -1,0 +1,13 @@
+{
+  "id": "3.5",
+  "title": "Quiz 1 — Fundamentos da Internet",
+  "type": "quiz",
+  "question": "Qual característica define a Web 2.0 em relação à Web 1.0?",
+  "options": [
+    { "option": "Páginas estáticas apenas para leitura", "correct": false },
+    { "option": "Participação ativa dos usuários com criação de conteúdo e redes sociais", "correct": true },
+    { "option": "Uso de contratos inteligentes para transações descentralizadas", "correct": false },
+    { "option": "Blockchain como infraestrutura de armazenamento de dados", "correct": false }
+  ],
+  "explanation": "A Web 2.0 trouxe interatividade e plataformas sociais onde os usuários passaram a criar conteúdo (YouTube, Facebook, Twitter). A Web 1.0 era estática e apenas para leitura."
+}

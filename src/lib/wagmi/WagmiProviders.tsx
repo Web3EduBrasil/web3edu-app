@@ -29,6 +29,9 @@ export function WagmiProviders({ children }: { children: ReactNode }) {
   // Config começa como null — WagmiProvider só monta após o config estar pronto
   // com os connectors sociais incluídos (wagmi v2 ignora mudanças no prop config após mount).
   const [config, setConfig] = useState<ReturnType<typeof buildWagmiConfig> | null>(null);
+  // mounted evita que wagmi/RainbowKit renderizem durante SSR/hydration,
+  // prevenindo o warning "Cannot update ConnectModal while rendering Hydrate"
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const check = () =>
@@ -42,8 +45,11 @@ export function WagmiProviders({ children }: { children: ReactNode }) {
     return () => observer.disconnect();
   }, []);
 
-  // Aguarda social wallets e monta o config UMA vez com tudo incluído
+  // Aguarda social wallets e monta o config UMA vez com tudo incluído.
+  // setMounted(true) aqui garante que o tree wagmi/RainbowKit só renderize
+  // após a hidratação, prevenindo o warning "Cannot update ConnectModal while rendering Hydrate".
   useEffect(() => {
+    setMounted(true);
     socialWalletsPromise.then((socialWallets) => {
       setConfig(buildWagmiConfig(socialWallets ?? []));
     });
@@ -57,7 +63,7 @@ export function WagmiProviders({ children }: { children: ReactNode }) {
     [isDark]
   );
 
-  if (!config) return null;
+  if (!config || !mounted) return null;
 
   return (
     <WagmiProvider config={config} reconnectOnMount={false}>

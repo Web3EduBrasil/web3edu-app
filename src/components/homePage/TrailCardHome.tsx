@@ -15,9 +15,9 @@ export const TrailCardHome = ({
   return (
     <MotionDiv
       func={() => router.push(`/learn/${trailId}/1`)}
-      className="w-full h-[30%] bg-cgray border-[1.5px] border-gray rounded-box flex justify-between items-center px-5 lg:px-10 cursor-pointer"
+      className="w-full min-h-16 bg-cgray border-[1.5px] border-gray rounded-box flex justify-between items-center px-5 lg:px-10 cursor-pointer"
     >
-      <div className="flex gap-4 items-center text-neutral h-1/4">
+      <div className="flex gap-4 items-center text-neutral min-h-10">
         {Icon ? <Icon className="h-full w-auto text-neutral" /> : <></>}
         <p className="text-base font-semibold">{text}</p>
       </div>

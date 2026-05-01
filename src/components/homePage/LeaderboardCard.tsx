@@ -41,7 +41,7 @@ export const LeaderboardCard = () => {
           {top.map((entry, index) => (
             <div
               key={entry.uid}
-              className="flex items-center justify-between bg-white rounded-box px-4 py-2 border border-gray/30"
+              className="flex items-center justify-between bg-base-100 rounded-box px-4 py-2 border border-gray/30"
             >
               <div className="flex items-center gap-3">
                 <span className="text-lg w-6 text-center">

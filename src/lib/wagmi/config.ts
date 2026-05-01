@@ -54,7 +54,8 @@ export function buildWagmiConfig(socialWallets: (() => Wallet)[] = []) {
       [mainnet.id]: http("https://rpc.ankr.com/eth"),
     },
     storage: createStorage({ key: "wagmi-web3edu-v6" }),
-    ssr: false,
+    // true: hidratação roda em useEffect (evita setState durante o render do Hydrate → conflito com RainbowKit).
+    ssr: true,
     multiInjectedProviderDiscovery: true,
   });
 }

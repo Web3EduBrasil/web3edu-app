@@ -14,9 +14,9 @@ export const JourneysCard = () => {
   const t = useTranslations("home.journeys");
 
   return (
-    <div className="w-full lg:h-full h-72 lg:col-span-2 lg:row-span-3 flex flex-col gap-3 ">
+    <div className="w-full min-h-72 lg:min-h-80 lg:col-span-2 lg:row-span-3 flex flex-col gap-3">
       <p className="font-bold text-xl">{t("title")}</p>
-      <div className="w-full lg:h-full h-full border-[1.5px] border-gray rounded-box flex flex-col overflow-hidden">
+      <div className="w-full flex-1 border-[1.5px] border-gray rounded-box flex flex-col overflow-hidden">
         {userDbInfo !== null ? (
           <>
             <div

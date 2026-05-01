@@ -92,6 +92,7 @@ export interface TrailsPageProps {
   image: string;
   title: string;
   description: string;
+  percentage?: number;
 }
 
 export interface TrailCardHomeProps {

@@ -10,6 +10,7 @@ export const TrailCards = ({
   title,
   description,
   id,
+  percentage,
 }: TrailsPageProps) => {
   const router = useRouter();
 
@@ -20,7 +21,12 @@ export const TrailCards = ({
         router.push(`/learn/${id}`);
       }}
     >
-      <div className="card bg-cgray w-full h-full shadow-xl border-2 border-gray overflow-hidden text-left">
+      <div className="card bg-cgray w-full h-full shadow-xl border-2 border-gray overflow-hidden text-left relative">
+        {typeof percentage === "number" && percentage > 0 && (
+          <div className="absolute top-2 right-2 z-10 badge badge-sm font-bold bg-cblue text-white border-0">
+            {percentage}%
+          </div>
+        )}
         <div className="relative min-h-[40%] w-full">
           <SafeImage
             src={image || ""}

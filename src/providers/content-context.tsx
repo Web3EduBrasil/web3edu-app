@@ -82,6 +82,7 @@ interface RewardState {
   rewardData: RewardData | null;
   mintStep: MintStep;
   mintTxHash: string | null;
+  mintCheckLoading: boolean;
   handleRewardContainer: (data?: RewardData) => void;
   fetchAirDrop: (
     type: "trail" | "program",
@@ -101,6 +102,7 @@ const RewardContext = createContext<RewardState>({
   rewardData: null,
   mintStep: "idle",
   mintTxHash: null,
+  mintCheckLoading: false,
   handleRewardContainer: () => { },
   fetchAirDrop: async () => { },
   retryMintStatusCheck: async () => { },
@@ -279,14 +281,18 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
   const [rewardData, setRewardData] = useState<RewardData | null>(null);
   const [mintStep, setMintStep] = useState<MintStep>("idle");
   const [mintTxHash, setMintTxHash] = useState<string | null>(null);
+  const [mintCheckLoading, setMintCheckLoading] = useState(false);
 
   const handleRewardContainer = useCallback((data?: RewardData) => {
     if (data) {
       setRewardData(data);
       setMintStep("idle");
       setMintTxHash(null);
+      setMintCheckLoading(false);
+      setRewardContainerVisibility(true);
+    } else {
+      setRewardContainerVisibility((prev) => !prev);
     }
-    setRewardContainerVisibility((prev) => !prev);
   }, []);
 
   // Fecha o modal sem resetar o estado do mint (permite fechar durante o polling)
@@ -432,11 +438,28 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      // 1. Upload do metadata para o IPFS
+      // 1. Upload do metadata para o IPFS (com imagem via ipfs://)
       setMintStep("uploading");
       const appLink = process.env.NEXT_PUBLIC_APP_LINK || "";
-      const imageUrl = icon.startsWith("http") ? icon : `${appLink}${icon}`;
-      const IpfsHash = await uploadToIpfs({ name: `Certificado — ${itemName}`, image: imageUrl, description });
+      const rawImageUrl = icon.startsWith("http") ? icon : `${appLink}${icon}`;
+
+      // Tenta fazer upload da imagem para IPFS para garantir compatibilidade com OpenSea
+      let nftImageUri = rawImageUrl;
+      try {
+        const imgUploadRes = await fetch("/api/ipfs/image", {
+          method: "POST",
+          headers: await authHeaders(),
+          body: JSON.stringify({ imageUrl: rawImageUrl }),
+        });
+        if (imgUploadRes.ok) {
+          const imgData = await imgUploadRes.json();
+          if (imgData.ipfsUrl) nftImageUri = imgData.ipfsUrl;
+        }
+      } catch {
+        // fallback: usa URL original
+      }
+
+      const IpfsHash = await uploadToIpfs({ name: `Certificado — ${itemName}`, image: nftImageUri, description });
 
       // 2. Registra na whitelist (dispara Cloud Function de mint)
       setMintStep("minting");
@@ -474,9 +497,9 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
   }, [uploadToIpfs, pollMintStatus, buildTerminalErrorToastMessage]);
 
   const value = useMemo(() => ({
-    rewardContainerVisibility, rewardData, mintStep, mintTxHash,
+    rewardContainerVisibility, rewardData, mintStep, mintTxHash, mintCheckLoading,
     handleRewardContainer, fetchAirDrop, retryMintStatusCheck, closeRewardContainer,
-  }), [rewardContainerVisibility, rewardData, mintStep, mintTxHash, handleRewardContainer, fetchAirDrop, retryMintStatusCheck, closeRewardContainer]);
+  }), [rewardContainerVisibility, rewardData, mintStep, mintTxHash, mintCheckLoading, handleRewardContainer, fetchAirDrop, retryMintStatusCheck, closeRewardContainer]);
 
   return <RewardContext.Provider value={value}>{children}</RewardContext.Provider>;
 };

@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { MotionButton } from "../ui/Button";
 import { MotionDiv } from "../ui/MotionDiv";
-import { Bounce, toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import { useContent } from "@/providers/content-context";
 
 interface QuizSectionProps {
   options: Array<any>;
   question: string;
+  explanation?: string;
   fetchDone: (param: Boolean) => Promise<void>;
   done: boolean;
   isLast: Boolean;
@@ -20,6 +20,7 @@ interface QuizSectionProps {
 export const RenderQuizV = ({
   options,
   question,
+  explanation,
   fetchDone,
   done,
   trailId,
@@ -28,6 +29,8 @@ export const RenderQuizV = ({
 }: QuizSectionProps) => {
   const [selectedOpt, setSelectedOpt] = useState(0);
   const [isCorrect, setIsCorrect] = useState(false);
+  const [errorExplanation, setErrorExplanation] = useState("");
+  const [successExplanation, setSuccessExplanation] = useState("");
   const { trailSections } = useContent();
   const router = useRouter();
 
@@ -40,47 +43,72 @@ export const RenderQuizV = ({
 
   async function HandleSubmit() {
     if (isCorrect || done) {
-      // Já correta ou já concluída: avança
       if (!isLast) {
         if (!done) await fetchDone(false);
         const nextId = getNextSectionId();
         if (nextId) router.push(`/learn/${trailId}/${nextId}`);
       } else if (!done) {
-        toast.promise(fetchDone(true), {
-          pending: "Enviando...",
-          success: "Trilha concluída! 🎉",
-          error: "Erro ao concluir tarefa.",
-        });
+        await fetchDone(true);
       }
       return;
     }
     if (options[selectedOpt].correct === true) {
       setIsCorrect(true);
-      toast.success("Resposta correta!", {
-        position: "top-center",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
-        transition: Bounce,
-      });
+      setErrorExplanation("");
+      const msg = explanation
+        ? explanation
+        : `Correto! A opção "${options[selectedOpt].option}" é a resposta certa.`;
+      setSuccessExplanation(msg);
     } else {
-      toast.error("Resposta Incorreta!", {
-        position: "top-center",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
-        transition: Bounce,
-      });
+      const correctOption = options.find((o) => o.correct)?.option || "";
+      const msg = explanation
+        ? explanation
+        : correctOption
+          ? `A resposta correta é: "${correctOption}".`
+          : "Tente novamente.";
+      setErrorExplanation(msg);
     }
   }
+
+  // Estado de acerto: mostra parabéns + explicação + botão avançar
+  if (isCorrect && successExplanation) {
+    return (
+      <div className="w-full flex flex-col gap-5">
+        <div className="w-full bg-green-50 border border-green-300 rounded-box p-8 flex flex-col gap-4">
+          <p className="text-green-600 font-bold text-lg">Resposta correta! 🎉</p>
+          <p className="text-neutral text-sm leading-relaxed">{successExplanation}</p>
+          <div className="flex justify-end">
+            <MotionButton
+              rightIcon={true}
+              label={!isLast ? "Avançar" : "Concluir trilha"}
+              type="button"
+              className="bg-blue text-neutral w-fit h-12"
+              func={HandleSubmit}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Estado de erro: esconde quiz e mostra explicação + botão retry
+  if (errorExplanation) {
+    return (
+      <div className="w-full flex flex-col gap-5">
+        <div className="w-full bg-orange-50 border border-orange-300 rounded-box p-8 flex flex-col gap-4">
+          <p className="text-orange-600 font-bold text-lg">Resposta incorreta!</p>
+          <p className="text-neutral text-sm leading-relaxed">{errorExplanation}</p>
+          <button
+            onClick={() => { setErrorExplanation(""); setSelectedOpt(0); }}
+            className="btn btn-outline btn-sm w-fit border-orange-400 text-orange-600 hover:bg-orange-100 hover:border-orange-400 hover:text-orange-700"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="w-full md:h-fit bg-ccblue rounded-box flex flex-col justify-start items-start p-10 gap-5">
@@ -112,24 +140,27 @@ export const RenderQuizV = ({
         })}
       </div>
       {done && !isLast ? (
-        <MotionButton
-          type="button"
-          label="Avançar"
-          className="w-fit bg-blue text-white"
-          func={async () => {
-            const nextId = getNextSectionId();
-            if (nextId) router.push(`/learn/${trailId}/${nextId}`);
-          }}
-        />
+        <div className="flex justify-end">
+          <MotionButton
+            type="button"
+            label="Avançar"
+            className="w-fit bg-blue text-white"
+            func={async () => {
+              const nextId = getNextSectionId();
+              if (nextId) router.push(`/learn/${trailId}/${nextId}`);
+            }}
+          />
+        </div>
       ) : (
-        <MotionButton
-          rightIcon={true}
-          label={(isCorrect || done) ? (!isLast ? "Avançar" : "Concluir trilha") : "Verificar"}
-          type="button"
-          className={`text-neutral w-fit h-12 self-end ${isCorrect || done ? "bg-blue" : "bg-transparent border-2"
-            }`}
-          func={HandleSubmit}
-        />
+        <div className="flex justify-end">
+          <MotionButton
+            rightIcon={true}
+            label={(isCorrect || done) ? (!isLast ? "Avançar" : "Concluir trilha") : "Verificar"}
+            type="button"
+            className={`text-neutral w-fit h-12 ${isCorrect || done ? "bg-blue" : "bg-transparent border-2"}`}
+            func={HandleSubmit}
+          />
+        </div>
       )}
     </>
   );

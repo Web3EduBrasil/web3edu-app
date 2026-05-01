@@ -2,7 +2,7 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 import { getFirestore } from "firebase/firestore";
-import { getVertexAI, getGenerativeModel } from "firebase/vertexai";
+
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -27,10 +27,4 @@ const auth = getAuth(app);
 const storage = getStorage(app);
 const db = getFirestore(app);
 
-// Initialize the Vertex AI service
-const vertexAI = getVertexAI(app);
-const model = getGenerativeModel(vertexAI, {
-  model: "gemini-2.0-flash-lite-001",
-});
-
-export { app, auth, storage, db, model };
+export { app, auth, storage, db };

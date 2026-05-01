@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { useTranslations } from "next-intl";
@@ -25,13 +25,25 @@ export const LoginButton = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const handleSocialLogin = () => {
+  const handleSocialLogin = async () => {
     setOpen(false);
     const web3AuthConnector = connectors.find((c) => c.id === "web3auth");
-    if (web3AuthConnector) {
-      connect({ connector: web3AuthConnector });
-    } else {
+    if (!web3AuthConnector) {
       openConnectModal?.();
+      return;
+    }
+    try {
+      // Abre o modal do Web3Auth diretamente para evitar bug do conector
+      // onde provider é null antes do login (web3auth-wagmi-connector@7 + modal@9)
+      const { getWeb3AuthInstance } = await import("@/lib/wagmi/web3authWallet");
+      const instance = getWeb3AuthInstance();
+      if (instance.status === "not_ready") {
+        await instance.initModal();
+      }
+      await instance.connect(); // abre modal, aguarda o usuário logar
+      connect({ connector: web3AuthConnector }); // sincroniza com wagmi
+    } catch {
+      // usuário fechou o modal ou erro — não faz nada
     }
   };
 

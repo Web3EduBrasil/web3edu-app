@@ -30,7 +30,7 @@ const web3AuthNetwork =
 let privateKeyProvider: EthereumPrivateKeyProvider | null = null;
 let web3AuthInstance: Web3Auth | null = null;
 
-function getWeb3AuthInstance(): Web3Auth {
+export function getWeb3AuthInstance(): Web3Auth {
   if (!web3AuthInstance) {
     if (!privateKeyProvider) {
       privateKeyProvider = new EthereumPrivateKeyProvider({

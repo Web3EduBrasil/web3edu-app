@@ -18,10 +18,10 @@ export const TrailsCardSection = () => {
   }, [trailsList.length, googleUserInfo, fetchTrailsList]);
 
   return (
-    <div className="flex flex-col lg:h-full h-80 w-full lg:col-span-3 lg:row-span-3 gap-3">
+    <div className="flex flex-col min-h-80 lg:min-h-80 w-full lg:col-span-3 lg:row-span-3 gap-3">
       <p className="font-bold text-xl text-nowrap ">Trilhas de aprendizagem</p>
 
-      <div className="w-full  h-full flex flex-col border-gray rounded-box justify-between">
+      <div className="w-full flex-1 flex flex-col border-gray rounded-box gap-3">
         {Object.keys(trailsList).length !== 0 ? (
           trailsList.map((e: any, index: any) => {
             return (
@@ -35,9 +35,9 @@ export const TrailsCardSection = () => {
           })
         ) : (
           <>
-            <div className="skeleton w-full h-[30%]"></div>
-            <div className="skeleton w-full h-[30%]"></div>
-            <div className="skeleton w-full h-[30%]"></div>
+            <div className="skeleton w-full h-16 rounded-box"></div>
+            <div className="skeleton w-full h-16 rounded-box"></div>
+            <div className="skeleton w-full h-16 rounded-box"></div>
           </>
         )}
       </div>

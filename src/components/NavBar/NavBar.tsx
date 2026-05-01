@@ -48,9 +48,6 @@ export default function NavBar({ }) {
                 <li>
                   <Link href="/homePage">{t("home")}</Link>
                 </li>
-                <li onClick={() => toast.info("Em breve.")}>
-                  <a>{t("mentoring")}</a>
-                </li>
                 <li>
                   <Link href="/trailsPage">{t("trails")}</Link>
                 </li>
@@ -72,9 +69,6 @@ export default function NavBar({ }) {
             <ul className="menu menu-horizontal px-3 text-neutral font-medium bg-cgray rounded-box">
               <li>
                 <Link href="/homePage">{t("home")}</Link>
-              </li>
-              <li onClick={() => toast.info("Em breve.")}>
-                <a>{t("mentoring")}</a>
               </li>
               <li>
                 <Link href="/trailsPage">{t("trails")}</Link>
