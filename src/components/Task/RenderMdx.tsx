@@ -65,7 +65,7 @@ export default function MdxSection({
           <p className="text-orange-500 text-xs mt-1">Este módulo ainda não possui conteúdo cadastrado.</p>
         </div>
       ) : mdxSource ? (
-        <div className="prose prose-blue max-w-none">
+        <div className="mdx-content">
           <MDXRemote {...mdxSource} />
         </div>
       ) : (

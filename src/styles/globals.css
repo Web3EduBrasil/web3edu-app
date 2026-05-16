@@ -29,22 +29,56 @@
   }
 }
 
-ul.mdx {
-  list-style-type: disc;
-  margin-left: 15px !important;
-}
+@layer components {
+  .mdx-content {
+    @apply prose prose-neutral max-w-none;
+  }
 
-ol.mdx {
-  list-style-type: decimal;
-  list-style-position: inside;
-}
+  .mdx-content :where(h1, h2, h3, h4) {
+    @apply text-neutral;
+  }
 
-li.mdx {
-  margin-bottom: 1rem !important;
-}
+  .mdx-content :where(p, li) {
+    @apply text-neutral/90;
+  }
 
-a.mdx {
-  color: blue !important;
-  cursor: pointer !important;
-  text-decoration: underline !important;
+  .mdx-content :where(ul) {
+    @apply list-disc pl-6;
+  }
+
+  .mdx-content :where(ol) {
+    @apply list-decimal pl-6;
+  }
+
+  .mdx-content :where(a) {
+    @apply text-cblue underline underline-offset-2;
+  }
+
+  .mdx-content :where(a:hover) {
+    @apply text-blue;
+  }
+
+  .mdx-content :where(strong) {
+    @apply text-neutral font-semibold;
+  }
+
+  .mdx-content :where(code) {
+    @apply text-blue bg-ccgray px-1 py-0.5 rounded;
+  }
+
+  .mdx-content :where(pre) {
+    @apply bg-ccgray text-neutral p-4 rounded-lg overflow-x-auto;
+  }
+
+  .mdx-content :where(blockquote) {
+    @apply border-l-4 border-cblue/60 pl-4 text-neutral/80;
+  }
+
+  .mdx-content :where(hr) {
+    @apply border-dgray/30;
+  }
+
+  .mdx-content :where(img) {
+    @apply rounded-lg;
+  }
 }
