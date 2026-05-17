@@ -32,7 +32,7 @@ const resolveImage = async (imageValue?: string) => {
   try {
     const response = await fetch(rawUrl, { cache: "no-store" });
     if (!response.ok) {
-      return { displayUrl: rawUrl, downloadUrl: rawUrl, rawUrl, isSvg: false };
+      return { displayUrl: "/assets/icons/nft-placeholder.svg", downloadUrl: rawUrl, rawUrl, isSvg: false };
     }
     const contentType = response.headers.get("content-type") || "";
     if (contentType.includes("image/svg+xml")) {
@@ -43,7 +43,7 @@ const resolveImage = async (imageValue?: string) => {
     }
     return { displayUrl: rawUrl, downloadUrl: rawUrl, rawUrl, isSvg: false };
   } catch {
-    return { displayUrl: rawUrl, downloadUrl: rawUrl, rawUrl, isSvg: false };
+    return { displayUrl: "/assets/icons/nft-placeholder.svg", downloadUrl: rawUrl, rawUrl, isSvg: false };
   }
 };
 
@@ -70,7 +70,8 @@ export default async function CertificatePage({
   const { displayUrl, downloadUrl, rawUrl, isSvg } = await resolveImage(metadata.image);
   const title = typeof metadata.name === "string" ? metadata.name : t("title");
   const description = typeof metadata.description === "string" ? metadata.description : "";
-  const downloadName = isSvg ? "certificado.svg" : "certificado";
+  const downloadName = "certificado.pdf";
+  const downloadParam = metadata.image ? encodeURIComponent(metadata.image) : encodeURIComponent(ipfsHash);
 
   return (
     <div className="min-h-screen w-full bg-neutralbg flex items-center justify-center px-6 py-10">
@@ -102,7 +103,7 @@ export default async function CertificatePage({
               {downloadUrl && (
                 <a
                   className="btn bg-dblue text-white border-0"
-                  href={downloadUrl}
+                  href={`/api/ipfs/pdf?image=${downloadParam}`}
                   download={downloadName}
                 >
                   {t("downloadImage")}

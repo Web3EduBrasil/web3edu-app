@@ -33,8 +33,13 @@ export const NftsCard = ({ achievedNfts }: { achievedNfts: AchievedNft[] }) => {
                 width={100}
                 height={100}
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  try {
+                    (e.target as HTMLImageElement).src = "/assets/icons/nft-placeholder.svg";
+                  } catch { }
+                }}
                 onClick={() => {
-                  window.open(nft.certificateUrl, "_self");
+                  window.open(nft.certificateUrl, "_blank", "noopener,noreferrer");
                 }}
               />
             </div>

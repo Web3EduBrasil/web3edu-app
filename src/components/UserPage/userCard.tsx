@@ -93,11 +93,14 @@ export const UserSection = () => {
     }
   };
 
+  const effectiveAddress =
+    userAccount[0] || (googleUserInfo?.uid?.startsWith("0x") ? googleUserInfo.uid : "");
+
   useEffect(() => {
-    if (activeTab === "certificados" && userAccount[0]) {
-      fetchAchievedNfts(userAccount[0]);
+    if (activeTab === "certificados" && effectiveAddress) {
+      fetchAchievedNfts(effectiveAddress);
     }
-  }, [activeTab, userAccount, fetchAchievedNfts]);
+  }, [activeTab, effectiveAddress, fetchAchievedNfts]);
 
   const linkedinRegex =
     /^(https?:\/\/)?(www\.|[\w]{2,3}\.)?linkedin\.com\/.+$/i;
@@ -172,7 +175,7 @@ export const UserSection = () => {
               onClick={() => setActiveTab("certificados")}
               className={`tab text-sm md:text-base ${activeTab === "certificados" ? "tab-active font-semibold" : "text-dgray"}`}
             >
-              🏆 {t("certificates")}
+              🏆 Certificados
             </button>
           </div>
         </div>
@@ -288,6 +291,8 @@ export const UserSection = () => {
                   <a
                     key={i}
                     href={nft.certificateUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="flex flex-col rounded-xl overflow-hidden border-2 border-gray bg-base-100 hover:shadow-lg transition-shadow group"
                   >
                     <div className="w-full aspect-square relative">

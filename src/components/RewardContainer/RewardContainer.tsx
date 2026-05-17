@@ -232,6 +232,8 @@ export const RewardContainer = () => {
             {mintIpfsHash && (
               <a
                 href={`/certificates/${mintIpfsHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="btn w-full h-12 bg-dblue text-white font-semibold border-0 flex items-center gap-2"
               >
                 <FaExternalLinkAlt className="w-4 h-4" />

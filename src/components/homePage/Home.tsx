@@ -12,7 +12,7 @@ import { useContent } from "@/providers/content-context";
 
 export const Home = () => {
   const router = useRouter();
-  const { userDbInfo, userAccount } = useWeb3AuthContext();
+  const { userDbInfo, userAccount, googleUserInfo } = useWeb3AuthContext();
   const { fetchAchievedNfts, achievedNfts } = useContent();
   const nftsFetchedRef = useRef(false);
 
@@ -24,12 +24,16 @@ export const Home = () => {
     }
   }, [userDbInfo, router]);
 
+  const effectiveAddress =
+    userAccount[0] || (googleUserInfo?.uid?.startsWith("0x") ? googleUserInfo.uid : "");
+
   useEffect(() => {
-    if (userDbInfo && Object.keys(userDbInfo).length > 0 && userAccount[0] && !nftsFetchedRef.current) {
+    if (!effectiveAddress) return;
+    if (userDbInfo && Object.keys(userDbInfo).length > 0 && !nftsFetchedRef.current) {
       nftsFetchedRef.current = true;
-      fetchAchievedNfts(userAccount[0]);
+      fetchAchievedNfts(effectiveAddress);
     }
-  }, [userDbInfo, userAccount, fetchAchievedNfts]);
+  }, [userDbInfo, effectiveAddress, fetchAchievedNfts]);
 
   return (
     <div className="w-full grid items-start grid-cols-1 pb-6 lg:grid-cols-5 lg:[grid-template-rows:repeat(5,minmax(90px,auto))] lg:px-40 px-10 justify-center gap-6">
