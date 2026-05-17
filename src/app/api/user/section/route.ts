@@ -2,6 +2,8 @@ import { adminDb } from "@/lib/firebase-admin";
 import { NextRequest, NextResponse } from "next/server";
 import { levelFromXp, XP_REWARDS } from "@/lib/xp";
 import { verifyAuth } from "@/lib/auth-helper";
+import fs from "fs";
+import path from "path";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +30,22 @@ export const POST = async (req: NextRequest) => {
     ]);
 
     if (userDocSnap.exists && contentsSnap.size > 0) {
-      const trailSections = contentsSnap.docs.map((doc) => doc.id);
+      const allContents = contentsSnap.docs.map((doc) => ({
+        id: doc.id,
+        type: doc.data().type ?? "text",
+      }));
+
+      const trailMdxDir = path.join(process.cwd(), "src", "contents", "trails", trailId);
+      const availableMdxIds = new Set<string>();
+      if (fs.existsSync(trailMdxDir)) {
+        fs.readdirSync(trailMdxDir)
+          .filter((f) => f.endsWith(".mdx"))
+          .forEach((f) => availableMdxIds.add(f.replace(".mdx", "")));
+      }
+
+      const trailSections = allContents
+        .filter((section) => section.type !== "text" || availableMdxIds.has(section.id))
+        .map((section) => section.id);
 
       const userTrails = userDocSnap.data()?.trails || [];
       const existingTrailIndex = userTrails.findIndex(

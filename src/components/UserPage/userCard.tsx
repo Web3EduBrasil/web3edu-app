@@ -287,14 +287,12 @@ export const UserSection = () => {
                 {achievedNfts.map((nft, i) => (
                   <a
                     key={i}
-                    href={nft.openseaUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href={nft.certificateUrl}
                     className="flex flex-col rounded-xl overflow-hidden border-2 border-gray bg-base-100 hover:shadow-lg transition-shadow group"
                   >
                     <div className="w-full aspect-square relative">
                       <Image
-                        src={nft.ipfs || "/assets/icons/nft-placeholder.svg"}
+                        src={nft.imageUrl || "/assets/icons/nft-placeholder.svg"}
                         alt={`NFT ${nft.trailId}`}
                         fill
                         sizes="200px"
@@ -309,7 +307,7 @@ export const UserSection = () => {
                     <div className="p-2">
                       <p className="text-xs font-semibold text-dgray truncate">{nft.trailId}</p>
                       <p className="text-xs text-dgray/60 flex items-center gap-1 mt-0.5">
-                        OpenSea <FaExternalLinkAlt className="text-[10px]" />
+                        {t("viewCertificate")} <FaExternalLinkAlt className="text-[10px]" />
                       </p>
                     </div>
                   </a>

@@ -1,5 +1,6 @@
 import { onDocumentWritten, FirestoreEvent, DocumentSnapshot, Change } from "firebase-functions/v2/firestore";
 import { runContract } from "../utils/wallet";
+import { ethers } from "ethers";
 import {
   updateProgramAirdropStatus,
   updateProgramAirdropTerminalFailureStatus,
@@ -83,8 +84,9 @@ export const airdropProgramNFT = onDocumentWritten(
           const ipfsHash = airdrop.ipfsHash;
           const tokenURI = ipfsHash.startsWith("ipfs://") ? ipfsHash : `ipfs://${ipfsHash}`;
           const contract = runContract(contractAddress, privateKey, rpcUrl);
+          const programHash = ethers.keccak256(ethers.toUtf8Bytes(programId));
 
-          const tx = await contract.safeMint(walletAddress, tokenURI);
+          const tx = await contract.safeMint(walletAddress, tokenURI, programHash);
           await tx.wait();
 
           await updateProgramAirdropStatus(uid, programId, true, tx.hash);

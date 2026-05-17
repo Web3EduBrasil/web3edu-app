@@ -8,14 +8,14 @@ let _tokenExpiry = 0;
 const TOKEN_TTL_MS = 55 * 60 * 1000;
 
 /** Retorna o Firebase ID Token do usuário autenticado (com cache de 55min). */
-export async function getIdToken(): Promise<string> {
+export async function getIdToken(forceRefresh = false): Promise<string> {
   const now = Date.now();
-  if (_cachedToken && now < _tokenExpiry) return _cachedToken;
+  if (!forceRefresh && _cachedToken && now < _tokenExpiry) return _cachedToken;
 
   const user = getAuth(app).currentUser;
   if (!user) throw new Error("Usuário não autenticado");
 
-  _cachedToken = await user.getIdToken();
+  _cachedToken = await user.getIdToken(forceRefresh);
   _tokenExpiry = now + TOKEN_TTL_MS;
   return _cachedToken;
 }
@@ -28,7 +28,12 @@ export function clearIdTokenCache(): void {
 
 /** Headers padrão com Authorization + Content-Type. */
 export async function authHeaders(): Promise<Record<string, string>> {
-  const token = await getIdToken();
+  let token: string;
+  try {
+    token = await getIdToken();
+  } catch {
+    token = await getIdToken(true);
+  }
   return {
     "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,

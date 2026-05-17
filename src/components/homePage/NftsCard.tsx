@@ -28,13 +28,13 @@ export const NftsCard = ({ achievedNfts }: { achievedNfts: AchievedNft[] }) => {
               className="w-22 h-22 flex items-center justify-center"
             >
               <Image
-                src={nft.ipfs}
+                src={nft.imageUrl || "/assets/icons/nft-placeholder.svg"}
                 alt="NFT"
                 width={100}
                 height={100}
                 className="w-full h-full object-cover"
                 onClick={() => {
-                  window.open(nft.openseaUrl, "_blank");
+                  window.open(nft.certificateUrl, "_self");
                 }}
               />
             </div>

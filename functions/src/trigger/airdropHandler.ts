@@ -2,6 +2,7 @@
 
 import { onDocumentWritten, FirestoreEvent, DocumentSnapshot, Change } from "firebase-functions/v2/firestore";
 import { runContract } from "../utils/wallet";
+import { ethers } from "ethers";
 import {
     updateAirdropStatus,
     updateAirdropTerminalFailureStatus,
@@ -85,9 +86,10 @@ export const airdropNFT = onDocumentWritten(
                     const tokenURI = ipfsHash.startsWith("ipfs://") ? ipfsHash : `ipfs://${ipfsHash}`;
 
                     const contract = runContract(contractAddress, privateKey, rpcUrl);
+                    const trailHash = ethers.keccak256(ethers.toUtf8Bytes(category));
 
                     // Executa o mint no contrato com walletAddress e tokenURI
-                    const tx = await contract.safeMint(walletAddress, tokenURI);
+                    const tx = await contract.safeMint(walletAddress, tokenURI, trailHash);
                     await tx.wait();
 
                     // Atualiza o status do airdrop para mintado e define o txHash

@@ -140,6 +140,7 @@
     "title": "Data",
     "personalData": "Personal Data",
     "certificates": "Certificates",
+    "viewCertificate": "View certificate",
     "displayName": "Display Name",
     "discord": "Discord",
     "discordPlaceholder": "Your Profile Name",
@@ -180,6 +181,7 @@
     "polling": "Waiting for network confirmation...",
     "success": "NFT minted successfully! 🎉",
     "viewOnChain": "View on blockchain",
+    "viewCertificate": "View certificate",
     "close": "Close",
     "retryCheck": "Check status again",
     "certificateLabel": "NFT Certificate",
@@ -189,5 +191,13 @@
     "stepUpload": "Uploading certificate to network",
     "stepMint": "Registering on blockchain",
     "stepConfirm": "Waiting for confirmation"
+  },
+  "certificate": {
+    "title": "Certificate",
+    "subtitle": "View and download your NFT certificate.",
+    "downloadImage": "Download image",
+    "openMetadata": "Open metadata",
+    "openImage": "Open image",
+    "notFound": "Certificate not found"
   }
 }

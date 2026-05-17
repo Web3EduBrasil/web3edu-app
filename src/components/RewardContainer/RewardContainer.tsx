@@ -2,7 +2,7 @@
 
 import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 import { RxCross2 } from "react-icons/rx";
-import { FaCheck, FaMedal, FaExternalLinkAlt, FaDownload } from "react-icons/fa";
+import { FaCheck, FaMedal, FaExternalLinkAlt } from "react-icons/fa";
 import { IconButton } from "../ui/IconButton";
 import { useContent } from "@/providers/content-context";
 import "react-toastify/dist/ReactToastify.css";
@@ -19,7 +19,7 @@ export const RewardContainer = () => {
     fetchAirDrop,
     mintStep,
     mintTxHash,
-    mintCheckLoading,
+    mintIpfsHash,
     retryMintStatusCheck,
     closeRewardContainer,
   } = useContent();
@@ -33,8 +33,6 @@ export const RewardContainer = () => {
   const effectiveAddress = userAccount[0] ?? googleUserInfo?.uid ?? "";
   const isProcessing = mintStep === "uploading" || mintStep === "minting" || mintStep === "polling";
   const isDone = mintStep === "success" || mintStep === "error";
-
-  const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "";
 
   // Verifica automaticamente se o NFT já foi mintado ao abrir o modal
   useEffect(() => {
@@ -231,15 +229,15 @@ export const RewardContainer = () => {
 
         {isDone && mintStep === "success" && (
           <div className="flex flex-col gap-2 w-full">
-            <a
-              href={`https://testnets.opensea.io/assets/sepolia/${contractAddress}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn w-full h-12 bg-dblue text-white font-semibold border-0 flex items-center gap-2"
-            >
-              <FaExternalLinkAlt className="w-4 h-4" />
-              Ver no OpenSea
-            </a>
+            {mintIpfsHash && (
+              <a
+                href={`/certificates/${mintIpfsHash}`}
+                className="btn w-full h-12 bg-dblue text-white font-semibold border-0 flex items-center gap-2"
+              >
+                <FaExternalLinkAlt className="w-4 h-4" />
+                {t("viewCertificate")}
+              </a>
+            )}
             {mintTxHash && (
               <a
                 href={`https://sepolia.etherscan.io/tx/${mintTxHash}`}

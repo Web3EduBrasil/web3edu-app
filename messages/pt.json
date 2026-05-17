@@ -140,6 +140,7 @@
     "title": "Dados",
     "personalData": "Dados Pessoais",
     "certificates": "Certificados",
+    "viewCertificate": "Ver certificado",
     "displayName": "Nome de Exibição",
     "discord": "Discord",
     "discordPlaceholder": "Nome do seu Perfil",
@@ -180,6 +181,7 @@
     "polling": "Aguardando confirmação da rede...",
     "success": "NFT mintado com sucesso! 🎉",
     "viewOnChain": "Ver na blockchain",
+    "viewCertificate": "Ver certificado",
     "close": "Fechar",
     "retryCheck": "Re-verificar status",
     "certificateLabel": "Certificado NFT",
@@ -189,5 +191,13 @@
     "stepUpload": "Enviando certificado para a rede",
     "stepMint": "Registrando na blockchain",
     "stepConfirm": "Aguardando confirmação"
+  },
+  "certificate": {
+    "title": "Certificado",
+    "subtitle": "Visualize e baixe seu certificado NFT.",
+    "downloadImage": "Baixar imagem",
+    "openMetadata": "Abrir metadata",
+    "openImage": "Abrir imagem",
+    "notFound": "Certificado não encontrado"
   }
 }

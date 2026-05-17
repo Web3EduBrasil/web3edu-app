@@ -3,6 +3,34 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+const pinataGateway = "https://ipfs.io/ipfs/";
+
+const normalizeIpfsHash = (hash?: string): string => {
+  if (!hash) return "";
+  return hash.startsWith("ipfs://") ? hash.replace("ipfs://", "") : hash;
+};
+
+const toGatewayUrl = (value?: string): string => {
+  if (!value) return "";
+  if (value.startsWith("ipfs://")) {
+    return `${pinataGateway}${value.replace("ipfs://", "")}`;
+  }
+  if (value.startsWith("http")) return value;
+  return `${pinataGateway}${value}`;
+};
+
+const fetchMetadata = async (ipfsHash: string) => {
+  if (!ipfsHash) return null;
+  try {
+    const response = await fetch(toGatewayUrl(ipfsHash), { cache: "no-store" });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) {
+    console.error("Erro ao buscar metadata do IPFS:", error);
+    return null;
+  }
+};
+
 /**
  * GET /api/user/nfts?walletAddress=0x...
  * Retorna os NFTs mintados do usuário a partir dos dados do Firestore (whitelist + programWhitelist).
@@ -18,11 +46,7 @@ export const GET = async (req: NextRequest) => {
       );
     }
 
-    const contractAddress =
-      process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ||
-      "0x8984b78F102f85222E7fa9c43d37d84E087B1Be8";
-
-    const nfts: any[] = [];
+    const nftPromises: Promise<any>[] = [];
 
     // Busca whitelist (trilhas) onde address == walletAddress
     const whitelistSnap = await adminDb
@@ -50,17 +74,20 @@ export const GET = async (req: NextRequest) => {
       for (const [trailId, trailStatus] of Object.entries(status)) {
         const s = trailStatus as any;
         if (s.minted && s.txHash) {
-          nfts.push({
-            walletAddress: data.address,
-            trailId,
-            ipfs: s.ipfsHash
-              ? (s.ipfsHash.startsWith("ipfs://")
-                ? `https://gateway.pinata.cloud/ipfs/${s.ipfsHash.replace("ipfs://", "")}`
-                : `https://gateway.pinata.cloud/ipfs/${s.ipfsHash}`)
-              : "",
-            createdAt: new Date().toISOString(),
-            openseaUrl: `https://testnets.opensea.io/assets/sepolia/${contractAddress}`,
-          });
+          const ipfsHash = normalizeIpfsHash(s.ipfsHash);
+          nftPromises.push((async () => {
+            const metadata = await fetchMetadata(ipfsHash);
+            const imageUrl = toGatewayUrl(metadata?.image);
+            return {
+              walletAddress: data.address,
+              trailId,
+              type: "trail",
+              ipfsHash,
+              imageUrl,
+              certificateUrl: ipfsHash ? `/certificates/${ipfsHash}` : "",
+              createdAt: new Date().toISOString(),
+            };
+          })());
         }
       }
     }
@@ -90,21 +117,25 @@ export const GET = async (req: NextRequest) => {
       for (const [programId, programStatus] of Object.entries(status)) {
         const s = programStatus as any;
         if (s.minted && s.txHash) {
-          nfts.push({
-            walletAddress: data.address,
-            trailId: programId,
-            ipfs: s.ipfsHash
-              ? (s.ipfsHash.startsWith("ipfs://")
-                ? `https://gateway.pinata.cloud/ipfs/${s.ipfsHash.replace("ipfs://", "")}`
-                : `https://gateway.pinata.cloud/ipfs/${s.ipfsHash}`)
-              : "",
-            createdAt: new Date().toISOString(),
-            openseaUrl: `https://testnets.opensea.io/assets/sepolia/${contractAddress}`,
-          });
+          const ipfsHash = normalizeIpfsHash(s.ipfsHash);
+          nftPromises.push((async () => {
+            const metadata = await fetchMetadata(ipfsHash);
+            const imageUrl = toGatewayUrl(metadata?.image);
+            return {
+              walletAddress: data.address,
+              trailId: programId,
+              type: "program",
+              ipfsHash,
+              imageUrl,
+              certificateUrl: ipfsHash ? `/certificates/${ipfsHash}` : "",
+              createdAt: new Date().toISOString(),
+            };
+          })());
         }
       }
     }
 
+    const nfts = (await Promise.all(nftPromises)).filter(Boolean);
     return NextResponse.json({ nfts }, { status: 200 });
   } catch (error: any) {
     console.error("Erro ao buscar NFTs do usuário:", error.message);

@@ -74,7 +74,7 @@ env:
 
   # CONTRATO NFT (Sepolia)
   - variable: NEXT_PUBLIC_CONTRACT_ADDRESS
-    value: "0x8984b78F102f85222E7fa9c43d37d84E087B1Be8"
+    value: "0xB0C4d62D4373e32D2eC78f3a2876BB85aC29C48C"
     availability:
       - BUILD
       - RUNTIME

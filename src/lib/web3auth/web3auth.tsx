@@ -267,6 +267,7 @@ export default function useWeb3Auth() {
         if (wagmiStatus === "reconnecting" || wagmiStatus === "connecting") return;
         // Só redireciona após auth ter sido verificado pelo menos uma vez
         if (!authCheckedRef.current) return;
+        if (pathname.startsWith("/certificates")) return;
         if (pathname !== "/") {
           router.push("/");
           toast.warning("Faça login para acessar esta tela");

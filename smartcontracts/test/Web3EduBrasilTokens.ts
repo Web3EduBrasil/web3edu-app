@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { network } from "hardhat";
+import { keccak256, stringToHex } from "viem";
 
 describe("Web3EduBrasilTokens", async function () {
   const { viem } = await network.create();
@@ -15,7 +16,8 @@ describe("Web3EduBrasilTokens", async function () {
       burner.account.address,
     ]);
 
-    await token.write.safeMint([user.account.address, "QmExampleMetadataCid"], {
+    const trailHash = keccak256(stringToHex("trail:example"));
+    await token.write.safeMint([user.account.address, "QmExampleMetadataCid", trailHash], {
       account: minter.account,
     });
 
@@ -38,9 +40,31 @@ describe("Web3EduBrasilTokens", async function () {
       burner.account.address,
     ]);
 
+    const trailHash = keccak256(stringToHex("trail:unauthorized"));
     await assert.rejects(async () => {
-      await token.write.safeMint([user.account.address, "QmUnauthorized"], {
+      await token.write.safeMint([user.account.address, "QmUnauthorized", trailHash], {
         account: user.account,
+      });
+    });
+  });
+
+  it("rejects mint for a trail already minted", async function () {
+    const [admin, minter, burner, user] = await viem.getWalletClients();
+
+    const token = await viem.deployContract("Web3EduBrasilTokens", [
+      admin.account.address,
+      minter.account.address,
+      burner.account.address,
+    ]);
+
+    const trailHash = keccak256(stringToHex("trail:duplicate"));
+    await token.write.safeMint([user.account.address, "QmFirst", trailHash], {
+      account: minter.account,
+    });
+
+    await assert.rejects(async () => {
+      await token.write.safeMint([user.account.address, "QmSecond", trailHash], {
+        account: minter.account,
       });
     });
   });

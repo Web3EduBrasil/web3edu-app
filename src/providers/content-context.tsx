@@ -33,6 +33,7 @@ interface MintStatusResponse {
   terminalError?: boolean;
   errorCode?: string | null;
   errorMessage?: string | null;
+  ipfsHash?: string | null;
 }
 
 // ─── Trail Context ─────────────────────────────────────────────────────────────
@@ -82,6 +83,7 @@ interface RewardState {
   rewardData: RewardData | null;
   mintStep: MintStep;
   mintTxHash: string | null;
+  mintIpfsHash: string | null;
   mintCheckLoading: boolean;
   handleRewardContainer: (data?: RewardData) => void;
   fetchAirDrop: (
@@ -102,6 +104,7 @@ const RewardContext = createContext<RewardState>({
   rewardData: null,
   mintStep: "idle",
   mintTxHash: null,
+  mintIpfsHash: null,
   mintCheckLoading: false,
   handleRewardContainer: () => { },
   fetchAirDrop: async () => { },
@@ -215,49 +218,10 @@ const TrailProvider = ({ children }: { children: React.ReactNode }) => {
 
 // ─── Nft Provider ──────────────────────────────────────────────────────────────
 
-function extractNftName(description: string): string {
-  if (!description) return "desconhecido";
-  const trailMatch = description.match(/trilha de aprendizagem\s(.+)$/i);
-  if (trailMatch) return trailMatch[1].trim();
-  const programMatch = description.match(/programa\s(.+)$/i);
-  if (programMatch) return programMatch[1].trim();
-  return "desconhecido";
-}
-
 const NftProvider = ({ children }: { children: React.ReactNode }) => {
   const [achievedNfts, setAchievedNfts] = useState<AchievedNft[]>([]);
 
   const fetchAchievedNfts = useCallback(async (walletAddress: string) => {
-    const contractAddress =
-      process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ||
-      "0x8984b78F102f85222E7fa9c43d37d84E087B1Be8";
-    const alchemyKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
-
-    if (alchemyKey) {
-      try {
-        const url = `https://eth-sepolia.g.alchemy.com/nft/v3/${alchemyKey}/getNFTsForOwner?owner=${walletAddress}&contractAddresses[]=${contractAddress}&withMetadata=true&orderBy=transferTime&pageSize=100`;
-        const res = await fetch(url, { headers: { accept: "application/json" } });
-        if (res.ok) {
-          const data = await res.json();
-          const formattedNfts: AchievedNft[] = (data.ownedNfts || []).map((nft: any) => {
-            const name = extractNftName(nft.description || nft.raw?.metadata?.description || "");
-            const openseaUrl = `https://testnets.opensea.io/assets/sepolia/${nft.contract?.address}/${nft.tokenId}`;
-            return {
-              walletAddress,
-              trailId: name,
-              ipfs: nft.raw?.metadata?.image || nft.image?.originalUrl || "",
-              createdAt: new Date(nft.timeLastUpdated),
-              openseaUrl,
-            };
-          });
-          setAchievedNfts(formattedNfts);
-          return;
-        }
-      } catch (error) {
-        console.error("Alchemy NFT API falhou, tentando fallback:", error);
-      }
-    }
-
     try {
       const res = await fetch(`/api/user/nfts?walletAddress=${walletAddress}`);
       if (res.ok) {
@@ -281,13 +245,20 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
   const [rewardData, setRewardData] = useState<RewardData | null>(null);
   const [mintStep, setMintStep] = useState<MintStep>("idle");
   const [mintTxHash, setMintTxHash] = useState<string | null>(null);
+  const [mintIpfsHash, setMintIpfsHash] = useState<string | null>(null);
   const [mintCheckLoading, setMintCheckLoading] = useState(false);
+
+  const normalizeIpfsHash = useCallback((hash?: string | null) => {
+    if (!hash) return null;
+    return hash.startsWith("ipfs://") ? hash.replace("ipfs://", "") : hash;
+  }, []);
 
   const handleRewardContainer = useCallback((data?: RewardData) => {
     if (data) {
       setRewardData(data);
       setMintStep("idle");
       setMintTxHash(null);
+      setMintIpfsHash(null);
       setMintCheckLoading(false);
       setRewardContainerVisibility(true);
     } else {
@@ -349,6 +320,7 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
         if (data.txHash) {
           setMintStep("success");
           setMintTxHash(data.txHash);
+          if (data.ipfsHash) setMintIpfsHash(normalizeIpfsHash(data.ipfsHash));
           toast.success("🎉 Seu certificado NFT foi mintado com sucesso!", { autoClose: 8000 });
           return;
         }
@@ -382,6 +354,7 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
       if (data.txHash) {
         setMintStep("success");
         setMintTxHash(data.txHash);
+        if (data.ipfsHash) setMintIpfsHash(normalizeIpfsHash(data.ipfsHash));
       } else if (data.terminalError) {
         setMintStep("error");
         setMintTxHash(null);
@@ -419,6 +392,7 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
       if (preData.txHash) {
         setMintStep("success");
         setMintTxHash(preData.txHash);
+        if (preData.ipfsHash) setMintIpfsHash(normalizeIpfsHash(preData.ipfsHash));
         toast.success("🎉 Seu certificado NFT foi mintado com sucesso!", { autoClose: 8000 });
         return;
       }
@@ -443,7 +417,7 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
       const appLink = process.env.NEXT_PUBLIC_APP_LINK || "";
       const rawImageUrl = icon.startsWith("http") ? icon : `${appLink}${icon}`;
 
-      // Tenta fazer upload da imagem para IPFS para garantir compatibilidade com OpenSea
+      // Tenta fazer upload da imagem para IPFS para garantir compatibilidade com gateways
       let nftImageUri = rawImageUrl;
       try {
         const imgUploadRes = await fetch("/api/ipfs/image", {
@@ -460,6 +434,7 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       const IpfsHash = await uploadToIpfs({ name: `Certificado — ${itemName}`, image: nftImageUri, description });
+      setMintIpfsHash(IpfsHash);
 
       // 2. Registra na whitelist (dispara Cloud Function de mint)
       setMintStep("minting");
@@ -480,7 +455,12 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
         const firestore = getFirestore();
         const userRef = doc(firestore, "users", uid);
         await addDoc(collection(userRef, "achievedNfts"), {
-          walletAddress, trailId: itemId, ipfs: icon, type, createdAt: serverTimestamp(),
+          walletAddress,
+          trailId: itemId,
+          type,
+          ipfsHash: IpfsHash,
+          imageUrl: nftImageUri,
+          createdAt: serverTimestamp(),
         });
       } catch (err) {
         console.error("Erro ao registrar NFT em achievedNfts:", err);
@@ -494,12 +474,12 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
       toast.error(`Erro ao resgatar certificado: ${error.message}`);
       console.error("Erro em fetchAirDrop:", error);
     }
-  }, [uploadToIpfs, pollMintStatus, buildTerminalErrorToastMessage]);
+  }, [uploadToIpfs, pollMintStatus, buildTerminalErrorToastMessage, normalizeIpfsHash]);
 
   const value = useMemo(() => ({
-    rewardContainerVisibility, rewardData, mintStep, mintTxHash, mintCheckLoading,
+    rewardContainerVisibility, rewardData, mintStep, mintTxHash, mintIpfsHash, mintCheckLoading,
     handleRewardContainer, fetchAirDrop, retryMintStatusCheck, closeRewardContainer,
-  }), [rewardContainerVisibility, rewardData, mintStep, mintTxHash, mintCheckLoading, handleRewardContainer, fetchAirDrop, retryMintStatusCheck, closeRewardContainer]);
+  }), [rewardContainerVisibility, rewardData, mintStep, mintTxHash, mintIpfsHash, mintCheckLoading, handleRewardContainer, fetchAirDrop, retryMintStatusCheck, closeRewardContainer]);
 
   return <RewardContext.Provider value={value}>{children}</RewardContext.Provider>;
 };

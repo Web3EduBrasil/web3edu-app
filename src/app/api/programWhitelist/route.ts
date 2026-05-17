@@ -1,6 +1,45 @@
 import { adminDb } from "@/lib/firebase-admin";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth-helper";
+import { createPublicClient, http, keccak256, stringToHex } from "viem";
+
+const contractAddress =
+  process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ||
+  "0x8984b78F102f85222E7fa9c43d37d84E087B1Be8";
+
+const rpcUrl =
+  process.env.NEXT_PUBLIC_ALCHEMY_RPC_TARGET ||
+  process.env.ALCHEMY_RPC_TARGET ||
+  process.env.RPC_URL ||
+  "";
+
+const contractAbi = [
+  {
+    inputs: [{ internalType: "bytes32", name: "trailHash", type: "bytes32" }],
+    name: "hasTrailMinted",
+    outputs: [{ internalType: "bool", name: "", type: "bool" }],
+    stateMutability: "view",
+    type: "function",
+  },
+];
+
+const readProgramMinted = async (programId: string): Promise<boolean | null> => {
+  if (!rpcUrl || !contractAddress) return null;
+  try {
+    const client = createPublicClient({ transport: http(rpcUrl) });
+    const programHash = keccak256(stringToHex(programId));
+    const minted = await client.readContract({
+      address: contractAddress as `0x${string}`,
+      abi: contractAbi,
+      functionName: "hasTrailMinted",
+      args: [programHash],
+    });
+    return minted as boolean;
+  } catch (error) {
+    console.error("Erro ao checar mint on-chain:", error);
+    return null;
+  }
+};
 
 /**
  * GET /api/programWhitelist?uid=&programId=
@@ -18,6 +57,22 @@ export const GET = async (req: NextRequest) => {
       );
     }
 
+    const onChainMinted = programId ? await readProgramMinted(programId) : null;
+    if (onChainMinted) {
+      return NextResponse.json(
+        {
+          eligible: false,
+          pending: false,
+          txHash: null,
+          terminalError: false,
+          errorCode: "ALREADY_MINTED",
+          errorMessage: "Certificado já foi resgatado para este programa",
+          ipfsHash: null,
+        },
+        { status: 200 }
+      );
+    }
+
     const docRef = adminDb.collection("programWhitelist").doc(uid);
     const docSnap = await docRef.get();
 
@@ -30,6 +85,7 @@ export const GET = async (req: NextRequest) => {
           terminalError: false,
           errorCode: null,
           errorMessage: null,
+          ipfsHash: null,
         },
         { status: 200 }
       );
@@ -47,6 +103,7 @@ export const GET = async (req: NextRequest) => {
           terminalError: false,
           errorCode: null,
           errorMessage: null,
+          ipfsHash: null,
         },
         { status: 200 }
       );
@@ -67,6 +124,7 @@ export const GET = async (req: NextRequest) => {
         terminalError: hasTerminalError,
         errorCode: programStatus.errorCode || null,
         errorMessage: programStatus.errorMessage || null,
+        ipfsHash: programStatus.ipfsHash || null,
       },
       { status: 200 }
     );
@@ -98,6 +156,14 @@ export const POST = async (req: NextRequest) => {
       return NextResponse.json(
         { error: "Parâmetros uid, walletAddress, programId e ipfsHash são obrigatórios" },
         { status: 400 }
+      );
+    }
+
+    const onChainMinted = await readProgramMinted(programId);
+    if (onChainMinted) {
+      return NextResponse.json(
+        { message: "Certificado já foi resgatado para este programa" },
+        { status: 409 }
       );
     }
 

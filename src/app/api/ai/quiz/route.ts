@@ -18,7 +18,11 @@ export const POST = async (req: NextRequest) => {
   try {
     const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: "Gemini API key não configurada" }, { status: 500 });
+      console.error("QUIZ API ERROR: Gemini API key não configurada");
+      return NextResponse.json(
+        { success: false, error: "Gemini API key não configurada" },
+        { status: 500 }
+      );
     }
 
     const { trailId, question, answer, lessonRange } = await req.json();
@@ -96,10 +100,14 @@ Retorne SOMENTE JSON no formato:
     }
 
     return NextResponse.json(parsed, { status: 201 });
-  } catch (error: any) {
-    console.error("Erro no endpoint AI quiz:", error);
+  } catch (error) {
+    console.error("QUIZ API ERROR:", error);
+
     return NextResponse.json(
-      { message: error.message || "Erro ao validar resposta" },
+      {
+        success: false,
+        error: String(error),
+      },
       { status: 500 }
     );
   }

@@ -41,10 +41,10 @@ export const GET = async (req: NextRequest) => {
 
     if (userDocSnap.exists) {
       const userData = userDocSnap.data();
+      const trailEntry = userData?.trails?.find((trail: any) => trail.trailId === trailId);
+      const doneSections = trailEntry?.doneSections ?? [];
       contents.forEach((content) => {
-        const isDone = userData?.trails?.some((trail: any) =>
-          trail.doneSections?.includes(content.id)
-        );
+        const isDone = doneSections.includes(content.id);
         if (isDone) content.done = true;
       });
     }

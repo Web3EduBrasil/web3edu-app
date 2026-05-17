@@ -121,7 +121,9 @@ export interface Trail {
 export interface AchievedNft {
   walletAddress: string;
   trailId: string;
-  ipfs: string;
+  ipfsHash: string;
+  imageUrl: string;
+  certificateUrl: string;
   createdAt: Date;
-  openseaUrl: string;
+  type?: "trail" | "program";
 }
