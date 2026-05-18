@@ -1,8 +1,7 @@
 import { adminDb } from "@/lib/firebase-admin";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth-helper";
-import fs from "fs";
-import path from "path";
+import { computeTrailProgress } from "@/lib/trail-progress";
 
 export const dynamic = "force-dynamic";
 
@@ -87,32 +86,8 @@ export const GET = async (req: NextRequest) => {
       );
     }
 
-    const contentsSnap = await adminDb.collection(`trails/${trailId}/contents`).get();
-    const allContents = contentsSnap.docs.map((doc) => ({
-      id: doc.id,
-      type: doc.data().type ?? "text",
-    }));
-
-    const trailMdxDir = path.join(process.cwd(), "src", "contents", "trails", trailId);
-    const availableMdxIds = new Set<string>();
-    if (fs.existsSync(trailMdxDir)) {
-      fs.readdirSync(trailMdxDir)
-        .filter((f) => f.endsWith(".mdx"))
-        .forEach((f) => availableMdxIds.add(f.replace(".mdx", "")));
-    }
-
-    const trailSections = allContents
-      .filter((section) => section.type !== "text" || availableMdxIds.has(section.id))
-      .map((section) => section.id);
-
     const doneSections = trailEntry?.doneSections || [];
-    const completedSectionsCount = doneSections.filter((section: string) =>
-      trailSections.includes(section)
-    ).length;
-    const percentage =
-      trailSections.length > 0
-        ? Math.round((completedSectionsCount / trailSections.length) * 100)
-        : 0;
+    const { percentage } = await computeTrailProgress(trailId, doneSections);
 
     return NextResponse.json(
       {

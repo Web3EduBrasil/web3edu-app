@@ -1,4 +1,5 @@
 import { adminDb } from "@/lib/firebase-admin";
+import { computeTrailProgress } from "@/lib/trail-progress";
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
@@ -21,24 +22,25 @@ export const GET = async (req: NextRequest) => {
 
     const querySnapshot = await adminDb.collection("trails").get();
 
-    const trails: any[] = [];
+    const trails = await Promise.all(
+      querySnapshot.docs.map(async (trail) => {
+        const userTrail = userTrails.find(
+          (userTrail: any) => userTrail.trailId === trail.id
+        );
+        const doneSections = userTrail?.doneSections ?? [];
+        const { percentage } = await computeTrailProgress(trail.id, doneSections);
 
-    querySnapshot.forEach((trail) => {
-      const userTrail = userTrails.find(
-        (userTrail: any) => userTrail.trailId === trail.id
-      );
-      const percentage = userTrail?.percentage || 0;
-
-      trails.push({
-        id: trail.id,
-        banner: trail.data().banner,
-        categories: trail.data().categories,
-        estimatedTime: trail.data().estimatedTime,
-        name: trail.data().name,
-        resumedDescription: trail.data().resumedDescription,
-        percentage: percentage,
-      });
-    });
+        return {
+          id: trail.id,
+          banner: trail.data().banner,
+          categories: trail.data().categories,
+          estimatedTime: trail.data().estimatedTime,
+          name: trail.data().name,
+          resumedDescription: trail.data().resumedDescription,
+          percentage,
+        };
+      })
+    );
 
     return NextResponse.json({ trails }, { status: 200 });
   } catch (error: any) {
