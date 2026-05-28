@@ -223,13 +223,23 @@ export default function useWeb3Auth() {
   const fetchUserDbData = useCallback(async (
     uid: string,
     email?: string | null,
-    googleName?: string | null
+    googleName?: string | null,
+    options?: {
+      emailVerified?: boolean;
+      photoURL?: string | null;
+      walletAddress?: string | null;
+      walletProvider?: string | null;
+    }
   ) => {
     // Para usuários de carteira (uid começa com 0x), usa endereço abreviado como nome
     const displayName = googleName
       || (uid.startsWith("0x") ? `${uid.slice(0, 6)}...${uid.slice(-4)}` : null);
 
+    const walletAddress = options?.walletAddress ?? null;
+    const walletProvider = options?.walletProvider ?? null;
+
     let response = await fetch(`/api/user?uid=${uid}`, { method: "GET" });
+    let userData: any = null;
 
     if (response.status === 404) {
       const createRes = await fetch("/api/user", {
@@ -239,7 +249,11 @@ export default function useWeb3Auth() {
           uid,
           email: email || null,
           displayName,
-          tutorialDone: false,
+          certificateName: displayName,
+          emailVerified: options?.emailVerified ?? false,
+          photoURL: options?.photoURL ?? null,
+          walletAddress,
+          walletProvider,
         }),
       });
 
@@ -247,15 +261,35 @@ export default function useWeb3Auth() {
         throw new Error("Falha ao criar usuário");
       }
 
-      response = createRes;
+      userData = await createRes.json();
+    } else if (response.ok) {
+      userData = await response.json();
+
+      if (walletAddress) {
+        const existingWallet = userData?.user?.walletAddressLowercase || "";
+        if (!existingWallet) {
+          await fetch("/api/user", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              uid,
+              walletAddress,
+              walletProvider,
+            }),
+          });
+          const refreshRes = await fetch(`/api/user?uid=${uid}`, { method: "GET" });
+          if (refreshRes.ok) {
+            userData = await refreshRes.json();
+          }
+        }
+      }
     }
 
-    if (!response.ok) {
+    if (!userData) {
       throw new Error("Falha ao buscar usuário");
     }
 
-    const data = await response.json();
-    setUserDbInfo(data.user || {});
+    setUserDbInfo(userData.user || {});
 
     authHeaders()
       .then((headers) =>
@@ -282,7 +316,13 @@ export default function useWeb3Auth() {
         fetchUserDbData(
           firebaseUser.uid,
           firebaseUser.email,
-          firebaseUser.displayName
+          firebaseUser.displayName,
+          {
+            emailVerified: firebaseUser.emailVerified,
+            photoURL: firebaseUser.photoURL,
+            walletAddress: address || (firebaseUser.uid.startsWith("0x") ? firebaseUser.uid : null),
+            walletProvider: address ? "wagmi" : null,
+          }
         ).catch(() => {
           toast.error("Erro ao carregar dados do usuário.");
         });
@@ -301,7 +341,7 @@ export default function useWeb3Auth() {
 
     return () => unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router, pathname, wagmiStatus, fetchUserDbData]);
+  }, [router, pathname, wagmiStatus, fetchUserDbData, address]);
 
   const signInWithGoogle = async (): Promise<UserCredential> => {
     const auth = getAuth(app);

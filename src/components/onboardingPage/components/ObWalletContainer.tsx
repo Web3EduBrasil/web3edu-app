@@ -9,10 +9,8 @@ import Onboarding4 from "../../../../public/assets/images/WalletTutorial/Onboard
 import Onboarding5 from "../../../../public/assets/images/WalletTutorial/Onboarding5.jpg";
 import web3EduLogo from "../../../../public/assets/images/Web3EduBrasil_logo.png";
 import { useState } from "react";
-import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
-import { Bounce, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
-import { authHeaders } from "@/lib/getIdToken";
 import { useTranslations } from "next-intl";
 
 const WALLET_IMAGES = [
@@ -26,7 +24,6 @@ const WALLET_IMAGES = [
 const WALLET_PROGRESS = [20, 40, 60, 80, 100];
 
 export const ObWalletContainer = () => {
-  const { googleUserInfo, setUserDbInfo } = useWeb3AuthContext();
   const router = useRouter();
   const t = useTranslations("onboarding.wallet");
 
@@ -58,35 +55,9 @@ export const ObWalletContainer = () => {
     },
   ];
 
-  const fetchTutorialDone = async () => {
-    try {
-      const response = await fetch("/api/user/onboarding", {
-        method: "POST",
-        headers: await authHeaders(),
-        body: JSON.stringify({}),
-      });
-      if (response.ok) {
-        const response = await fetch(`/api/user?uid=${googleUserInfo?.uid}`, {
-          method: "GET",
-        });
-        const data = await response.json();
-        setUserDbInfo(data.user);
-        toast.success("Tutorial completo!", {
-          position: "top-right",
-          autoClose: 2500,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-          transition: Bounce,
-        });
-        router.push(`/homePage`);
-      }
-    } catch (error: any) {
-      console.error(error);
-    }
+  const handleFinish = () => {
+    toast.info("Complete seu cadastro para liberar certificados.");
+    router.push("/onboarding");
   };
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -135,7 +106,7 @@ export const ObWalletContainer = () => {
           type="button"
           func={() =>
             currentStep === steps.length - 1
-              ? fetchTutorialDone()
+              ? handleFinish()
               : handleNextStep()
           }
           className="bg-cgreen w-fit text-lg font-semibold"

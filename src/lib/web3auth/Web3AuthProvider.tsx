@@ -13,7 +13,17 @@ interface Web3AuthContextProps {
 
   userInfo: Partial<any> | null;
   userDbInfo: any;
-  fetchUserDbData: (uid: string) => void;
+  fetchUserDbData: (
+    uid: string,
+    email?: string | null,
+    googleName?: string | null,
+    options?: {
+      emailVerified?: boolean;
+      photoURL?: string | null;
+      walletAddress?: string | null;
+      walletProvider?: string | null;
+    }
+  ) => void;
   setUserDbInfo: React.Dispatch<React.SetStateAction<boolean>>;
   userAccount: string[];
   googleUserInfo: any | null;

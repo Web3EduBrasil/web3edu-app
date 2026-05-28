@@ -31,6 +31,14 @@ export const RewardContainer = () => {
   const hasWallet =
     !!userAccount[0] || (googleUserInfo?.uid?.startsWith("0x") ?? false);
   const effectiveAddress = userAccount[0] ?? googleUserInfo?.uid ?? "";
+  const fallbackWallet =
+    effectiveAddress ? `${effectiveAddress.slice(0, 6)}...${effectiveAddress.slice(-4)}` : "";
+  const certificateName =
+    (userDbInfo as any)?.certificateName ||
+    (userDbInfo as any)?.displayName ||
+    googleUserInfo?.displayName ||
+    googleUserInfo?.name ||
+    fallbackWallet;
   const isProcessing = mintStep === "uploading" || mintStep === "minting" || mintStep === "polling";
   const isDone = mintStep === "success" || mintStep === "error";
 
@@ -66,12 +74,11 @@ export const RewardContainer = () => {
       if (openConnectModal) openConnectModal();
       return;
     }
-    const userName = (userDbInfo as any)?.displayName || googleUserInfo?.displayName || "";
     await fetchAirDrop(
       rewardData.type,
       rewardData.icon,
       googleUserInfo.uid,
-      userName,
+      certificateName,
       effectiveAddress,
       rewardData.id,
       rewardData.name
@@ -80,8 +87,8 @@ export const RewardContainer = () => {
 
   const title =
     rewardData?.type === "program"
-      ? t("programCompleted", { name: googleUserInfo?.displayName || "", program: rewardData?.name || "" })
-      : t("trailCompleted", { name: googleUserInfo?.displayName || "", trail: rewardData?.name || "" });
+      ? t("programCompleted", { name: certificateName || "", program: rewardData?.name || "" })
+      : t("trailCompleted", { name: certificateName || "", trail: rewardData?.name || "" });
 
   return (
     <div
@@ -127,7 +134,7 @@ export const RewardContainer = () => {
                   {rewardData.name}
                 </span>
                 <span className="text-white/70 text-[10px]">
-                  {googleUserInfo?.name || googleUserInfo?.displayName || userAccount[0]}
+                  {certificateName || userAccount[0]}
                 </span>
               </div>
             </div>

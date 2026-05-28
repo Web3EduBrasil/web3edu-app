@@ -4,46 +4,17 @@ import Image from "next/image";
 import web3EduLogo from "../../../public/assets/images/Web3EduBrasil_logo.png";
 import { MotionButton } from "../ui/Button";
 import { useRouter } from "next/navigation";
-import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
-import { Bounce, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import { OnboardingProps } from "@/interfaces/interfaces";
-import { authHeaders } from "@/lib/getIdToken";
 import { useTranslations } from "next-intl";
 
 export const ObIntro = ({ handleTabClick }: OnboardingProps<void>) => {
   const router = useRouter();
-  const { googleUserInfo, setUserDbInfo } = useWeb3AuthContext();
   const t = useTranslations("onboarding");
 
-  const fetchTutorialDone = async () => {
-    try {
-      const response = await fetch("/api/user/onboarding", {
-        method: "POST",
-        headers: await authHeaders(),
-        body: JSON.stringify({}),
-      });
-      if (response.ok) {
-        const response = await fetch(`/api/user?uid=${googleUserInfo?.uid}`, {
-          method: "GET",
-        });
-        const data = await response.json();
-        setUserDbInfo(data.user);
-        toast.success("Tutorial completo!", {
-          position: "top-right",
-          autoClose: 2500,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-          transition: Bounce,
-        });
-        router.push(`/homePage`);
-      }
-    } catch (error: any) {
-      console.error(error);
-    }
+  const handleSkip = () => {
+    toast.info("Complete seu cadastro para emitir certificados.");
+    router.push("/onboarding");
   };
   return (
     <div className="w-full h-full flex justify-center items-center p-5">
@@ -63,7 +34,7 @@ export const ObIntro = ({ handleTabClick }: OnboardingProps<void>) => {
         </div>
         <MotionButton
           label={t("next")}
-          type="button"
+          <a onClick={handleSkip}>{t("skip")}</a>
           func={() => handleTabClick("ObCommu")}
           className="bg-cgreen w-28 text-neutral font-bold"
         />

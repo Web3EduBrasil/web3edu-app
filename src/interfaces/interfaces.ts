@@ -126,4 +126,42 @@ export interface AchievedNft {
   certificateUrl: string;
   createdAt: Date;
   type?: "trail" | "program";
+  certificateName?: string;
+}
+
+export type PreferredLanguage = "pt" | "en";
+
+export type ExperienceLevel = "beginner" | "intermediate" | "advanced";
+
+export type StudentType =
+  | "student"
+  | "developer"
+  | "founder"
+  | "professional"
+  | "curious"
+  | "other";
+
+export interface StudentProfile {
+  uid: string;
+  email: string | null;
+  emailVerified: boolean;
+  walletAddress: string | null;
+  walletAddressLowercase: string | null;
+  walletProvider: string | null;
+  displayName: string;
+  certificateName: string;
+  photoURL: string | null;
+  country: string | null;
+  preferredLanguage: PreferredLanguage | null;
+  timezone: string | null;
+  studentType: StudentType | null;
+  experienceLevel: ExperienceLevel | null;
+  learningGoals: string[];
+  acceptedTermsAt: string | null;
+  acceptedPrivacyPolicyAt: string | null;
+  certificateDataConsent: boolean;
+  marketingOptIn: boolean;
+  onboardingCompleted: boolean;
+  createdAt: unknown;
+  updatedAt: unknown;
 }

@@ -18,7 +18,7 @@ export const Home = () => {
 
   useEffect(() => {
     if (userDbInfo && Object.keys(userDbInfo).length > 0) {
-      if ((userDbInfo as any).tutorialDone === false) {
+      if ((userDbInfo as any).onboardingCompleted !== true) {
         router.push(`/onboarding`);
       }
     }

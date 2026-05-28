@@ -90,7 +90,7 @@ interface RewardState {
     type: "trail" | "program",
     icon: string,
     uid: string,
-    userName: string,
+    certificateName: string,
     walletAddress: string,
     itemId: string,
     itemName: string
@@ -371,7 +371,7 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
     type: "trail" | "program",
     icon: string,
     uid: string,
-    userName: string,
+    certificateName: string,
     walletAddress: string,
     itemId: string,
     itemName: string
@@ -382,8 +382,8 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
     const registerEndpoint = type === "trail" ? "/api/whitelist" : "/api/programWhitelist";
     const bodyKey = type === "trail" ? "trailId" : "programId";
     const description = type === "trail"
-      ? `Este certificado é concedido a ${userName} em reconhecimento por completar com sucesso a trilha de aprendizagem ${itemName}, totalizando uma carga horária de 3 horas.`
-      : `Este certificado é concedido a ${userName} em reconhecimento por completar com sucesso o programa ${itemName}.`;
+      ? `Certificado concedido por completar a trilha de aprendizagem ${itemName}.`
+      : `Certificado concedido por completar o programa ${itemName}.`;
 
     try {
       // 0. Pré-checagem: verifica se já foi mintado ou se há erro terminal
@@ -460,6 +460,7 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
           type,
           ipfsHash: IpfsHash,
           imageUrl: nftImageUri,
+          certificateName,
           createdAt: serverTimestamp(),
         });
       } catch (err) {

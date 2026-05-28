@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
+import { createBaseStudentProfile, upsertStudentProfile } from "@/lib/student-profile";
 export const dynamic = "force-dynamic";
 
 export const GET = async (req: NextRequest) => {
@@ -44,35 +45,43 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
-    const userDocRef = adminDb.collection("users").doc(data.uid);
-    const docSnap = await userDocRef.get();
+    const baseProfile = createBaseStudentProfile({
+      uid: data.uid,
+      email: data.email ?? null,
+      emailVerified: data.emailVerified ?? false,
+      displayName: data.displayName ?? "",
+      certificateName: data.certificateName ?? data.displayName ?? "",
+      photoURL: data.photoURL ?? null,
+      walletAddress: data.walletAddress ?? null,
+      walletProvider: data.walletProvider ?? null,
+      preferredLanguage: data.preferredLanguage ?? "pt",
+      timezone: data.timezone ?? null,
+    });
 
-    if (docSnap.exists) {
-      return NextResponse.json(
-        { message: "Usuário já existe", user: docSnap.data() },
-        { status: 200 }
-      );
-    }
-
-    data = {
-      ...data,
-      xp: 0,
-      level: 1,
-      streak: 0,
-      lastActiveAt: new Date().toISOString().split("T")[0],
-      createdAt: new Date().toLocaleString("pt-BR", {
-        timeZone: "America/Sao_Paulo",
-      }),
+    const profilePayload = {
+      ...baseProfile,
+      xp: data.xp ?? 0,
+      level: data.level ?? 1,
+      streak: data.streak ?? 0,
+      lastActiveAt: data.lastActiveAt ?? new Date().toISOString().split("T")[0],
+      tutorialDone: data.tutorialDone ?? false,
     };
-    await userDocRef.set(data);
+
+    await upsertStudentProfile(data.uid, profilePayload);
     return NextResponse.json(
       {
-        message: "Usuario adicionado com sucesso",
-        user: data,
+        message: "Usuario criado/atualizado com sucesso",
+        user: profilePayload,
       },
       { status: 201 }
     );
   } catch (error: any) {
+    if (error?.message === "WALLET_ALREADY_LINKED") {
+      return NextResponse.json(
+        { message: "Carteira ja vinculada a outro usuario" },
+        { status: 409 }
+      );
+    }
     console.error(error.message);
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
