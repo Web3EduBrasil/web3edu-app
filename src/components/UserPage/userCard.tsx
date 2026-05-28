@@ -17,6 +17,11 @@ import { useTranslations } from "next-intl";
 import { storage } from "@/firebase/config";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
+const isSvgOrDataUrl = (src: string) => {
+  const lower = src.toLowerCase();
+  return lower.startsWith("data:") || lower.startsWith("blob:") || lower.includes("image/svg+xml") || lower.endsWith(".svg") || lower.includes(".svg?");
+};
+
 export const UserSection = () => {
   const { userDbInfo, googleUserInfo, fetchUserDbData, userAccount } = useWeb3AuthContext();
   const { fetchAchievedNfts, achievedNfts } = useContent();
@@ -296,18 +301,38 @@ export const UserSection = () => {
                     className="flex flex-col rounded-xl overflow-hidden border-2 border-gray bg-base-100 hover:shadow-lg transition-shadow group"
                   >
                     <div className="w-full aspect-square relative">
-                      <Image
-                        src={nft.imageUrl || "/assets/icons/nft-placeholder.svg"}
-                        alt={`NFT ${nft.trailId}`}
-                        fill
-                        sizes="200px"
-                        style={{ objectFit: "cover" }}
-                        onError={(e) => {
-                          try {
-                            (e.target as HTMLImageElement).src = "/assets/icons/nft-placeholder.svg";
-                          } catch { }
-                        }}
-                      />
+                      {(() => {
+                        const imageSrc = nft.imageUrl || "/assets/icons/nft-placeholder.svg";
+                        if (isSvgOrDataUrl(imageSrc)) {
+                          return (
+                            <img
+                              src={imageSrc}
+                              alt={`NFT ${nft.trailId}`}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                try {
+                                  (e.target as HTMLImageElement).src = "/assets/icons/nft-placeholder.svg";
+                                } catch { }
+                              }}
+                            />
+                          );
+                        }
+
+                        return (
+                          <Image
+                            src={imageSrc}
+                            alt={`NFT ${nft.trailId}`}
+                            fill
+                            sizes="200px"
+                            style={{ objectFit: "cover" }}
+                            onError={(e) => {
+                              try {
+                                (e.target as HTMLImageElement).src = "/assets/icons/nft-placeholder.svg";
+                              } catch { }
+                            }}
+                          />
+                        );
+                      })()}
                     </div>
                     <div className="p-2">
                       <p className="text-xs font-semibold text-dgray truncate">{nft.trailId}</p>

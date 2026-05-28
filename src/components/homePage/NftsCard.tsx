@@ -5,6 +5,11 @@ import NoNftIcon from "../../../public/assets/icons/no-certificate.svg";
 import { useTranslations } from "next-intl";
 import { AchievedNft } from "@/interfaces/interfaces";
 
+const isSvgOrDataUrl = (src: string) => {
+  const lower = src.toLowerCase();
+  return lower.startsWith("data:") || lower.startsWith("blob:") || lower.includes("image/svg+xml") || lower.endsWith(".svg") || lower.includes(".svg?");
+};
+
 export const NftsCard = ({ achievedNfts }: { achievedNfts: AchievedNft[] }) => {
   const t = useTranslations("home.nfts");
   return (
@@ -27,21 +32,46 @@ export const NftsCard = ({ achievedNfts }: { achievedNfts: AchievedNft[] }) => {
               key={index}
               className="w-22 h-22 flex items-center justify-center"
             >
-              <Image
-                src={nft.imageUrl || "/assets/icons/nft-placeholder.svg"}
-                alt="NFT"
-                width={100}
-                height={100}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  try {
-                    (e.target as HTMLImageElement).src = "/assets/icons/nft-placeholder.svg";
-                  } catch { }
-                }}
-                onClick={() => {
-                  window.open(nft.certificateUrl, "_blank", "noopener,noreferrer");
-                }}
-              />
+              {(() => {
+                const imageSrc = nft.imageUrl || "/assets/icons/nft-placeholder.svg";
+                const useImgTag = isSvgOrDataUrl(imageSrc);
+
+                if (useImgTag) {
+                  return (
+                    <img
+                      src={imageSrc}
+                      alt="NFT"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        try {
+                          (e.target as HTMLImageElement).src = "/assets/icons/nft-placeholder.svg";
+                        } catch { }
+                      }}
+                      onClick={() => {
+                        window.open(nft.certificateUrl, "_blank", "noopener,noreferrer");
+                      }}
+                    />
+                  );
+                }
+
+                return (
+                  <Image
+                    src={imageSrc}
+                    alt="NFT"
+                    width={100}
+                    height={100}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      try {
+                        (e.target as HTMLImageElement).src = "/assets/icons/nft-placeholder.svg";
+                      } catch { }
+                    }}
+                    onClick={() => {
+                      window.open(nft.certificateUrl, "_blank", "noopener,noreferrer");
+                    }}
+                  />
+                );
+              })()}
             </div>
           ))
         )}

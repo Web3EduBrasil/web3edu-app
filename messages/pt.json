@@ -167,7 +167,8 @@
     "claimNft": "Resgatar NFT",
     "claiming": "Resgatando...",
     "trailCompleted": "Curso Concluído! 🎉",
-    "claimCertificate": "Resgatar Certificado NFT"
+    "claimCertificate": "Resgatar Certificado NFT",
+    "certificateLocked": "Complete 100% da trilha para acessar o certificado."
   },
   "reward": {
     "trailCompleted": "Parabéns, {name}! Você concluiu a trilha {trail}.",

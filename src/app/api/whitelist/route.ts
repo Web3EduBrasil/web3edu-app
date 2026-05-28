@@ -1,4 +1,5 @@
 import { adminDb } from "@/lib/firebase-admin";
+import { computeTrailProgress } from "@/lib/trail-progress";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth-helper";
 import { createPublicClient, http, keccak256, stringToHex } from "viem";
@@ -56,6 +57,22 @@ export const POST = async (req: NextRequest, res: NextResponse) => {
     }
     if (!/^0x[0-9a-fA-F]{40}$/.test(walletAddress)) {
       return NextResponse.json({ message: "walletAddress inválido" }, { status: 400 });
+    }
+
+    const userDocSnap = await adminDb.collection("users").doc(uid).get();
+    if (!userDocSnap.exists) {
+      return NextResponse.json({ message: "Usuário não encontrado" }, { status: 404 });
+    }
+
+    const userTrails = userDocSnap.data()?.trails || [];
+    const trailEntry = userTrails.find((trail: any) => trail.trailId === trailId);
+    const doneSections = trailEntry?.doneSections || [];
+    const { percentage } = await computeTrailProgress(trailId, doneSections);
+    if (percentage < 100) {
+      return NextResponse.json(
+        { message: "Complete 100% da trilha para resgatar o certificado." },
+        { status: 403 }
+      );
     }
     const onChainMinted = await readTrailMinted(trailId);
     if (onChainMinted) {
