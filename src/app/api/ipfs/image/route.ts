@@ -1,6 +1,69 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
+
+const ipfsGateway = "https://ipfs.io/ipfs/";
+
+const toGatewayUrl = (value?: string): string => {
+  if (!value) return "";
+  if (value.startsWith("ipfs://")) {
+    return `${ipfsGateway}${value.replace("ipfs://", "")}`;
+  }
+  if (value.startsWith("http")) return value;
+  return `${ipfsGateway}${value}`;
+};
+
+const detectSvg = (contentType: string, text: string) => {
+  if (contentType.includes("image/svg+xml")) return true;
+  if (contentType.includes("text") || contentType.includes("xml") || !contentType) {
+    return text.trim().startsWith("<svg");
+  }
+  return false;
+};
+
+export const GET = async (req: NextRequest) => {
+  try {
+    const imageParam = req.nextUrl.searchParams.get("image") || "";
+    if (!imageParam) {
+      return NextResponse.json({ error: "Parâmetro image é obrigatório" }, { status: 400 });
+    }
+
+    const imageUrl = toGatewayUrl(imageParam);
+    if (!imageUrl) {
+      return NextResponse.json({ error: "Imagem inválida" }, { status: 400 });
+    }
+
+    const response = await fetch(imageUrl, { cache: "no-store" });
+    if (!response.ok) {
+      return NextResponse.json({ error: "Não foi possível buscar a imagem" }, { status: 404 });
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    const textPreview = buffer.toString("utf8", 0, Math.min(buffer.length, 1024));
+    const isSvg = detectSvg(contentType, textPreview);
+
+    const finalContentType = isSvg
+      ? "image/svg+xml"
+      : contentType.startsWith("image/")
+        ? contentType
+        : "application/octet-stream";
+
+    return new NextResponse(buffer, {
+      status: 200,
+      headers: {
+        "Content-Type": finalContentType,
+        "Cache-Control": "no-store",
+      },
+    });
+  } catch (error: any) {
+    console.error("Erro ao buscar imagem do IPFS:", error?.message || error);
+    return NextResponse.json({ error: "Erro ao buscar imagem" }, { status: 500 });
+  }
+};
+
 import { verifyAuth } from "@/lib/auth-helper";
 
 /**

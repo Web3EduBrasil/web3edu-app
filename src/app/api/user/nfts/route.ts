@@ -31,6 +31,31 @@ const fetchMetadata = async (ipfsHash: string) => {
   }
 };
 
+const extractImageValue = (metadata: any): string => {
+  if (!metadata) return "";
+  const imageCandidates = [
+    metadata.image,
+    metadata.image_url,
+    metadata.imageUrl,
+    metadata.image_data,
+    metadata.animation_url,
+  ];
+
+  for (const value of imageCandidates) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (value && typeof value.url === "string" && value.url.trim()) return value.url.trim();
+  }
+
+  return "";
+};
+
+const resolveDisplayImageUrl = (imageValue?: string) => {
+  if (!imageValue) return "";
+  if (imageValue.startsWith("data:")) return imageValue;
+
+  return `/api/ipfs/image?image=${encodeURIComponent(imageValue)}`;
+};
+
 /**
  * GET /api/user/nfts?walletAddress=0x...
  * Retorna os NFTs mintados do usuário a partir dos dados do Firestore (whitelist + programWhitelist).
@@ -73,11 +98,12 @@ export const GET = async (req: NextRequest) => {
       const status = data.status || {};
       for (const [trailId, trailStatus] of Object.entries(status)) {
         const s = trailStatus as any;
-        if (s.minted && s.txHash) {
+        if (s.txHash) {
           const ipfsHash = normalizeIpfsHash(s.ipfsHash);
           nftPromises.push((async () => {
             const metadata = await fetchMetadata(ipfsHash);
-            const imageUrl = toGatewayUrl(metadata?.image);
+            const imageValue = extractImageValue(metadata);
+            const imageUrl = resolveDisplayImageUrl(imageValue);
             return {
               walletAddress: data.address,
               trailId,
@@ -116,11 +142,12 @@ export const GET = async (req: NextRequest) => {
       const status = data.status || {};
       for (const [programId, programStatus] of Object.entries(status)) {
         const s = programStatus as any;
-        if (s.minted && s.txHash) {
+        if (s.txHash) {
           const ipfsHash = normalizeIpfsHash(s.ipfsHash);
           nftPromises.push((async () => {
             const metadata = await fetchMetadata(ipfsHash);
-            const imageUrl = toGatewayUrl(metadata?.image);
+            const imageValue = extractImageValue(metadata);
+            const imageUrl = resolveDisplayImageUrl(imageValue);
             return {
               walletAddress: data.address,
               trailId: programId,

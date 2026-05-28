@@ -13,6 +13,8 @@ import { authHeaders } from "@/lib/getIdToken";
 import { useRouter } from "next/navigation";
 import { FaMedal, FaTrophy } from "react-icons/fa";
 import { IoArrowBack } from "react-icons/io5";
+import { toast } from "react-toastify";
+import { useTranslations } from "next-intl";
 
 export const Task = ({
   sectionId,
@@ -31,7 +33,9 @@ export const Task = ({
   const [section, setSection] = useState<any>({});
   const { googleUserInfo } = useWeb3AuthContext();
   const router = useRouter();
+  const t = useTranslations("learn");
   const trailSectionsRef = useRef(trailSections);
+  const redirectRef = useRef(false);
   trailSectionsRef.current = trailSections;
 
   const fetchData = useCallback(async () => {
@@ -49,10 +53,28 @@ export const Task = ({
 
   useEffect(() => {
     if (googleUserInfo && trailId && Object.keys(section).length === 0) {
+      if (String(sectionId) === "99" && trailSectionsRef.current.length === 0) {
+        return;
+      }
       // Seção virtual de conclusão — não busca do Firestore
       const sectionMeta = trailSectionsRef.current.find(
         (s: any) => String(s.id) === String(sectionId)
       );
+      if (sectionMeta?.type === "conclusion" && sectionMeta.done !== true) {
+        if (!redirectRef.current) {
+          const sorted = [...trailSectionsRef.current]
+            .filter((s: any) => s.type !== "conclusion")
+            .sort((a: any, b: any) => Number(a.id) - Number(b.id));
+          const firstPending = sorted.find((s: any) => !s.done);
+          const targetId = firstPending?.id ?? sorted[sorted.length - 1]?.id;
+          if (targetId) {
+            redirectRef.current = true;
+            toast.error(t("certificateLocked"));
+            router.replace(`/learn/${trailId}/${targetId}`);
+            return;
+          }
+        }
+      }
       if (sectionMeta?.type === "conclusion") {
         const sorted = [...trailSectionsRef.current].sort(
           (a: any, b: any) => Number(a.id) - Number(b.id)
@@ -65,7 +87,7 @@ export const Task = ({
       }
       fetchData();
     }
-  }, [googleUserInfo, trailId, section, fetchData, sectionId]);
+  }, [googleUserInfo, trailId, section, fetchData, sectionId, router, t, trailSections]);
 
   const fetchDone = async (isLast: Boolean) => {
     try {
@@ -183,6 +205,7 @@ export const Task = ({
                       icon: trail?.banner || "",
                     })
                   }
+                  disabled={!section.done}
                   className="btn flex-1 h-12 bg-yellow-500 hover:bg-yellow-400 text-white border-0 gap-2 font-semibold"
                 >
                   <FaMedal className="w-4 h-4" />

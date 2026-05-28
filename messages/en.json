@@ -167,7 +167,8 @@
     "claimNft": "Claim NFT",
     "claiming": "Claiming...",
     "trailCompleted": "Course Completed! 🎉",
-    "claimCertificate": "Claim NFT Certificate"
+    "claimCertificate": "Claim NFT Certificate",
+    "certificateLocked": "Complete the trail to 100% to access the certificate."
   },
   "reward": {
     "trailCompleted": "Congratulations, {name}! You completed the trail {trail}.",
