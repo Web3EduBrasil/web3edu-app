@@ -117,29 +117,50 @@ export default function useWeb3Auth() {
       try {
         setLoadingMessage("Conectando carteira...");
         setIsLoading(true);
+        const getCustomToken = async () => {
+          const timestamp = Date.now();
+          const message = `Web3EduBrasil Authentication\n\nEndereço: ${address}\nTimestamp: ${timestamp}`;
 
-        const timestamp = Date.now();
-        const message = `Web3EduBrasil Authentication\n\nEndereço: ${address}\nTimestamp: ${timestamp}`;
+          setLoadingMessage("Assine a mensagem na MetaMask...");
+          const signature = await signMessageAsync({ message });
 
-        setLoadingMessage("Assine a mensagem na MetaMask...");
-        const signature = await signMessageAsync({ message });
+          setLoadingMessage("Autenticando...");
+          const res = await fetch("/api/auth/metamask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ address, signature, timestamp }),
+          });
 
-        setLoadingMessage("Autenticando...");
-        const res = await fetch("/api/auth/metamask", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ address, signature, timestamp }),
-        });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            const statusInfo = res.status ? ` (status ${res.status})` : "";
+            return {
+              ok: false,
+              error: data.error || `Erro na autenticação com carteira${statusInfo}`,
+            } as const;
+          }
 
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          const statusInfo = res.status ? ` (status ${res.status})` : "";
-          throw new Error(
-            data.error || `Erro na autenticação com carteira${statusInfo}`
-          );
+          const { token } = await res.json();
+          return { ok: true, token } as const;
+        };
+
+        const firstAttempt = await getCustomToken();
+        let token: string;
+
+        if (!firstAttempt.ok) {
+          if (firstAttempt.error.includes("Mensagem expirada")) {
+            const retryAttempt = await getCustomToken();
+            if (!retryAttempt.ok) {
+              throw new Error(retryAttempt.error);
+            }
+            token = retryAttempt.token;
+          } else {
+            throw new Error(firstAttempt.error);
+          }
+        } else {
+          token = firstAttempt.token;
         }
 
-        const { token } = await res.json();
         const cred = await signInWithCustomToken(auth, token);
 
         const shortAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;

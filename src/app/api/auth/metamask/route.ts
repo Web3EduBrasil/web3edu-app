@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyMessage } from "viem";
 import { adminAuth } from "@/lib/firebase-admin";
 
-const MAX_AGE_MS = 5 * 60 * 1000; // 5 minutos
+const MAX_AGE_MS = 10 * 60 * 1000; // 10 minutos
+const MAX_SKEW_MS = 2 * 60 * 1000; // tolera relogio adiantado
 
 function buildMessage(address: string, timestamp: number): string {
   return `Web3EduBrasil Authentication\n\nEndereço: ${address}\nTimestamp: ${timestamp}`;
@@ -28,7 +29,14 @@ export async function POST(req: NextRequest) {
 
     // Valida frescor do timestamp para prevenir replay attacks
     const age = Date.now() - normalizedTimestamp;
-    if (age < 0 || age > MAX_AGE_MS) {
+    if (age < -MAX_SKEW_MS) {
+      return NextResponse.json(
+        { error: "Relogio do dispositivo adiantado. Ajuste e tente novamente." },
+        { status: 400 }
+      );
+    }
+
+    if (age > MAX_AGE_MS) {
       return NextResponse.json(
         { error: "Mensagem expirada. Tente novamente." },
         { status: 400 }
