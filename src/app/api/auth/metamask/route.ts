@@ -12,11 +12,13 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { address, signature, timestamp } = body;
+    const normalizedTimestamp =
+      typeof timestamp === "string" ? Number(timestamp) : timestamp;
 
     if (
       typeof address !== "string" ||
       typeof signature !== "string" ||
-      typeof timestamp !== "number"
+      !Number.isFinite(normalizedTimestamp)
     ) {
       return NextResponse.json(
         { error: "Parâmetros inválidos" },
@@ -25,7 +27,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Valida frescor do timestamp para prevenir replay attacks
-    const age = Date.now() - timestamp;
+    const age = Date.now() - normalizedTimestamp;
     if (age < 0 || age > MAX_AGE_MS) {
       return NextResponse.json(
         { error: "Mensagem expirada. Tente novamente." },
@@ -33,7 +35,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const message = buildMessage(address, timestamp);
+    const message = buildMessage(address, normalizedTimestamp);
 
     // Verifica a assinatura criptograficamente
     const isValid = await verifyMessage({

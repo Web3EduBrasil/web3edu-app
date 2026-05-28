@@ -11,6 +11,19 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 const nextConfig = {
   reactStrictMode: true,
   productionBrowserSourceMaps: false,
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin-allow-popups",
+          },
+        ],
+      },
+    ];
+  },
   // Força o Next.js a transpilar react-toastify pelo pipeline webpack/swc,
   // o que remove referências sourceMappingURL que causam 404 no browser.
   transpilePackages: [

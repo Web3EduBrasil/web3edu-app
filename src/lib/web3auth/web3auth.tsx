@@ -132,8 +132,11 @@ export default function useWeb3Auth() {
         });
 
         if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || "Erro na autenticação com carteira");
+          const data = await res.json().catch(() => ({}));
+          const statusInfo = res.status ? ` (status ${res.status})` : "";
+          throw new Error(
+            data.error || `Erro na autenticação com carteira${statusInfo}`
+          );
         }
 
         const { token } = await res.json();
