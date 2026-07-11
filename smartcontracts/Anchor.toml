@@ -1,0 +1,19 @@
+skip_local_validator = true
+
+[toolchain]
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+web3edu_brasil_tokens = "E5kNkYswxY6jMacxMa6oGLyg5pamYFEknSJvk5uHQgY3"
+
+[provider]
+cluster = "localnet"
+wallet = '~\.config/solana/id.json'
+
+[scripts]
+test = "cargo test"
+
+[hooks]

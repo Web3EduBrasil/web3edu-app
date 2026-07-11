@@ -1,6 +1,6 @@
 # Phase 2 — Architecture Shift
 
-**Status:** [ ] Not started
+**Status:** ✅ Done (2026-07-10)
 
 > Read this entire phase before writing any code. The mental model shift from EVM to Solana is the single biggest source of bugs during migration.
 
@@ -92,10 +92,10 @@ In Solidity, `msg.sender` is always available. In Anchor, you declare which acco
 
 ## Checklist
 
-- [ ] Understand why programs are stateless
-- [ ] Understand how PDAs replace mappings
-- [ ] Understand what a CPI is
-- [ ] Read the Anchor Book accounts chapter
+- [x] Understand why programs are stateless
+- [x] Understand how PDAs replace mappings
+- [x] Understand what a CPI is
+- [x] Read the Anchor Book accounts chapter
 
 ---
 

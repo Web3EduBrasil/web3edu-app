@@ -1,6 +1,6 @@
 # Phase 3 — Project Structure
 
-**Status:** [ ] Not started
+**Status:** ✅ Done (2026-07-10)
 
 ---
 
@@ -104,11 +104,11 @@ increments = false
 
 ## Checklist
 
-- [ ] `anchor init` scaffold created
-- [ ] Folder structure matches layout above
-- [ ] `Cargo.toml` workspace configured
-- [ ] `package.json` updated with Anchor test dependencies
-- [ ] Old Hardhat files removed (`hardhat.config.ts`, `ignition/`, `@openzeppelin` deps)
+- [x] `anchor init` scaffold created
+- [x] Folder structure matches layout above
+- [x] `Cargo.toml` workspace configured
+- [x] `package.json` updated with Anchor test dependencies
+- [x] Old Hardhat files removed (`hardhat.config.ts`, `ignition/`, `@openzeppelin` deps)
 
 ---
 

@@ -22,9 +22,9 @@ Migration of `Web3EduBrasilTokens` from EVM (Solidity + Hardhat) to Solana (Rust
 
 | # | Phase | Status |
 |---|---|---|
-| 1 | [Environment Setup](./phase-1-environment-setup.md) | |
-| 2 | [Architecture Shift](./phase-2-architecture.md) | |
-| 3 | [Project Structure](./phase-3-project-structure.md) | |
+| 1 | [Environment Setup](./phase-1-environment-setup.md) | ✅ Done |
+| 2 | [Architecture Shift](./phase-2-architecture.md) | ✅ Done |
+| 3 | [Project Structure](./phase-3-project-structure.md) | ✅ Done |
 | 4 | [Write the Anchor Program](./phase-4-anchor-program.md) | |
 | 5 | [Anchor.toml Config](./phase-5-anchor-toml.md) | |
 | 6 | [Testing](./phase-6-testing.md) | |

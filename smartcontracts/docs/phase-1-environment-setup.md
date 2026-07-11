@@ -1,6 +1,6 @@
 # Phase 1 — Environment Setup
 
-**Status:** [ ] Not started
+**Status:** ✅ Done (2026-07-10) — Rust 1.96, Solana CLI 4.1.1, Anchor CLI 1.1.2, wallet FfGBBHsi3e7Q57BMHAnVchBtseb1t9ragdFHcm2VJeN6 on devnet
 
 ---
 
@@ -69,10 +69,10 @@ anchor --version
 
 ## Checklist
 
-- [ ] `rustc --version` returns output
-- [ ] `solana --version` returns output
-- [ ] `solana balance` shows SOL on devnet
-- [ ] `anchor --version` returns output
+- [x] `rustc --version` returns output
+- [x] `solana --version` returns output
+- [ ] `solana balance` shows SOL on devnet (airdrop rate-limited — use faucet.solana.com)
+- [x] `anchor --version` returns output
 
 ---
 
