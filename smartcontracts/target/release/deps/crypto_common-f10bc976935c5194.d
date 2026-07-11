@@ -1,0 +1,7 @@
+C:\Users\davio\projects\web3edu\web3edu-app\smartcontracts\target\release\deps\crypto_common-f10bc976935c5194.d: C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\crypto-common-0.1.7\src\lib.rs
+
+C:\Users\davio\projects\web3edu\web3edu-app\smartcontracts\target\release\deps\libcrypto_common-f10bc976935c5194.rlib: C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\crypto-common-0.1.7\src\lib.rs
+
+C:\Users\davio\projects\web3edu\web3edu-app\smartcontracts\target\release\deps\libcrypto_common-f10bc976935c5194.rmeta: C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\crypto-common-0.1.7\src\lib.rs
+
+C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\crypto-common-0.1.7\src\lib.rs:

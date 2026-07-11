@@ -1,33 +1,32 @@
 use anchor_lang::prelude::*;
-
-use crate::{constants::*, state::Counter};
+use crate::state::ProgramConfig;
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    #[account(mut)]
-    pub payer: Signer<'info>,
     #[account(
         init,
-        payer = payer,
-        space = 8 + Counter::INIT_SPACE,
-        seeds = [COUNTER_SEED],
+        payer = admin,
+        space = ProgramConfig::LEN,
+        seeds = [b"config"],
         bump
     )]
-    pub counter: Account<'info, Counter>,
+    pub config: Account<'info, ProgramConfig>,
+
+    #[account(mut)]
+    pub admin: Signer<'info>,
+
     pub system_program: Program<'info, System>,
 }
 
-pub fn handle_initialize(ctx: Context<Initialize>) -> Result<()> {
-    ctx.accounts.counter.count = 0;
-    ctx.accounts.counter.authority = ctx.accounts.payer.key();
-
-    let cpi_accounts = anchor_lang::system_program::Transfer {
-        from: ctx.accounts.payer.to_account_info(),
-        to: ctx.accounts.counter.to_account_info(),
-    };
-    let cpi_ctx = CpiContext::new(anchor_lang::system_program::ID, cpi_accounts);
-    anchor_lang::system_program::transfer(cpi_ctx, HELLO_WORLD_LAMPORTS)?;
-
-    msg!("Hello, world! Counter initialized");
+pub fn handler(
+    ctx: Context<Initialize>,
+    minter: Pubkey,
+    burner: Pubkey,
+) -> Result<()> {
+    let config = &mut ctx.accounts.config;
+    config.admin = ctx.accounts.admin.key();
+    config.minter = minter;
+    config.burner = burner;
+    config.bump = ctx.bumps.config;
     Ok(())
 }

@@ -1,6 +1,6 @@
 # Phase 4 — Write the Anchor Program
 
-**Status:** [ ] Not started
+**Status:** ✅ Complete
 
 > This is the main implementation phase. Complete Phase 2 and 3 before starting here.
 
@@ -416,14 +416,14 @@ anchor build
 
 ## Checklist
 
-- [ ] `state/program_config.rs` written
-- [ ] `state/trail_mint_record.rs` written
-- [ ] `errors.rs` written
-- [ ] `instructions/initialize.rs` written
-- [ ] `instructions/mint_certificate.rs` written
-- [ ] `instructions/burn_certificate.rs` written
-- [ ] `lib.rs` entry point written
-- [ ] `anchor build` succeeds with no errors
+- [x] `state/program_config.rs` written
+- [x] `state/trail_mint_record.rs` written (+ uri field added)
+- [x] `errors.rs` written
+- [x] `instructions/initialize.rs` written
+- [x] `instructions/mint_certificate.rs` written (Metaplex removido; URI stored in PDA)
+- [x] `instructions/burn_certificate.rs` written
+- [x] `lib.rs` entry point written
+- [x] `anchor build` succeeds with no errors
 
 ---
 

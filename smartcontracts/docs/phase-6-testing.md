@@ -1,6 +1,6 @@
 # Phase 6 — Testing
 
-**Status:** [ ] Not started
+**Status:** ✅ Complete
 
 > Anchor tests are written in TypeScript with Mocha + Chai, similar to Hardhat. The main difference is using `@coral-xyz/anchor` instead of `viem` or `ethers`.
 

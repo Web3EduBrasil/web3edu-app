@@ -1,8 +1,5 @@
-use anchor_lang::prelude::*;
+pub mod program_config;
+pub mod trail_mint_record;
 
-#[account]
-#[derive(InitSpace)]
-pub struct Counter {
-    pub count: u64,
-    pub authority: Pubkey,
-}
+pub use program_config::*;
+pub use trail_mint_record::*;

@@ -1,0 +1,9 @@
+C:\Users\davio\projects\web3edu\web3edu-app\smartcontracts\target\sbpf-solana-solana\release\deps\solana_loader_v3_interface-189e8cf6f319e7a7.d: C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-loader-v3-interface-6.1.1\src\lib.rs C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-loader-v3-interface-6.1.1\src\instruction.rs C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-loader-v3-interface-6.1.1\src\state.rs
+
+C:\Users\davio\projects\web3edu\web3edu-app\smartcontracts\target\sbpf-solana-solana\release\deps\libsolana_loader_v3_interface-189e8cf6f319e7a7.rlib: C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-loader-v3-interface-6.1.1\src\lib.rs C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-loader-v3-interface-6.1.1\src\instruction.rs C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-loader-v3-interface-6.1.1\src\state.rs
+
+C:\Users\davio\projects\web3edu\web3edu-app\smartcontracts\target\sbpf-solana-solana\release\deps\libsolana_loader_v3_interface-189e8cf6f319e7a7.rmeta: C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-loader-v3-interface-6.1.1\src\lib.rs C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-loader-v3-interface-6.1.1\src\instruction.rs C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-loader-v3-interface-6.1.1\src\state.rs
+
+C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-loader-v3-interface-6.1.1\src\lib.rs:
+C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-loader-v3-interface-6.1.1\src\instruction.rs:
+C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-loader-v3-interface-6.1.1\src\state.rs:

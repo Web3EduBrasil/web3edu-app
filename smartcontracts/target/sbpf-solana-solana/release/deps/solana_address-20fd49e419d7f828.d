@@ -1,0 +1,10 @@
+C:\Users\davio\projects\web3edu\web3edu-app\smartcontracts\target\sbpf-solana-solana\release\deps\solana_address-20fd49e419d7f828.d: C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-address-2.6.1\src\lib.rs C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-address-2.6.1\src\derive.rs C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-address-2.6.1\src\error.rs C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-address-2.6.1\src\syscalls.rs
+
+C:\Users\davio\projects\web3edu\web3edu-app\smartcontracts\target\sbpf-solana-solana\release\deps\libsolana_address-20fd49e419d7f828.rlib: C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-address-2.6.1\src\lib.rs C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-address-2.6.1\src\derive.rs C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-address-2.6.1\src\error.rs C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-address-2.6.1\src\syscalls.rs
+
+C:\Users\davio\projects\web3edu\web3edu-app\smartcontracts\target\sbpf-solana-solana\release\deps\libsolana_address-20fd49e419d7f828.rmeta: C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-address-2.6.1\src\lib.rs C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-address-2.6.1\src\derive.rs C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-address-2.6.1\src\error.rs C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-address-2.6.1\src\syscalls.rs
+
+C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-address-2.6.1\src\lib.rs:
+C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-address-2.6.1\src\derive.rs:
+C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-address-2.6.1\src\error.rs:
+C:\Users\davio\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\solana-address-2.6.1\src\syscalls.rs:

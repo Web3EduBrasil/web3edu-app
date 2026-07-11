@@ -1,6 +1,6 @@
 # Phase 5 — Anchor.toml Config
 
-**Status:** [ ] Not started
+**Status:** ✅ Complete
 
 > `Anchor.toml` replaces `hardhat.config.ts`. It tells Anchor which network to target, where your wallet is, and what your program IDs are.
 
