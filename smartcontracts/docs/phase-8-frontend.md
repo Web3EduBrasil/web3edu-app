@@ -1,6 +1,6 @@
 # Phase 8 — Frontend / Client Update
 
-**Status:** [ ] Not started
+**Status:** 🔄 In Progress — code complete, pending `npm install`
 
 > The frontend currently uses `viem` to interact with the EVM contract. This phase replaces those calls with `@coral-xyz/anchor` and `@solana/web3.js`.
 

@@ -7,7 +7,7 @@ import { ToastContainer } from "react-toastify";
 import { RewardContainer } from "@/components/RewardContainer/RewardContainer";
 import { Lexend_Deca } from "next/font/google";
 import { LoadingProvider } from "@/lib/loading-context";
-import { WagmiProviders } from "@/lib/wagmi/WagmiProviders";
+import { SolanaProviders } from "@/lib/solana/SolanaProviders";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
@@ -83,7 +83,7 @@ export default async function RootLayout({
       </head>
       <body className={LexendDeca.className}>
         <NextIntlClientProvider locale={locale} messages={messages}>
-          <WagmiProviders>
+          <SolanaProviders>
             <LoadingProvider>
               <Web3AuthProvider>
                 <ContentProvider>
@@ -112,7 +112,7 @@ export default async function RootLayout({
                 </ContentProvider>
               </Web3AuthProvider>
             </LoadingProvider>
-          </WagmiProviders>
+          </SolanaProviders>
         </NextIntlClientProvider>
       </body>
     </html>

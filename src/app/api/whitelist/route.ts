@@ -2,45 +2,43 @@ import { adminDb } from "@/lib/firebase-admin";
 import { computeTrailProgress } from "@/lib/trail-progress";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth-helper";
-import { createPublicClient, http, keccak256, stringToHex } from "viem";
+import { Connection, PublicKey } from "@solana/web3.js";
 
-const contractAddress =
-  process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ||
-  "0x8984b78F102f85222E7fa9c43d37d84E087B1Be8";
+const PROGRAM_ID = new PublicKey(
+  process.env.NEXT_PUBLIC_PROGRAM_ID || "2GqcF3UeuJ7f2RtwVSTjNgojbkEuyEsGptbNR1eZUEqQ"
+);
 
-const rpcUrl =
-  process.env.NEXT_PUBLIC_ALCHEMY_RPC_TARGET ||
-  process.env.ALCHEMY_RPC_TARGET ||
-  process.env.RPC_URL ||
-  "";
-
-const contractAbi = [
-  {
-    inputs: [{ internalType: "bytes32", name: "trailHash", type: "bytes32" }],
-    name: "hasTrailMinted",
-    outputs: [{ internalType: "bool", name: "", type: "bool" }],
-    stateMutability: "view",
-    type: "function",
-  },
-];
+const connection = new Connection(
+  process.env.SOLANA_RPC_URL ||
+    process.env.NEXT_PUBLIC_SOLANA_RPC_URL ||
+    "https://api.devnet.solana.com",
+  "confirmed"
+);
 
 const readTrailMinted = async (trailId: string): Promise<boolean | null> => {
-  if (!rpcUrl || !contractAddress) return null;
   try {
-    const client = createPublicClient({ transport: http(rpcUrl) });
-    const trailHash = keccak256(stringToHex(trailId));
-    const minted = await client.readContract({
-      address: contractAddress as `0x${string}`,
-      abi: contractAbi,
-      functionName: "hasTrailMinted",
-      args: [trailHash],
-    });
-    return minted as boolean;
+    const trailHash = Buffer.alloc(32);
+    Buffer.from(trailId).copy(trailHash);
+    const [pda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("trail"), trailHash],
+      PROGRAM_ID
+    );
+    const account = await connection.getAccountInfo(pda);
+    return account !== null;
   } catch (error) {
     console.error("Erro ao checar mint on-chain:", error);
     return null;
   }
 };
+
+function isValidSolanaPubkey(address: string): boolean {
+  try {
+    new PublicKey(address);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export const POST = async (req: NextRequest, res: NextResponse) => {
   let verifiedUid: string;
@@ -55,7 +53,7 @@ export const POST = async (req: NextRequest, res: NextResponse) => {
         { status: 400 }
       );
     }
-    if (!/^0x[0-9a-fA-F]{40}$/.test(walletAddress)) {
+    if (!isValidSolanaPubkey(walletAddress)) {
       return NextResponse.json({ message: "walletAddress inválido" }, { status: 400 });
     }
 
@@ -203,7 +201,6 @@ export const GET = async (req: NextRequest) => {
     const hasTxHash = typeof trailStatus.txHash === "string" && trailStatus.txHash !== "";
     const hasTerminalError = trailStatus.terminalError === true;
     const isEligible = isMarkedEligible && !alreadyMinted && !hasTxHash && !hasTerminalError;
-    // pending = registrado na whitelist, sem txHash e sem erro terminal
     const isPending = isEligible && !!trailStatus;
 
     return NextResponse.json(

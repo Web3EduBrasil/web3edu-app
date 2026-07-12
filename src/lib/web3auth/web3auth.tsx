@@ -20,17 +20,12 @@ import { useLoading } from "../loading-context";
 import { clearIdTokenCache } from "../getIdToken";
 import { toast } from "react-toastify";
 import { authHeaders } from "@/lib/getIdToken";
+import { useWallet } from "@solana/wallet-adapter-react";
 
-import {
-  useAccount,
-  useSignMessage,
-  useDisconnect,
-  useChainId,
-  useSwitchChain,
-} from "wagmi";
-import { useAccountModal } from "@rainbow-me/rainbowkit";
-import { sepolia } from "wagmi/chains";
-
+function isSolanaWalletUid(uid: string): boolean {
+  // Solana pubkeys are base58 and 43–44 chars; Firebase Google UIDs are 28 chars
+  return uid.length >= 32 && !uid.startsWith("0x");
+}
 
 export default function useWeb3Auth() {
   const router = useRouter();
@@ -43,15 +38,10 @@ export default function useWeb3Auth() {
   const [isHydrated, setIsHydrated] = useState(false);
   const authCheckedRef = useRef(false);
 
-  // wagmi hooks
-  const { address, isConnected, isReconnecting, status: wagmiStatus } = useAccount();
-  const chainId = useChainId();
-  const { signMessageAsync } = useSignMessage();
-  const { disconnect } = useDisconnect();
-  const { switchChainAsync } = useSwitchChain();
-  const { openAccountModal } = useAccountModal();
+  // Solana wallet adapter hooks
+  const { publicKey, connected, disconnect, signMessage, disconnecting } = useWallet();
+  const address = publicKey?.toBase58() ?? null;
 
-  // userInfo compatível com o contrato anterior do contexto
   const userInfo = useMemo(() => user
     ? {
       profileImage: user.photoURL || "",
@@ -60,10 +50,8 @@ export default function useWeb3Auth() {
     }
     : null, [user]);
 
-  // userAccount compatível com o contrato anterior
   const userAccount: string[] = useMemo(() => address ? [address] : [], [address]);
 
-  // Restaura googleUserInfo do localStorage na montagem
   useEffect(() => {
     const stored = localStorage.getItem("googleUserInfo");
     if (stored) {
@@ -76,28 +64,11 @@ export default function useWeb3Auth() {
     setIsHydrated(true);
   }, []);
 
-  // Quando a carteira conecta → autentica no Firebase via custom token
+  // When Solana wallet connects → authenticate with Firebase via custom token
   const walletAuthAttempted = useRef<string | null>(null);
   useEffect(() => {
-    if (!isConnected || !address) {
+    if (!connected || !address || !signMessage) {
       walletAuthAttempted.current = null;
-      return;
-    }
-
-    if (chainId !== sepolia.id) {
-      (async () => {
-        try {
-          setLoadingMessage("Trocando para rede Sepolia...");
-          setIsLoading(true);
-          await switchChainAsync({ chainId: sepolia.id });
-        } catch {
-          toast.error("Troque para a rede Sepolia para continuar.");
-          disconnect();
-        } finally {
-          setIsLoading(false);
-          setLoadingMessage("");
-        }
-      })();
       return;
     }
 
@@ -105,7 +76,6 @@ export default function useWeb3Auth() {
 
     (async () => {
       const auth = getAuth(app);
-      // Espera o Firebase inicializar para não sobrescrever sessão existente
       await auth.authStateReady();
       if (auth.currentUser) {
         walletAuthAttempted.current = address;
@@ -117,18 +87,21 @@ export default function useWeb3Auth() {
       try {
         setLoadingMessage("Conectando carteira...");
         setIsLoading(true);
+
         const getCustomToken = async () => {
           const timestamp = Date.now();
           const message = `Web3EduBrasil Authentication\n\nEndereço: ${address}\nTimestamp: ${timestamp}`;
+          const messageBytes = new TextEncoder().encode(message);
 
-          setLoadingMessage("Assine a mensagem na MetaMask...");
-          const signature = await signMessageAsync({ message });
+          setLoadingMessage("Assine a mensagem na carteira...");
+          const signatureBytes = await signMessage(messageBytes);
+          const signature = Buffer.from(signatureBytes).toString("base64");
 
           setLoadingMessage("Autenticando...");
-          const res = await fetch("/api/auth/metamask", {
+          const res = await fetch("/api/auth/solana", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ address, signature, timestamp }),
+            body: JSON.stringify({ publicKey: address, signature, timestamp }),
           });
 
           if (!res.ok) {
@@ -150,9 +123,7 @@ export default function useWeb3Auth() {
         if (!firstAttempt.ok) {
           if (firstAttempt.error.includes("Mensagem expirada")) {
             const retryAttempt = await getCustomToken();
-            if (!retryAttempt.ok) {
-              throw new Error(retryAttempt.error);
-            }
+            if (!retryAttempt.ok) throw new Error(retryAttempt.error);
             token = retryAttempt.token;
           } else {
             throw new Error(firstAttempt.error);
@@ -161,7 +132,7 @@ export default function useWeb3Auth() {
           token = firstAttempt.token;
         }
 
-        const cred = await signInWithCustomToken(auth, token);
+        const cred = await signInWithCustomToken(getAuth(app), token);
 
         const shortAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
         const walletInfo = {
@@ -176,8 +147,7 @@ export default function useWeb3Auth() {
       } catch (error: any) {
         walletAuthAttempted.current = null;
         const isUserRejected =
-          error?.name === "UserRejectedRequestError" ||
-          error?.code === 4001 ||
+          error?.name === "WalletSignMessageError" ||
           error?.message?.toLowerCase().includes("user rejected") ||
           error?.message?.toLowerCase().includes("rejected the request");
 
@@ -186,39 +156,34 @@ export default function useWeb3Auth() {
         } else {
           toast.error(error?.message || "Erro ao conectar com carteira.");
         }
-        disconnect();
+        disconnect().catch(() => {});
       } finally {
         setIsLoading(false);
         setLoadingMessage("");
       }
     })();
   }, [
-    isConnected,
+    connected,
     address,
-    chainId,
+    signMessage,
     disconnect,
     setIsLoading,
     setLoadingMessage,
-    signMessageAsync,
-    switchChainAsync,
   ]);
 
-  // Quando a carteira desconecta → faz logout do Firebase se era sessão de carteira
-  // Usa wagmiStatus para garantir que só deslogar quando definitivamente "disconnected"
-  // e não durante a fase de reconnect (que ocorre no carregamento da página)
+  // When wallet disconnects → sign out if this was a wallet session
   useEffect(() => {
-    if (wagmiStatus !== "disconnected") return;
+    if (connected || disconnecting) return;
     const auth = getAuth(app);
     if (!auth.currentUser) return;
-    // UIDs de carteira são endereços ethereum (começam com 0x)
-    if (!auth.currentUser.uid.startsWith("0x")) return;
+    if (!isSolanaWalletUid(auth.currentUser.uid)) return;
 
     clearIdTokenCache();
-    signOut(auth).catch(() => { });
+    signOut(auth).catch(() => {});
     setGoogleUserInfo(null);
     setUserDbInfo({});
     localStorage.removeItem("googleUserInfo");
-  }, [wagmiStatus]);
+  }, [connected, disconnecting]);
 
   const fetchUserDbData = useCallback(async (
     uid: string,
@@ -231,9 +196,8 @@ export default function useWeb3Auth() {
       walletProvider?: string | null;
     }
   ) => {
-    // Para usuários de carteira (uid começa com 0x), usa endereço abreviado como nome
     const displayName = googleName
-      || (uid.startsWith("0x") ? `${uid.slice(0, 6)}...${uid.slice(-4)}` : null);
+      || (isSolanaWalletUid(uid) ? `${uid.slice(0, 6)}...${uid.slice(-4)}` : null);
 
     const walletAddress = options?.walletAddress ?? null;
     const walletProvider = options?.walletProvider ?? null;
@@ -257,10 +221,7 @@ export default function useWeb3Auth() {
         }),
       });
 
-      if (!createRes.ok) {
-        throw new Error("Falha ao criar usuário");
-      }
-
+      if (!createRes.ok) throw new Error("Falha ao criar usuário");
       userData = await createRes.json();
     } else if (response.ok) {
       userData = await response.json();
@@ -271,23 +232,15 @@ export default function useWeb3Auth() {
           await fetch("/api/user", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              uid,
-              walletAddress,
-              walletProvider,
-            }),
+            body: JSON.stringify({ uid, walletAddress, walletProvider }),
           });
           const refreshRes = await fetch(`/api/user?uid=${uid}`, { method: "GET" });
-          if (refreshRes.ok) {
-            userData = await refreshRes.json();
-          }
+          if (refreshRes.ok) userData = await refreshRes.json();
         }
       }
     }
 
-    if (!userData) {
-      throw new Error("Falha ao buscar usuário");
-    }
+    if (!userData) throw new Error("Falha ao buscar usuário");
 
     setUserDbInfo(userData.user || {});
 
@@ -299,7 +252,7 @@ export default function useWeb3Auth() {
           body: JSON.stringify({}),
         })
       )
-      .catch(() => { });
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -308,7 +261,6 @@ export default function useWeb3Auth() {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       authCheckedRef.current = true;
-      // Resolve o loading inicial (auth verificado pelo Firebase)
       setIsLoading(false);
       setLoadingMessage("");
 
@@ -320,16 +272,13 @@ export default function useWeb3Auth() {
           {
             emailVerified: firebaseUser.emailVerified,
             photoURL: firebaseUser.photoURL,
-            walletAddress: address || (firebaseUser.uid.startsWith("0x") ? firebaseUser.uid : null),
-            walletProvider: address ? "wagmi" : null,
+            walletAddress: address || (isSolanaWalletUid(firebaseUser.uid) ? firebaseUser.uid : null),
+            walletProvider: address ? "solana" : null,
           }
         ).catch(() => {
           toast.error("Erro ao carregar dados do usuário.");
         });
       } else {
-        // Só redireciona se wagmi não está reconectando (evita logout no reload)
-        if (wagmiStatus === "reconnecting" || wagmiStatus === "connecting") return;
-        // Só redireciona após auth ter sido verificado pelo menos uma vez
         if (!authCheckedRef.current) return;
         if (pathname.startsWith("/certificates")) return;
         if (pathname !== "/") {
@@ -341,7 +290,7 @@ export default function useWeb3Auth() {
 
     return () => unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router, pathname, wagmiStatus, fetchUserDbData, address]);
+  }, [router, pathname, fetchUserDbData, address]);
 
   const signInWithGoogle = async (): Promise<UserCredential> => {
     const auth = getAuth(app);
@@ -405,8 +354,7 @@ export default function useWeb3Auth() {
     }
   };
 
-  // Mantido para compatibilidade — abertura do modal é feita diretamente no LoginButton
-  const loginWithMetaMask = async () => { };
+  const loginWithMetaMask = async () => {};
 
   const resetPassword = async (email: string) => {
     const auth = getAuth(app);
@@ -417,7 +365,7 @@ export default function useWeb3Auth() {
     try {
       clearIdTokenCache();
       await signOut(getAuth(app));
-      disconnect();
+      await disconnect().catch(() => {});
       setUserDbInfo({});
       setGoogleUserInfo(null);
       localStorage.removeItem("googleUserInfo");
@@ -426,12 +374,9 @@ export default function useWeb3Auth() {
     }
   };
 
+  // Opens Solana wallet adapter modal programmatically — callers import useWalletModal
   const WalletUi = async () => {
-    if (openAccountModal) {
-      openAccountModal();
-    } else {
-      toast.info("Nenhuma carteira conectada.");
-    }
+    toast.info("Use o botão de carteira para gerenciar sua conexão.");
   };
 
   return {

@@ -6,7 +6,7 @@ import { FaCheck, FaMedal, FaExternalLinkAlt } from "react-icons/fa";
 import { IconButton } from "../ui/IconButton";
 import { useContent } from "@/providers/content-context";
 import "react-toastify/dist/ReactToastify.css";
-import { useConnectModal } from "@rainbow-me/rainbowkit";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { useEffect } from "react";
@@ -24,7 +24,7 @@ export const RewardContainer = () => {
     closeRewardContainer,
   } = useContent();
   const { googleUserInfo, userAccount, userDbInfo } = useWeb3AuthContext();
-  const { openConnectModal } = useConnectModal();
+  const { setVisible } = useWalletModal();
   const t = useTranslations("reward");
   const tLearn = useTranslations("learn");
 
@@ -71,7 +71,7 @@ export const RewardContainer = () => {
   const handleClaim = async () => {
     if (!rewardData || !googleUserInfo) return;
     if (!hasWallet) {
-      if (openConnectModal) openConnectModal();
+      setVisible(true);
       return;
     }
     await fetchAirDrop(
@@ -146,7 +146,7 @@ export const RewardContainer = () => {
                 <span className="text-green text-xs font-semibold">{t("nftMinted")}</span>
                 {mintTxHash && (
                   <a
-                    href={`https://sepolia.etherscan.io/tx/${mintTxHash}`}
+                    href={`https://solscan.io/tx/${mintTxHash}?cluster=devnet`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-dblue underline text-xs ml-auto"
@@ -249,13 +249,13 @@ export const RewardContainer = () => {
             )}
             {mintTxHash && (
               <a
-                href={`https://sepolia.etherscan.io/tx/${mintTxHash}`}
+                href={`https://solscan.io/tx/${mintTxHash}?cluster=devnet`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn w-full h-10 bg-transparent border border-neutral/20 text-neutral/70 font-medium text-sm flex items-center gap-2"
               >
                 <FaExternalLinkAlt className="w-3 h-3" />
-                Ver transação no Etherscan
+                Ver transação no Solscan
               </a>
             )}
             <button

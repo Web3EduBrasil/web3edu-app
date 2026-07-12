@@ -5,7 +5,7 @@
     "test": "yarn ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
   },
   "devDependencies": {
-    "@coral-xyz/anchor": "^1.1.2",
+    "@coral-xyz/anchor": "^0.32.1",
     "@solana/spl-token": "^0.4.0",
     "@solana/web3.js": "^1.98.0",
     "@types/chai": "^4.3.0",

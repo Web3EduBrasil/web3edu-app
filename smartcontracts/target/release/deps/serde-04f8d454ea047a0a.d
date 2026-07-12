@@ -1,0 +1,14 @@
+/mnt/c/Users/davio/projects/web3edu/web3edu-app/smartcontracts/target/release/deps/serde-04f8d454ea047a0a.d: /home/davio/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/davio/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/davio/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/davio/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/davio/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /mnt/c/Users/davio/projects/web3edu/web3edu-app/smartcontracts/target/release/build/serde-bb49da510ea5f8ec/out/private.rs
+
+/mnt/c/Users/davio/projects/web3edu/web3edu-app/smartcontracts/target/release/deps/libserde-04f8d454ea047a0a.rlib: /home/davio/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/davio/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/davio/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/davio/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/davio/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /mnt/c/Users/davio/projects/web3edu/web3edu-app/smartcontracts/target/release/build/serde-bb49da510ea5f8ec/out/private.rs
+
+/mnt/c/Users/davio/projects/web3edu/web3edu-app/smartcontracts/target/release/deps/libserde-04f8d454ea047a0a.rmeta: /home/davio/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/davio/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/davio/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/davio/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/davio/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /mnt/c/Users/davio/projects/web3edu/web3edu-app/smartcontracts/target/release/build/serde-bb49da510ea5f8ec/out/private.rs
+
+/home/davio/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs:
+/home/davio/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs:
+/home/davio/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs:
+/home/davio/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs:
+/home/davio/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs:
+/mnt/c/Users/davio/projects/web3edu/web3edu-app/smartcontracts/target/release/build/serde-bb49da510ea5f8ec/out/private.rs:
+
+# env-dep:OUT_DIR=/mnt/c/Users/davio/projects/web3edu/web3edu-app/smartcontracts/target/release/build/serde-bb49da510ea5f8ec/out

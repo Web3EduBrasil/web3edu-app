@@ -1,37 +1,31 @@
 import { onDocumentWritten, FirestoreEvent, DocumentSnapshot, Change } from "firebase-functions/v2/firestore";
-import { runContract } from "../utils/wallet";
-import { ethers } from "ethers";
+import { Keypair, PublicKey, SystemProgram } from "@solana/web3.js";
+import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from "@solana/spl-token";
 import {
   updateProgramAirdropStatus,
   updateProgramAirdropTerminalFailureStatus,
   TerminalErrorCode,
 } from "../utils/firestoreScripts";
+import { getSolanaProgram, buildTrailHash, PROGRAM_ID } from "../utils/solanaWallet";
 
 function classifyTerminalError(error: unknown): { errorCode: TerminalErrorCode; errorMessage: string } {
-  const err = error as {
-    message?: string;
-    shortMessage?: string;
-    reason?: { message?: string };
-  };
+  const err = error as { message?: string; shortMessage?: string };
 
   const rawMessage =
-    err?.reason?.message ||
     err?.shortMessage ||
     err?.message ||
     "Unknown mint error";
 
   const sanitizedMessage = rawMessage.replace(/\s+/g, " ").trim().slice(0, 300);
-  const normalizedMessage = sanitizedMessage.toLowerCase();
+  const normalized = sanitizedMessage.toLowerCase();
 
-  if (/(accesscontrol|missing role|minter_role|not authorized|unauthorized|permission)/i.test(normalizedMessage)) {
+  if (/(unauthorized|permission|not authorized)/i.test(normalized)) {
     return { errorCode: "ACCESS_CONTROL", errorMessage: sanitizedMessage };
   }
-
-  if (/(invalid address|unsupported addressable value|bad address checksum|invalid argument.*address)/i.test(normalizedMessage)) {
+  if (/(invalid.*address|pubkey)/i.test(normalized)) {
     return { errorCode: "INVALID_ADDRESS", errorMessage: sanitizedMessage };
   }
-
-  if (/(rpc|network|timeout|timed out|429|rate limit|could not coalesce error|socket|connection|econn|etimedout)/i.test(normalizedMessage)) {
+  if (/(rpc|network|timeout|timed out|429|rate limit|connection)/i.test(normalized)) {
     return { errorCode: "RPC_ERROR", errorMessage: sanitizedMessage };
   }
 
@@ -39,13 +33,12 @@ function classifyTerminalError(error: unknown): { errorCode: TerminalErrorCode; 
 }
 
 /**
- * Cloud Function disparada quando um documento em programWhitelist/{uid} é criado ou atualizado.
- * Para cada programa com eligible: true e minted: false, faz o mint do NFT de certificado.
+ * Cloud Function triggered when programWhitelist/{uid} is written.
  */
 export const airdropProgramNFT = onDocumentWritten(
   {
     document: "programWhitelist/{uid}",
-    secrets: ["CONTRACT_ADDRESS", "PRIVATE_KEY", "RPC_URL"],
+    secrets: ["SOLANA_MINTER_PRIVATE_KEY", "SOLANA_RPC_URL"],
   },
   async (event: FirestoreEvent<Change<DocumentSnapshot> | undefined, { uid: string }>) => {
     if (!event.data) {
@@ -57,15 +50,12 @@ export const airdropProgramNFT = onDocumentWritten(
     const uid = event.params.uid;
     const programCategories = newValue?.status ?? {};
 
-    const contractAddress = process.env.CONTRACT_ADDRESS;
-    const privateKey = process.env.PRIVATE_KEY;
-    const rpcUrl = process.env.RPC_URL;
+    const minterPrivKeyJson = process.env.SOLANA_MINTER_PRIVATE_KEY;
+    const rpcUrl = process.env.SOLANA_RPC_URL;
 
-    const missingSecrets = !contractAddress || !privateKey || !rpcUrl;
-    if (missingSecrets) {
-      const errorMessage = "Missing required function secrets for minting";
+    if (!minterPrivKeyJson || !rpcUrl) {
+      const errorMessage = "Missing required Solana secrets for minting";
       console.error(errorMessage);
-
       for (const programId in programCategories) {
         const airdrop = programCategories[programId];
         if (airdrop?.eligible && !airdrop?.minted && !airdrop?.terminalError) {
@@ -75,23 +65,57 @@ export const airdropProgramNFT = onDocumentWritten(
       return;
     }
 
+    const minterPrivKeyBytes: number[] = JSON.parse(minterPrivKeyJson);
+    const { program, minterKeypair } = getSolanaProgram(minterPrivKeyBytes, rpcUrl);
+
+    const [configPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("config")],
+      PROGRAM_ID
+    );
+
     for (const programId in programCategories) {
       const airdrop = programCategories[programId];
 
       if (airdrop.eligible && !airdrop.minted && !airdrop.terminalError) {
         try {
-          const walletAddress = newValue?.address;
+          const recipientAddress = newValue?.address;
           const ipfsHash = airdrop.ipfsHash;
           const tokenURI = ipfsHash.startsWith("ipfs://") ? ipfsHash : `ipfs://${ipfsHash}`;
-          const contract = runContract(contractAddress, privateKey, rpcUrl);
-          const programHash = ethers.keccak256(ethers.toUtf8Bytes(programId));
 
-          const tx = await contract.safeMint(walletAddress, tokenURI, programHash);
-          await tx.wait();
+          const trailHash = buildTrailHash(programId);
 
-          await updateProgramAirdropStatus(uid, programId, true, tx.hash);
+          const [trailRecordPda] = PublicKey.findProgramAddressSync(
+            [Buffer.from("trail"), trailHash],
+            PROGRAM_ID
+          );
+
+          const mintKeypair = Keypair.generate();
+          const recipientPubkey = new PublicKey(recipientAddress);
+
+          const recipientTokenAccount = await getAssociatedTokenAddress(
+            mintKeypair.publicKey,
+            recipientPubkey
+          );
+
+          const txSignature = await program.methods
+            .mintCertificate(Array.from(trailHash), tokenURI)
+            .accounts({
+              config: configPda,
+              trailRecord: trailRecordPda,
+              mint: mintKeypair.publicKey,
+              recipientTokenAccount,
+              recipient: recipientPubkey,
+              signer: minterKeypair.publicKey,
+              tokenProgram: TOKEN_PROGRAM_ID,
+              associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+              systemProgram: SystemProgram.programId,
+            })
+            .signers([minterKeypair, mintKeypair])
+            .rpc();
+
+          await updateProgramAirdropStatus(uid, programId, true, txSignature);
           console.log(
-            `Certificado de programa mintado com sucesso para usuário ${uid}, programa ${programId} - Tx: ${tx.hash}`
+            `Certificado de programa mintado para usuário ${uid}, programa ${programId} - Tx: ${txSignature}`
           );
         } catch (error) {
           console.error(

@@ -1,16 +1,16 @@
 "use client";
 
-import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
-import { useConnect } from "wagmi";
 import { useState, useRef, useEffect } from "react";
 import { FiChevronDown } from "react-icons/fi";
 import { FaWallet, FaEnvelope } from "react-icons/fa";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { useWeb3AuthContext } from "@/lib/web3auth/Web3AuthProvider";
 
 export const LoginButton = () => {
-  const { openConnectModal } = useConnectModal();
-  const { connect, connectors } = useConnect();
+  const { setVisible } = useWalletModal();
+  const { login } = useWeb3AuthContext();
   const t = useTranslations("login");
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -27,29 +27,16 @@ export const LoginButton = () => {
 
   const handleSocialLogin = async () => {
     setOpen(false);
-    const web3AuthConnector = connectors.find((c) => c.id === "web3auth");
-    if (!web3AuthConnector) {
-      openConnectModal?.();
-      return;
-    }
     try {
-      // Abre o modal do Web3Auth diretamente para evitar bug do conector
-      // onde provider é null antes do login (web3auth-wagmi-connector@7 + modal@9)
-      const { getWeb3AuthInstance } = await import("@/lib/wagmi/web3authWallet");
-      const instance = getWeb3AuthInstance();
-      if (instance.status === "not_ready") {
-        await instance.initModal();
-      }
-      await instance.connect(); // abre modal, aguarda o usuário logar
-      connect({ connector: web3AuthConnector }); // sincroniza com wagmi
+      await login();
     } catch {
-      // usuário fechou o modal ou erro — não faz nada
+      // user cancelled or error — no-op
     }
   };
 
   const handleWalletLogin = () => {
     setOpen(false);
-    openConnectModal?.();
+    setVisible(true);
   };
 
   return (

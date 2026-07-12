@@ -15,7 +15,9 @@
   },
   "main": "lib/index.js",
   "dependencies": {
-    "ethers": "^6.13.5",
+    "@coral-xyz/anchor": "^0.32.1",
+    "@solana/spl-token": "^0.4.0",
+    "@solana/web3.js": "^1.98.0",
     "firebase-admin": "^12.6.0",
     "firebase-functions": "^6.0.1"
   },
