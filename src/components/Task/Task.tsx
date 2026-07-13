@@ -85,7 +85,7 @@ export const Task = ({
         setSection({ ...sectionMeta, isLast });
         return;
       }
-      fetchData();
+      fetchData().catch((err) => console.error("Erro ao carregar seção:", err));
     }
   }, [googleUserInfo, trailId, section, fetchData, sectionId, router, t, trailSections]);
 

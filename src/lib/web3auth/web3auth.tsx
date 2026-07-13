@@ -227,7 +227,8 @@ export default function useWeb3Auth() {
       userData = await response.json();
 
       if (walletAddress) {
-        const existingWallet = userData?.user?.walletAddressLowercase || "";
+        const existingWallet =
+          userData?.user?.walletAddressLowercase || userData?.user?.walletAddress || "";
         if (!existingWallet) {
           await fetch("/api/user", {
             method: "POST",

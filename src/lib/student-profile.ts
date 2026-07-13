@@ -128,10 +128,18 @@ export const upsertStudentProfile = async (uid: string, data: PartialProfile) =>
     await ensureWalletIndex(uid, walletAddressLowercase, data.walletProvider ?? null);
   }
 
+  const existingOnboarded =
+    existing.exists && (existing.data() as any)?.onboardingCompleted === true;
+
   const payload = stripUndefined({
     ...data,
     uid,
     walletAddressLowercase: walletAddressLowercase || data.walletAddressLowercase || null,
+    // Never downgrade onboardingCompleted from true to false/undefined
+    onboardingCompleted:
+      existingOnboarded && data.onboardingCompleted !== true
+        ? undefined
+        : data.onboardingCompleted,
     updatedAt: now,
     createdAt: existing.exists ? undefined : now,
   });
