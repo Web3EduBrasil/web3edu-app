@@ -9,22 +9,30 @@ import {
 import { assert } from "chai";
 import { Web3eduBrasilTokens } from "../target/types/web3edu_brasil_tokens";
 
+// Deterministic keypairs — same across devnet runs so the on-chain config stays consistent
+function seedKeypair(label: string): Keypair {
+  const seed = Buffer.alloc(32);
+  Buffer.from(label).copy(seed);
+  return Keypair.fromSeed(seed);
+}
+
 describe("web3edu-brasil-tokens", () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
-
   const program = anchor.workspace.Web3eduBrasilTokens as Program<Web3eduBrasilTokens>;
 
-  const minterKeypair = Keypair.generate();
-  const burnerKeypair = Keypair.generate();
-  const recipientKeypair = Keypair.generate();
-  const mintKeypair = Keypair.generate();
+  const minterKeypair   = seedKeypair("web3edu-minter-devnet-v1");
+  const burnerKeypair   = seedKeypair("web3edu-burner-devnet-v1");
+  const recipientKeypair = seedKeypair("web3edu-recipient-devnet-v1");
+  const mintKeypair     = Keypair.generate(); // fresh per run, tied to a unique trail hash
 
+  // Unique trail hashes per run — avoids "account already in use" on devnet
+  const runTs = Date.now();
   const trailHash = Buffer.alloc(32);
-  Buffer.from("trail-id-001").copy(trailHash);
+  Buffer.from(runTs.toString()).copy(trailHash);
 
   const anotherTrailHash = Buffer.alloc(32);
-  Buffer.from("trail-id-002").copy(anotherTrailHash);
+  Buffer.from((runTs + 1).toString()).copy(anotherTrailHash);
 
   const [configPda] = PublicKey.findProgramAddressSync(
     [Buffer.from("config")],
@@ -42,26 +50,48 @@ describe("web3edu-brasil-tokens", () => {
   );
 
   before(async () => {
-    const [sigMinter, sigBurner] = await Promise.all([
-      provider.connection.requestAirdrop(minterKeypair.publicKey, 2e9),
-      provider.connection.requestAirdrop(burnerKeypair.publicKey, 2e9),
-    ]);
-    await provider.connection.confirmTransaction(sigMinter);
-    await provider.connection.confirmTransaction(sigBurner);
+    // Fund minter (pays rent for new accounts) and burner (receives rent on close)
+    const minterBalance = await provider.connection.getBalance(minterKeypair.publicKey);
+    if (minterBalance < 0.05 * anchor.web3.LAMPORTS_PER_SOL) {
+      const fundTx = new anchor.web3.Transaction()
+        .add(anchor.web3.SystemProgram.transfer({
+          fromPubkey: provider.wallet.publicKey,
+          toPubkey: minterKeypair.publicKey,
+          lamports: 0.1 * anchor.web3.LAMPORTS_PER_SOL,
+        }))
+        .add(anchor.web3.SystemProgram.transfer({
+          fromPubkey: provider.wallet.publicKey,
+          toPubkey: burnerKeypair.publicKey,
+          lamports: 0.01 * anchor.web3.LAMPORTS_PER_SOL,
+        }));
+      await provider.sendAndConfirm(fundTx);
+    }
+
+    // Initialize config on first run; update minter/burner to deterministic keys on subsequent runs
+    const existing = await provider.connection.getAccountInfo(configPda);
+    if (!existing) {
+      await program.methods
+        .initialize(minterKeypair.publicKey, burnerKeypair.publicKey)
+        .accounts({
+          config: configPda,
+          admin: provider.wallet.publicKey,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+    } else {
+      await program.methods
+        .updateConfig(minterKeypair.publicKey, burnerKeypair.publicKey)
+        .accounts({
+          config: configPda,
+          admin: provider.wallet.publicKey,
+        })
+        .rpc();
+    }
   });
 
   // ─── Initialize ─────────────────────────────────────────────────────────────
 
   it("initializes the program with admin, minter, and burner", async () => {
-    await program.methods
-      .initialize(minterKeypair.publicKey, burnerKeypair.publicKey)
-      .accounts({
-        config: configPda,
-        admin: provider.wallet.publicKey,
-        systemProgram: SystemProgram.programId,
-      })
-      .rpc();
-
     const config = await program.account.programConfig.fetch(configPda);
 
     assert.equal(config.admin.toBase58(), provider.wallet.publicKey.toBase58());
@@ -103,6 +133,10 @@ describe("web3edu-brasil-tokens", () => {
 
   it("rejects double-minting the same trail", async () => {
     const duplicateMint = Keypair.generate();
+    const recipientTokenAccount = await getAssociatedTokenAddress(
+      duplicateMint.publicKey,
+      recipientKeypair.publicKey
+    );
 
     try {
       await program.methods
@@ -111,7 +145,12 @@ describe("web3edu-brasil-tokens", () => {
           config: configPda,
           trailRecord: trailRecordPda,
           mint: duplicateMint.publicKey,
+          recipientTokenAccount,
+          recipient: recipientKeypair.publicKey,
           signer: minterKeypair.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
         })
         .signers([minterKeypair, duplicateMint])
         .rpc();
@@ -127,9 +166,20 @@ describe("web3edu-brasil-tokens", () => {
   it("rejects mint from an unauthorized signer", async () => {
     const fakeMinter = Keypair.generate();
     const newMint = Keypair.generate();
+    const fakeRecipient = Keypair.generate();
+    const fakeRecipientTokenAccount = await getAssociatedTokenAddress(
+      newMint.publicKey,
+      fakeRecipient.publicKey
+    );
 
-    const sig = await provider.connection.requestAirdrop(fakeMinter.publicKey, 2e9);
-    await provider.connection.confirmTransaction(sig);
+    const fundTx = new anchor.web3.Transaction().add(
+      anchor.web3.SystemProgram.transfer({
+        fromPubkey: provider.wallet.publicKey,
+        toPubkey: fakeMinter.publicKey,
+        lamports: 0.05 * anchor.web3.LAMPORTS_PER_SOL,
+      })
+    );
+    await provider.sendAndConfirm(fundTx);
 
     try {
       await program.methods
@@ -138,9 +188,53 @@ describe("web3edu-brasil-tokens", () => {
           config: configPda,
           trailRecord: anotherTrailRecordPda,
           mint: newMint.publicKey,
+          recipientTokenAccount: fakeRecipientTokenAccount,
+          recipient: fakeRecipient.publicKey,
           signer: fakeMinter.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
         })
         .signers([fakeMinter, newMint])
+        .rpc();
+
+      assert.fail("Expected unauthorized error");
+    } catch (err: any) {
+      assert.include(err.message, "Unauthorized");
+    }
+  });
+
+  // ─── Unauthorized Burn (must run BEFORE authorized burn) ─────────────────────
+
+  it("rejects burn from an unauthorized signer", async () => {
+    const fakeBurner = Keypair.generate();
+    const holderTokenAccount = await getAssociatedTokenAddress(
+      mintKeypair.publicKey,
+      recipientKeypair.publicKey
+    );
+
+    const fundTx = new anchor.web3.Transaction().add(
+      anchor.web3.SystemProgram.transfer({
+        fromPubkey: provider.wallet.publicKey,
+        toPubkey: fakeBurner.publicKey,
+        lamports: 0.01 * anchor.web3.LAMPORTS_PER_SOL,
+      })
+    );
+    await provider.sendAndConfirm(fundTx);
+
+    try {
+      await program.methods
+        .burnCertificate(Array.from(trailHash))
+        .accounts({
+          config: configPda,
+          trailRecord: trailRecordPda,
+          mint: mintKeypair.publicKey,
+          holderTokenAccount,
+          holder: recipientKeypair.publicKey,
+          signer: fakeBurner.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .signers([fakeBurner, recipientKeypair])
         .rpc();
 
       assert.fail("Expected unauthorized error");
@@ -168,7 +262,7 @@ describe("web3edu-brasil-tokens", () => {
         signer: burnerKeypair.publicKey,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
-      .signers([burnerKeypair])
+      .signers([burnerKeypair, recipientKeypair])
       .rpc();
 
     try {
@@ -176,33 +270,6 @@ describe("web3edu-brasil-tokens", () => {
       assert.fail("Account should be closed after burn");
     } catch (err) {
       assert.ok(err);
-    }
-  });
-
-  // ─── Unauthorized Burn ───────────────────────────────────────────────────────
-
-  it("rejects burn from an unauthorized signer", async () => {
-    const fakeBurner = Keypair.generate();
-    const dummyMint = Keypair.generate();
-
-    const sig = await provider.connection.requestAirdrop(fakeBurner.publicKey, 2e9);
-    await provider.connection.confirmTransaction(sig);
-
-    try {
-      await program.methods
-        .burnCertificate(Array.from(anotherTrailHash))
-        .accounts({
-          config: configPda,
-          trailRecord: anotherTrailRecordPda,
-          mint: dummyMint.publicKey,
-          signer: fakeBurner.publicKey,
-        })
-        .signers([fakeBurner])
-        .rpc();
-
-      assert.fail("Expected unauthorized error");
-    } catch (err: any) {
-      assert.include(err.message, "Unauthorized");
     }
   });
 });

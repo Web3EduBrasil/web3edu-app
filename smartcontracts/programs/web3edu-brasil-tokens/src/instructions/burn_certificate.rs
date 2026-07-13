@@ -29,7 +29,8 @@ pub struct BurnCertificate<'info> {
     )]
     pub holder_token_account: Account<'info, TokenAccount>,
 
-    pub holder: SystemAccount<'info>,
+    #[account(mut)]
+    pub holder: Signer<'info>,
 
     #[account(mut)]
     pub signer: Signer<'info>,
@@ -53,7 +54,7 @@ pub fn handler(
             Burn {
                 mint: ctx.accounts.mint.to_account_info(),
                 from: ctx.accounts.holder_token_account.to_account_info(),
-                authority: ctx.accounts.signer.to_account_info(),
+                authority: ctx.accounts.holder.to_account_info(),
             },
         ),
         1,

@@ -161,7 +161,9 @@ export type Web3eduBrasilTokens = {
           }
         },
         {
-          "name": "holder"
+          "name": "holder",
+          "writable": true,
+          "signer": true
         },
         {
           "name": "signer",
@@ -182,6 +184,38 @@ export type Web3eduBrasilTokens = {
               32
             ]
           }
+        }
+      ]
+    },
+    {
+      "name": "updateConfig",
+      "discriminator": [29, 158, 252, 191, 10, 83, 219, 99],
+      "accounts": [
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [99, 111, 110, 102, 105, 103]
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "minter",
+          "type": "pubkey"
+        },
+        {
+          "name": "burner",
+          "type": "pubkey"
         }
       ]
     },

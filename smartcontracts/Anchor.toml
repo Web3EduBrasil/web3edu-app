@@ -15,7 +15,7 @@ web3edu_brasil_tokens = "2GqcF3UeuJ7f2RtwVSTjNgojbkEuyEsGptbNR1eZUEqQ"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "Devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

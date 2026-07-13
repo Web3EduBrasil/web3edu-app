@@ -7,6 +7,7 @@ pub mod state;
 use instructions::burn_certificate::*;
 use instructions::initialize::*;
 use instructions::mint_certificate::*;
+use instructions::update_config::*;
 
 declare_id!("2GqcF3UeuJ7f2RtwVSTjNgojbkEuyEsGptbNR1eZUEqQ");
 
@@ -35,5 +36,13 @@ pub mod web3edu_brasil_tokens {
         trail_hash: [u8; 32],
     ) -> Result<()> {
         instructions::burn_certificate::handler(ctx, trail_hash)
+    }
+
+    pub fn update_config(
+        ctx: Context<UpdateConfig>,
+        minter: Pubkey,
+        burner: Pubkey,
+    ) -> Result<()> {
+        instructions::update_config::handler(ctx, minter, burner)
     }
 }
