@@ -355,8 +355,6 @@ export default function useWeb3Auth() {
     }
   };
 
-  const loginWithMetaMask = async () => {};
-
   const resetPassword = async (email: string) => {
     const auth = getAuth(app);
     await sendPasswordResetEmail(auth, email);
@@ -384,7 +382,6 @@ export default function useWeb3Auth() {
     logout,
     login,
     loginWithEmail,
-    loginWithMetaMask,
     resetPassword,
     user,
     WalletUi,

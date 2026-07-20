@@ -28,9 +28,10 @@ export const RewardContainer = () => {
   const t = useTranslations("reward");
   const tLearn = useTranslations("learn");
 
-  const hasWallet =
-    !!userAccount[0] || (googleUserInfo?.uid?.startsWith("0x") ?? false);
-  const effectiveAddress = userAccount[0] ?? googleUserInfo?.uid ?? "";
+  const uid = googleUserInfo?.uid ?? "";
+  const isSolanaWalletUid = uid.length >= 32 && !uid.startsWith("0x");
+  const hasWallet = !!userAccount[0] || isSolanaWalletUid;
+  const effectiveAddress = userAccount[0] ?? (isSolanaWalletUid ? uid : "");
   const fallbackWallet =
     effectiveAddress ? `${effectiveAddress.slice(0, 6)}...${effectiveAddress.slice(-4)}` : "";
   const certificateName =

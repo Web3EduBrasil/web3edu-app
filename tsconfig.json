@@ -38,6 +38,7 @@
     "node_modules",
     "functions",
     "scripts",
-    "smartcontracts"
+    "smartcontracts",
+    "vitest.config.ts"
   ]
 }

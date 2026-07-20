@@ -14,10 +14,9 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Validate required env vars — apenas no browser (evita falhar durante next build)
-if (typeof window !== "undefined" && !firebaseConfig.apiKey) {
-  console.error(
-    'Missing NEXT_PUBLIC_FIREBASE_API_KEY environment variable. Copy .env.example to .env.local and set your Firebase keys, then restart the dev server.'
+if (!firebaseConfig.apiKey) {
+  throw new Error(
+    "Missing NEXT_PUBLIC_FIREBASE_API_KEY. Add your Firebase credentials to .env.local and restart the dev server."
   );
 }
 

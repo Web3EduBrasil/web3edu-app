@@ -6,7 +6,6 @@ import useWeb3Auth from "./web3auth";
 interface Web3AuthContextProps {
   login: () => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
-  loginWithMetaMask: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   WalletUi: () => Promise<void>;
@@ -24,7 +23,7 @@ interface Web3AuthContextProps {
       walletProvider?: string | null;
     }
   ) => void;
-  setUserDbInfo: React.Dispatch<React.SetStateAction<boolean>>;
+  setUserDbInfo: React.Dispatch<React.SetStateAction<any>>;
   userAccount: string[];
   googleUserInfo: any | null;
 }
@@ -37,7 +36,6 @@ export const Web3AuthProvider = ({ children }: { children: ReactNode }) => {
   const {
     login,
     loginWithEmail,
-    loginWithMetaMask,
     resetPassword,
     logout,
     WalletUi,
@@ -53,7 +51,6 @@ export const Web3AuthProvider = ({ children }: { children: ReactNode }) => {
   const contextValue = useMemo(() => ({
     login,
     loginWithEmail,
-    loginWithMetaMask,
     resetPassword,
     logout,
     WalletUi,
@@ -66,7 +63,6 @@ export const Web3AuthProvider = ({ children }: { children: ReactNode }) => {
   }), [
     login,
     loginWithEmail,
-    loginWithMetaMask,
     resetPassword,
     logout,
     WalletUi,

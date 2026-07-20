@@ -2,6 +2,9 @@ import { adminDb } from "@/lib/firebase-admin";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth-helper";
 import { Connection, PublicKey } from "@solana/web3.js";
+import { mintTrailCertificate, getMintErrorCode } from "@/lib/solana-mint";
+
+export const maxDuration = 60;
 
 const PROGRAM_ID = new PublicKey(
   process.env.NEXT_PUBLIC_PROGRAM_ID || "2GqcF3UeuJ7f2RtwVSTjNgojbkEuyEsGptbNR1eZUEqQ"
@@ -166,45 +169,51 @@ export const POST = async (req: NextRequest) => {
 
     const docRef = adminDb.collection("programWhitelist").doc(uid);
     const docSnap = await docRef.get();
+    const isUpdate = docSnap.exists;
 
-    if (docSnap.exists) {
-      await docRef.update({
-        address: walletAddress,
-        [`status.${programId}`]: {
-          eligible: true,
-          ipfsHash: ipfsHash,
-          minted: false,
-          txHash: "",
-          terminalError: false,
-          errorCode: null,
-          errorMessage: null,
-          errorAt: null,
-        },
-      });
-      return NextResponse.json(
-        { message: "Status do programa atualizado na whitelist com sucesso" },
-        { status: 200 }
-      );
+    const pendingState = {
+      eligible: true,
+      ipfsHash,
+      minted: false,
+      txHash: "",
+      terminalError: false,
+      errorCode: null,
+      errorMessage: null,
+      errorAt: null,
+    };
+
+    if (isUpdate) {
+      await docRef.update({ address: walletAddress, [`status.${programId}`]: pendingState });
     } else {
-      await docRef.set({
-        address: walletAddress,
-        status: {
-          [programId]: {
-            eligible: true,
-            ipfsHash: ipfsHash,
-            minted: false,
-            txHash: "",
-            terminalError: false,
-            errorCode: null,
-            errorMessage: null,
-            errorAt: null,
-          },
-        },
-      });
+      await docRef.set({ address: walletAddress, status: { [programId]: pendingState } });
+    }
+
+    try {
+      const txSignature = await mintTrailCertificate(walletAddress, programId, ipfsHash);
+
+      await docRef.update({ [`status.${programId}.txHash`]: txSignature });
+
       return NextResponse.json(
-        { message: "Usuário adicionado à whitelist de programas com sucesso" },
-        { status: 201 }
+        {
+          message: isUpdate
+            ? "Certificado mintado e whitelist de programa atualizada com sucesso"
+            : "Certificado mintado e usuário adicionado à whitelist de programas",
+          txHash: txSignature,
+        },
+        { status: isUpdate ? 200 : 201 }
       );
+    } catch (mintError: unknown) {
+      const { errorCode, errorMessage } = getMintErrorCode(mintError);
+
+      await docRef.update({
+        [`status.${programId}.terminalError`]: true,
+        [`status.${programId}.errorCode`]: errorCode,
+        [`status.${programId}.errorMessage`]: errorMessage,
+        [`status.${programId}.errorAt`]: new Date().toISOString(),
+      });
+
+      console.error("Erro ao mintar certificado Solana (programa):", mintError);
+      return NextResponse.json({ message: errorMessage, errorCode }, { status: 422 });
     }
   } catch (error: any) {
     console.error(error.message);

@@ -10,7 +10,6 @@ import type {
 const walletRegex = /^0x[0-9a-fA-F]{40}$/;
 
 type PartialProfile = Partial<StudentProfile> & {
-  uid: string;
   walletProvider?: string | null;
 };
 
@@ -145,7 +144,7 @@ export const upsertStudentProfile = async (uid: string, data: PartialProfile) =>
   });
 
   await docRef.set(payload, { merge: true });
-  return payload as StudentProfile;
+  return payload as unknown as StudentProfile;
 };
 
 export const completeOnboarding = async (

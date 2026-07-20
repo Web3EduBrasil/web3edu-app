@@ -34,12 +34,12 @@ export const ObIntro = ({ handleTabClick }: OnboardingProps<void>) => {
         </div>
         <MotionButton
           label={t("next")}
-          <a onClick={handleSkip}>{t("skip")}</a>
+          type="button"
           func={() => handleTabClick("ObCommu")}
           className="bg-cgreen w-28 text-neutral font-bold"
         />
         <div className="cursor-pointer text-dblue">
-          <a onClick={() => fetchTutorialDone()}>{t("skip")}</a>
+          <a onClick={handleSkip}>{t("skip")}</a>
         </div>
       </div>
     </div>

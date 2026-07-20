@@ -436,17 +436,17 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
       const IpfsHash = await uploadToIpfs({ name: `Certificado — ${itemName}`, image: nftImageUri, description });
       setMintIpfsHash(IpfsHash);
 
-      // 2. Registra na whitelist (dispara Cloud Function de mint)
+      // 2. Registra na whitelist e executa o mint na Solana (via API server-side)
       setMintStep("minting");
       const whitelistRes = await fetch(registerEndpoint, {
         method: "POST",
         headers: await authHeaders(),
         body: JSON.stringify({ walletAddress, [bodyKey]: itemId, ipfsHash: IpfsHash }),
       });
+      const whitelistData = await whitelistRes.json();
       if (!whitelistRes.ok) {
-        const errorData = await whitelistRes.json();
         setMintStep("error");
-        toast.error(`Erro ao registrar na whitelist: ${errorData.message}`);
+        toast.error(`Erro ao mintar certificado: ${whitelistData.message}`);
         return;
       }
 
@@ -467,7 +467,15 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
         console.error("Erro ao registrar NFT em achievedNfts:", err);
       }
 
-      // 4. Polling — aguarda txHash vindo da Cloud Function
+      // 4a. O mint foi executado sincronamente — txHash já está disponível
+      if (whitelistData.txHash) {
+        setMintStep("success");
+        setMintTxHash(whitelistData.txHash);
+        toast.success("🎉 Seu certificado NFT foi mintado com sucesso!", { autoClose: 8000 });
+        return;
+      }
+
+      // 4b. Fallback: aguarda txHash via polling (caso o mint demore mais que o timeout da API)
       setMintStep("polling");
       pollMintStatus(uid, itemId, type);
     } catch (error: any) {

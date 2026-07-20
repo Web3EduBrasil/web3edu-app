@@ -3,6 +3,10 @@ import { computeTrailProgress } from "@/lib/trail-progress";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth-helper";
 import { Connection, PublicKey } from "@solana/web3.js";
+import { mintTrailCertificate, getMintErrorCode } from "@/lib/solana-mint";
+
+// Aumenta o timeout no Vercel Pro/Enterprise para acomodar a submissão da tx
+export const maxDuration = 60;
 
 const PROGRAM_ID = new PublicKey(
   process.env.NEXT_PUBLIC_PROGRAM_ID || "2GqcF3UeuJ7f2RtwVSTjNgojbkEuyEsGptbNR1eZUEqQ"
@@ -82,54 +86,58 @@ export const POST = async (req: NextRequest, res: NextResponse) => {
 
     const whitelistDocRef = adminDb.collection("whitelist").doc(uid);
     const docSnap = await whitelistDocRef.get();
+    const isUpdate = docSnap.exists;
 
-    if (docSnap.exists) {
-      await whitelistDocRef.update({
-        address: walletAddress,
-        [`status.${trailId}`]: {
-          eligible: true,
-          ipfsHash: ipfsHash,
-          minted: false,
-          txHash: "",
-          terminalError: false,
-          errorCode: null,
-          errorMessage: null,
-          errorAt: null,
-        },
-      });
+    const pendingState = {
+      eligible: true,
+      ipfsHash,
+      minted: false,
+      txHash: "",
+      terminalError: false,
+      errorCode: null,
+      errorMessage: null,
+      errorAt: null,
+    };
 
-      return NextResponse.json(
-        { message: "Status do usuário atualizado na whitelist com sucesso" },
-        { status: 200 }
-      );
+    // Grava estado pendente antes de tentar o mint
+    if (isUpdate) {
+      await whitelistDocRef.update({ address: walletAddress, [`status.${trailId}`]: pendingState });
     } else {
-      await whitelistDocRef.set({
-        address: walletAddress,
-        status: {
-          [trailId]: {
-            eligible: true,
-            ipfsHash: ipfsHash,
-            minted: false,
-            txHash: "",
-            terminalError: false,
-            errorCode: null,
-            errorMessage: null,
-            errorAt: null,
-          },
-        },
-      });
+      await whitelistDocRef.set({ address: walletAddress, status: { [trailId]: pendingState } });
+    }
+
+    // Executa o mint na rede Solana
+    try {
+      const txSignature = await mintTrailCertificate(walletAddress, trailId, ipfsHash);
+
+      // Salva o txHash no Firestore assim que a tx é submetida (antes de aguardar confirmação)
+      await whitelistDocRef.update({ [`status.${trailId}.txHash`]: txSignature });
 
       return NextResponse.json(
-        { message: "Usuário adicionado à whitelist com sucesso" },
-        { status: 201 }
+        {
+          message: isUpdate
+            ? "Certificado mintado e whitelist atualizada com sucesso"
+            : "Certificado mintado e usuário adicionado à whitelist",
+          txHash: txSignature,
+        },
+        { status: isUpdate ? 200 : 201 }
       );
+    } catch (mintError: unknown) {
+      const { errorCode, errorMessage } = getMintErrorCode(mintError);
+
+      await whitelistDocRef.update({
+        [`status.${trailId}.terminalError`]: true,
+        [`status.${trailId}.errorCode`]: errorCode,
+        [`status.${trailId}.errorMessage`]: errorMessage,
+        [`status.${trailId}.errorAt`]: new Date().toISOString(),
+      });
+
+      console.error("Erro ao mintar certificado Solana:", mintError);
+      return NextResponse.json({ message: errorMessage, errorCode }, { status: 422 });
     }
   } catch (error: any) {
     console.error(error.message);
-    return NextResponse.json(
-      { message: "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 };
 
