@@ -68,7 +68,7 @@ const TrailContext = createContext<TrailState>({
 
 interface NftState {
   achievedNfts: AchievedNft[];
-  fetchAchievedNfts: (walletAddress: string) => void;
+  fetchAchievedNfts: (uid: string) => void;
 }
 
 const NftContext = createContext<NftState>({
@@ -86,6 +86,7 @@ interface RewardState {
   mintIpfsHash: string | null;
   mintCheckLoading: boolean;
   handleRewardContainer: (data?: RewardData) => void;
+  startMintCheck: (uid: string, itemId: string, type: "trail" | "program") => Promise<void>;
   fetchAirDrop: (
     type: "trail" | "program",
     icon: string,
@@ -107,6 +108,7 @@ const RewardContext = createContext<RewardState>({
   mintIpfsHash: null,
   mintCheckLoading: false,
   handleRewardContainer: () => { },
+  startMintCheck: async () => { },
   fetchAirDrop: async () => { },
   retryMintStatusCheck: async () => { },
   closeRewardContainer: () => { },
@@ -221,9 +223,10 @@ const TrailProvider = ({ children }: { children: React.ReactNode }) => {
 const NftProvider = ({ children }: { children: React.ReactNode }) => {
   const [achievedNfts, setAchievedNfts] = useState<AchievedNft[]>([]);
 
-  const fetchAchievedNfts = useCallback(async (walletAddress: string) => {
+  const fetchAchievedNfts = useCallback(async (uid: string) => {
+    if (!uid) return;
     try {
-      const res = await fetch(`/api/user/nfts?walletAddress=${walletAddress}`);
+      const res = await fetch(`/api/user/nfts?uid=${encodeURIComponent(uid)}`);
       if (res.ok) {
         const data = await res.json();
         setAchievedNfts(data.nfts || []);
@@ -331,6 +334,13 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
           toast.error(buildTerminalErrorToastMessage(data), { autoClose: 8000 });
           return;
         }
+
+        if (data.eligible === false) {
+          setMintStep("success");
+          if (data.ipfsHash) setMintIpfsHash(normalizeIpfsHash(data.ipfsHash));
+          toast.success("🎉 Seu certificado NFT foi mintado com sucesso!", { autoClose: 8000 });
+          return;
+        }
       } catch (err: any) {
         if (err?.name !== "AbortError") {
           console.error("Erro no polling de mint:", err);
@@ -344,28 +354,53 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
     );
   }, [buildTerminalErrorToastMessage]);
 
-  const retryMintStatusCheck = useCallback(async (uid: string, itemId: string, type: "trail" | "program") => {
+  // Verifica o status do mint e atualiza o estado do modal.
+  // Usado tanto no pre-check inicial (loading=true bloqueia os botões)
+  // quanto no retry manual (loading=false para não travar o botão de retry).
+  const startMintCheck = useCallback(async (
+    uid: string,
+    itemId: string,
+    type: "trail" | "program",
+    showLoading = true
+  ) => {
     const endpoint = type === "trail"
       ? `/api/whitelist?uid=${uid}&trailId=${itemId}`
       : `/api/programWhitelist?uid=${uid}&programId=${itemId}`;
+
+    if (showLoading) setMintCheckLoading(true);
     try {
       const res = await fetch(endpoint);
       const data = (await res.json()) as MintStatusResponse;
+
       if (data.txHash) {
         setMintStep("success");
         setMintTxHash(data.txHash);
         if (data.ipfsHash) setMintIpfsHash(normalizeIpfsHash(data.ipfsHash));
+        if (!showLoading) toast.success("🎉 Seu certificado NFT foi mintado com sucesso!", { autoClose: 8000 });
       } else if (data.terminalError) {
         setMintStep("error");
         setMintTxHash(null);
         toast.error(buildTerminalErrorToastMessage(data), { autoClose: 8000 });
-      } else {
+      } else if (data.eligible === false) {
+        setMintStep("success");
+        if (data.ipfsHash) setMintIpfsHash(normalizeIpfsHash(data.ipfsHash));
+        if (!showLoading) toast.success("🎉 Seu certificado NFT já foi mintado!", { autoClose: 8000 });
+      } else if (data.pending) {
+        setMintStep("polling");
+        pollMintStatus(uid, itemId, type);
+      } else if (!showLoading) {
         toast.info("Mint ainda em processamento. Aguarde mais alguns minutos e tente novamente.", { autoClose: 6000 });
       }
     } catch {
-      toast.error("Erro ao verificar status do mint.");
+      if (!showLoading) toast.error("Erro ao verificar status do mint.");
+    } finally {
+      if (showLoading) setMintCheckLoading(false);
     }
-  }, [buildTerminalErrorToastMessage]);
+  }, [buildTerminalErrorToastMessage, normalizeIpfsHash, pollMintStatus]);
+
+  const retryMintStatusCheck = useCallback(async (uid: string, itemId: string, type: "trail" | "program") => {
+    await startMintCheck(uid, itemId, type, false);
+  }, [startMintCheck]);
 
   const fetchAirDrop = useCallback(async (
     type: "trail" | "program",
@@ -386,7 +421,7 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
       : `Certificado concedido por completar o programa ${itemName}.`;
 
     try {
-      // 0. Pré-checagem: verifica se já foi mintado ou se há erro terminal
+      // 0. Pré-checagem: bloqueia apenas se já foi mintado com sucesso (txHash salvo) ou está pendente
       const preCheck = await fetch(checkEndpoint);
       const preData = (await preCheck.json()) as MintStatusResponse;
       if (preData.txHash) {
@@ -396,44 +431,51 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
         toast.success("🎉 Seu certificado NFT foi mintado com sucesso!", { autoClose: 8000 });
         return;
       }
-      if (preData.terminalError) {
-        setMintStep("error");
-        setMintTxHash(null);
-        toast.error(buildTerminalErrorToastMessage(preData), { autoClose: 8000 });
-        return;
-      }
       if (preData.pending) {
         setMintStep("polling");
         pollMintStatus(uid, itemId, type);
         return;
       }
-      if (preData.eligible === false) {
-        toast.error(type === "trail" ? "Certificado já foi resgatado para esta trilha" : "Certificado já foi resgatado para este programa");
-        return;
-      }
+      // terminalError e eligible===false sem txHash: permite re-tentativa
+      // O POST sempre reseta o estado pendente antes de mintar
 
-      // 1. Upload do metadata para o IPFS (com imagem via ipfs://)
+      // 1. Gera imagem do certificado com nome do usuário e faz upload para IPFS
       setMintStep("uploading");
       const appLink = process.env.NEXT_PUBLIC_APP_LINK || "";
       const rawImageUrl = icon.startsWith("http") ? icon : `${appLink}${icon}`;
 
-      // Tenta fazer upload da imagem para IPFS para garantir compatibilidade com gateways
       let nftImageUri = rawImageUrl;
       try {
-        const imgUploadRes = await fetch("/api/ipfs/image", {
+        const certImgRes = await fetch("/api/certificate/image", {
           method: "POST",
           headers: await authHeaders(),
-          body: JSON.stringify({ imageUrl: rawImageUrl }),
+          body: JSON.stringify({ recipientName: certificateName, trailName: itemName }),
         });
-        if (imgUploadRes.ok) {
-          const imgData = await imgUploadRes.json();
-          if (imgData.ipfsUrl) nftImageUri = imgData.ipfsUrl;
+        if (certImgRes.ok) {
+          const certImgData = await certImgRes.json();
+          if (certImgData.ipfsUrl) nftImageUri = certImgData.ipfsUrl;
         }
       } catch {
-        // fallback: usa URL original
+        // fallback: tenta upload do banner original
+        try {
+          const imgUploadRes = await fetch("/api/ipfs/image", {
+            method: "POST",
+            headers: await authHeaders(),
+            body: JSON.stringify({ imageUrl: rawImageUrl }),
+          });
+          if (imgUploadRes.ok) {
+            const imgData = await imgUploadRes.json();
+            if (imgData.ipfsUrl) nftImageUri = imgData.ipfsUrl;
+          }
+        } catch { /* usa URL original como último recurso */ }
       }
 
-      const IpfsHash = await uploadToIpfs({ name: `Certificado — ${itemName}`, image: nftImageUri, description });
+      const IpfsHash = await uploadToIpfs({
+        name: `Certificado — ${itemName}`,
+        image: nftImageUri,
+        description,
+        recipient: certificateName,
+      });
       setMintIpfsHash(IpfsHash);
 
       // 2. Registra na whitelist e executa o mint na Solana (via API server-side)
@@ -487,8 +529,8 @@ const RewardProvider = ({ children }: { children: React.ReactNode }) => {
 
   const value = useMemo(() => ({
     rewardContainerVisibility, rewardData, mintStep, mintTxHash, mintIpfsHash, mintCheckLoading,
-    handleRewardContainer, fetchAirDrop, retryMintStatusCheck, closeRewardContainer,
-  }), [rewardContainerVisibility, rewardData, mintStep, mintTxHash, mintIpfsHash, mintCheckLoading, handleRewardContainer, fetchAirDrop, retryMintStatusCheck, closeRewardContainer]);
+    handleRewardContainer, startMintCheck, fetchAirDrop, retryMintStatusCheck, closeRewardContainer,
+  }), [rewardContainerVisibility, rewardData, mintStep, mintTxHash, mintIpfsHash, mintCheckLoading, handleRewardContainer, startMintCheck, fetchAirDrop, retryMintStatusCheck, closeRewardContainer]);
 
   return <RewardContext.Provider value={value}>{children}</RewardContext.Provider>;
 };

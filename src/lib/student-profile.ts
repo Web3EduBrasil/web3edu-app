@@ -7,7 +7,8 @@ import type {
   StudentType,
 } from "@/interfaces/interfaces";
 
-const walletRegex = /^0x[0-9a-fA-F]{40}$/;
+// Solana base58 pubkey: 32–44 chars, base58 alphabet
+const solanaAddressRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
 type PartialProfile = Partial<StudentProfile> & {
   walletProvider?: string | null;
@@ -21,8 +22,8 @@ const stripUndefined = (value: Record<string, unknown>) =>
 export const normalizeWalletAddress = (address?: string | null): string | null => {
   if (!address || typeof address !== "string") return null;
   const trimmed = address.trim();
-  if (!walletRegex.test(trimmed)) return null;
-  return trimmed.toLowerCase();
+  if (!solanaAddressRegex.test(trimmed)) return null;
+  return trimmed; // Solana addresses are case-sensitive — do not lowercase
 };
 
 export const getStudentProfile = async (uid: string) => {

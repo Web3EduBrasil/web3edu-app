@@ -2,25 +2,36 @@ import { getTranslations } from "next-intl/server";
 
 export const dynamic = "force-dynamic";
 
-const pinataGateway = "https://ipfs.io/ipfs/";
+const IPFS_GATEWAYS = [
+  "https://gateway.pinata.cloud/ipfs/",
+  "https://cloudflare-ipfs.com/ipfs/",
+  "https://ipfs.io/ipfs/",
+];
 
-const toGatewayUrl = (value?: string): string => {
+const toGatewayUrl = (value?: string, gateway = IPFS_GATEWAYS[0]): string => {
   if (!value) return "";
-  if (value.startsWith("ipfs://")) {
-    return `${pinataGateway}${value.replace("ipfs://", "")}`;
-  }
+  if (value.startsWith("ipfs://")) return `${gateway}${value.replace("ipfs://", "")}`;
   if (value.startsWith("http")) return value;
-  return `${pinataGateway}${value}`;
+  return `${gateway}${value}`;
 };
 
 const fetchMetadata = async (ipfsHash: string) => {
-  try {
-    const response = await fetch(toGatewayUrl(ipfsHash), { cache: "no-store" });
-    if (!response.ok) return null;
-    return await response.json();
-  } catch {
-    return null;
+  for (const gateway of IPFS_GATEWAYS) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const response = await fetch(toGatewayUrl(ipfsHash, gateway), {
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      if (!response.ok) continue;
+      return await response.json();
+    } catch {
+      continue;
+    }
   }
+  return null;
 };
 
 const extractImageValue = (metadata: any): string => {
@@ -68,9 +79,17 @@ export default async function CertificatePage({
   if (!metadata) {
     return (
       <div className="min-h-screen w-full bg-neutralbg flex items-center justify-center px-6">
-        <div className="bg-cgray border-2 border-gray rounded-2xl p-8 text-center max-w-md w-full">
+        <div className="bg-cgray border-2 border-gray rounded-2xl p-8 text-center max-w-md w-full flex flex-col gap-4">
           <h1 className="text-xl font-semibold text-neutral">{t("notFound")}</h1>
-          <p className="text-sm text-dgray mt-2">IPFS: {ipfsHash}</p>
+          <p className="text-xs text-dgray break-all">IPFS: {ipfsHash}</p>
+          <a
+            href={`https://gateway.pinata.cloud/ipfs/${ipfsHash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-outline border-dblue text-dblue w-full"
+          >
+            Abrir diretamente no Pinata ↗
+          </a>
         </div>
       </div>
     );
@@ -80,6 +99,7 @@ export default async function CertificatePage({
   const { displayUrl, downloadUrl, rawUrl, isSvg } = resolveImage(imageValue);
   const title = typeof metadata.name === "string" ? metadata.name : t("title");
   const description = typeof metadata.description === "string" ? metadata.description : "";
+  const recipient = typeof metadata.recipient === "string" ? metadata.recipient : null;
   const downloadName = "certificado.pdf";
   const downloadParam = imageValue ? encodeURIComponent(imageValue) : encodeURIComponent(ipfsHash);
   const canDownload = !!downloadUrl || !!rawUrl;
@@ -91,6 +111,11 @@ export default async function CertificatePage({
         <h1 className="text-center text-xl md:text-2xl font-semibold text-neutral">
           {title}
         </h1>
+        {recipient && (
+          <p className="text-center text-sm text-dgray mt-1">
+            {recipient}
+          </p>
+        )}
         <div className="mt-5 flex justify-center">
           <div className="w-full max-w-2xl aspect-video overflow-hidden rounded-xl border border-gray/40 bg-base-200">
             {displayUrl ? (

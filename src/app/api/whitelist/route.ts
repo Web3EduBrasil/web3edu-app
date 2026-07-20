@@ -2,38 +2,11 @@ import { adminDb } from "@/lib/firebase-admin";
 import { computeTrailProgress } from "@/lib/trail-progress";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/lib/auth-helper";
-import { Connection, PublicKey } from "@solana/web3.js";
-import { mintTrailCertificate, getMintErrorCode } from "@/lib/solana-mint";
+import { PublicKey } from "@solana/web3.js";
+import { mintTrailCertificate, getMintErrorCode, recoverMintSignature } from "@/lib/solana-mint";
 
 // Aumenta o timeout no Vercel Pro/Enterprise para acomodar a submissão da tx
 export const maxDuration = 60;
-
-const PROGRAM_ID = new PublicKey(
-  process.env.NEXT_PUBLIC_PROGRAM_ID || "2GqcF3UeuJ7f2RtwVSTjNgojbkEuyEsGptbNR1eZUEqQ"
-);
-
-const connection = new Connection(
-  process.env.SOLANA_RPC_URL ||
-    process.env.NEXT_PUBLIC_SOLANA_RPC_URL ||
-    "https://api.devnet.solana.com",
-  "confirmed"
-);
-
-const readTrailMinted = async (trailId: string): Promise<boolean | null> => {
-  try {
-    const trailHash = Buffer.alloc(32);
-    Buffer.from(trailId).copy(trailHash);
-    const [pda] = PublicKey.findProgramAddressSync(
-      [Buffer.from("trail"), trailHash],
-      PROGRAM_ID
-    );
-    const account = await connection.getAccountInfo(pda);
-    return account !== null;
-  } catch (error) {
-    console.error("Erro ao checar mint on-chain:", error);
-    return null;
-  }
-};
 
 function isValidSolanaPubkey(address: string): boolean {
   try {
@@ -76,17 +49,21 @@ export const POST = async (req: NextRequest, res: NextResponse) => {
         { status: 403 }
       );
     }
-    const onChainMinted = await readTrailMinted(trailId);
-    if (onChainMinted) {
-      return NextResponse.json(
-        { message: "Certificado já foi resgatado para esta trilha" },
-        { status: 409 }
-      );
-    }
 
     const whitelistDocRef = adminDb.collection("whitelist").doc(uid);
     const docSnap = await whitelistDocRef.get();
     const isUpdate = docSnap.exists;
+
+    // Impede double-mint para o mesmo usuário: se já tem txHash salvo, rejeita
+    if (isUpdate) {
+      const existingTxHash = docSnap.data()?.status?.[trailId]?.txHash;
+      if (typeof existingTxHash === "string" && existingTxHash.trim()) {
+        return NextResponse.json(
+          { message: "Você já resgatou o certificado desta trilha", txHash: existingTxHash },
+          { status: 409 }
+        );
+      }
+    }
 
     const pendingState = {
       eligible: true,
@@ -97,6 +74,7 @@ export const POST = async (req: NextRequest, res: NextResponse) => {
       errorCode: null,
       errorMessage: null,
       errorAt: null,
+      pendingAt: new Date().toISOString(),
     };
 
     // Grava estado pendente antes de tentar o mint
@@ -125,6 +103,21 @@ export const POST = async (req: NextRequest, res: NextResponse) => {
     } catch (mintError: unknown) {
       const { errorCode, errorMessage } = getMintErrorCode(mintError);
 
+      // When the on-chain PDA already exists but txHash was never persisted,
+      // attempt to recover the original signature before marking as error.
+      if (errorCode === "TRAIL_ALREADY_MINTED") {
+        try {
+          const recoveredSig = await recoverMintSignature(walletAddress, trailId);
+          if (recoveredSig) {
+            await whitelistDocRef.update({ [`status.${trailId}.txHash`]: recoveredSig });
+            return NextResponse.json(
+              { message: "Certificado já mintado", txHash: recoveredSig },
+              { status: 200 }
+            );
+          }
+        } catch { /* recovery failed, fall through to terminal error */ }
+      }
+
       await whitelistDocRef.update({
         [`status.${trailId}.terminalError`]: true,
         [`status.${trailId}.errorCode`]: errorCode,
@@ -149,22 +142,6 @@ export const GET = async (req: NextRequest) => {
       return NextResponse.json(
         { error: "Parâmetros uid e trailId são obrigatórios" },
         { status: 400 }
-      );
-    }
-
-    const onChainMinted = trailId ? await readTrailMinted(trailId) : null;
-    if (onChainMinted) {
-      return NextResponse.json(
-        {
-          eligible: false,
-          pending: false,
-          txHash: null,
-          terminalError: false,
-          errorCode: "ALREADY_MINTED",
-          errorMessage: "Certificado já foi resgatado para esta trilha",
-          ipfsHash: null,
-        },
-        { status: 200 }
       );
     }
 
@@ -204,22 +181,26 @@ export const GET = async (req: NextRequest) => {
       );
     }
 
-    const isMarkedEligible = trailStatus.eligible === true;
-    const alreadyMinted = trailStatus.minted === true;
-    const hasTxHash = typeof trailStatus.txHash === "string" && trailStatus.txHash !== "";
+    const hasTxHash = typeof trailStatus.txHash === "string" && trailStatus.txHash.trim().length > 0;
     const hasTerminalError = trailStatus.terminalError === true;
-    const isEligible = isMarkedEligible && !alreadyMinted && !hasTxHash && !hasTerminalError;
-    const isPending = isEligible && !!trailStatus;
+    const alreadyMinted = trailStatus.minted === true;
+    const isEligible = !hasTxHash && !hasTerminalError && !alreadyMinted;
+
+    // Estado pendente expira após 10 minutos — permite re-mint se o servidor travou antes de salvar txHash
+    const PENDING_TTL_MS = 10 * 60 * 1000;
+    const pendingAt = trailStatus.pendingAt ? new Date(trailStatus.pendingAt).getTime() : null;
+    const isFreshPending = pendingAt !== null && Date.now() - pendingAt < PENDING_TTL_MS;
+    const isPending = isEligible && isFreshPending;
 
     return NextResponse.json(
       {
         eligible: isEligible,
         pending: isPending,
-        txHash: trailStatus.txHash || null,
+        txHash: hasTxHash ? trailStatus.txHash : null,
         terminalError: hasTerminalError,
         errorCode: trailStatus.errorCode || null,
         errorMessage: trailStatus.errorMessage || null,
-        ipfsHash: trailStatus.ipfsHash || null,
+        ipfsHash: (typeof trailStatus.ipfsHash === "string" && trailStatus.ipfsHash.trim()) ? trailStatus.ipfsHash : null,
       },
       { status: 200 }
     );

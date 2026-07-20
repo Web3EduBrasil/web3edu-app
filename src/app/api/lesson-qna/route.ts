@@ -63,7 +63,7 @@ async function getAuthUser(uid: string) {
     displayName:
       (userData as any)?.displayName ||
       (userData as any)?.name ||
-      (uid.startsWith("0x") ? `${uid.slice(0, 6)}...${uid.slice(-4)}` : "Aluno"),
+      (uid.length >= 32 ? `${uid.slice(0, 6)}...${uid.slice(-4)}` : "Aluno"),
     photoURL: (userData as any)?.photoURL || "",
     role: (isAdmin ? "admin" : "student") as Role,
     isAdmin,

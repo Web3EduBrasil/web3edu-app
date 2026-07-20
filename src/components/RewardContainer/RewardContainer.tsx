@@ -9,7 +9,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export const RewardContainer = () => {
   const {
@@ -20,6 +20,8 @@ export const RewardContainer = () => {
     mintStep,
     mintTxHash,
     mintIpfsHash,
+    mintCheckLoading,
+    startMintCheck,
     retryMintStatusCheck,
     closeRewardContainer,
   } = useContent();
@@ -30,8 +32,9 @@ export const RewardContainer = () => {
 
   const uid = googleUserInfo?.uid ?? "";
   const isSolanaWalletUid = uid.length >= 32 && !uid.startsWith("0x");
-  const hasWallet = !!userAccount[0] || isSolanaWalletUid;
-  const effectiveAddress = userAccount[0] ?? (isSolanaWalletUid ? uid : "");
+  const dbWalletAddress = (userDbInfo as any)?.walletAddress ?? "";
+  const effectiveAddress = userAccount[0] ?? (isSolanaWalletUid ? uid : dbWalletAddress);
+  const hasWallet = !!effectiveAddress;
   const fallbackWallet =
     effectiveAddress ? `${effectiveAddress.slice(0, 6)}...${effectiveAddress.slice(-4)}` : "";
   const certificateName =
@@ -40,27 +43,28 @@ export const RewardContainer = () => {
     googleUserInfo?.displayName ||
     googleUserInfo?.name ||
     fallbackWallet;
+
   const isProcessing = mintStep === "uploading" || mintStep === "minting" || mintStep === "polling";
   const isDone = mintStep === "success" || mintStep === "error";
 
-  // Verifica automaticamente se o NFT já foi mintado ao abrir o modal
+  // Email user sem wallet conectada ou salva no perfil — mostra input manual
+  const [sessionWalletAddress, setSessionWalletAddress] = useState("");
+  const mintAddress = effectiveAddress || sessionWalletAddress;
+  const hasWalletOrSession = !!mintAddress;
+  const needsWalletInput = !hasWalletOrSession && !isSolanaWalletUid;
+  const [walletInput, setWalletInput] = useState("");
+  const [walletInputError, setWalletInputError] = useState("");
+  const [showWalletInput, setShowWalletInput] = useState(false);
+
+  const isValidSolanaAddress = (addr: string) =>
+    /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr.trim());
+
+  // Ao abrir o modal, verifica imediatamente o estado do certificado.
+  // mintCheckLoading=true bloqueia os botões enquanto a verificação roda.
   useEffect(() => {
-    if (!rewardContainerVisibility || !rewardData || !googleUserInfo?.uid || mintStep !== "idle") return;
-
-    const uid = googleUserInfo.uid;
-    const endpoint = rewardData.type === "trail"
-      ? `/api/whitelist?uid=${uid}&trailId=${rewardData.id}`
-      : `/api/programWhitelist?uid=${uid}&programId=${rewardData.id}`;
-
-    fetch(endpoint)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.txHash) {
-          retryMintStatusCheck(uid, rewardData.id, rewardData.type);
-        }
-      })
-      .catch(() => { /* silencioso */ });
-  }, [rewardContainerVisibility, rewardData, googleUserInfo?.uid, mintStep, retryMintStatusCheck]);
+    if (!rewardContainerVisibility || !rewardData || !uid || mintStep !== "idle") return;
+    startMintCheck(uid, rewardData.id, rewardData.type);
+  }, [rewardContainerVisibility, rewardData, uid, mintStep, startMintCheck]);
 
   const stepLabel =
     mintStep === "uploading" ? t("uploading") :
@@ -71,8 +75,12 @@ export const RewardContainer = () => {
 
   const handleClaim = async () => {
     if (!rewardData || !googleUserInfo) return;
-    if (!hasWallet) {
-      setVisible(true);
+    if (!hasWalletOrSession) {
+      if (needsWalletInput) {
+        setShowWalletInput(true);
+      } else {
+        setVisible(true);
+      }
       return;
     }
     await fetchAirDrop(
@@ -80,7 +88,28 @@ export const RewardContainer = () => {
       rewardData.icon,
       googleUserInfo.uid,
       certificateName,
-      effectiveAddress,
+      mintAddress,
+      rewardData.id,
+      rewardData.name
+    );
+  };
+
+  const handleWalletInputSubmit = async () => {
+    const addr = walletInput.trim();
+    if (!isValidSolanaAddress(addr)) {
+      setWalletInputError("Endereço Solana inválido. Cole o endereço da sua carteira (ex: 7HjX...)");
+      return;
+    }
+    if (!rewardData || !googleUserInfo) return;
+    setWalletInputError("");
+    setShowWalletInput(false);
+    setSessionWalletAddress(addr);
+    await fetchAirDrop(
+      rewardData.type,
+      rewardData.icon,
+      googleUserInfo.uid,
+      certificateName,
+      addr,
       rewardData.id,
       rewardData.name
     );
@@ -111,13 +140,11 @@ export const RewardContainer = () => {
         {/* Pré-visualização do certificado NFT */}
         {rewardData?.icon && (
           <div className="w-full rounded-box overflow-hidden border-2 border-yellow-400/60 shadow-md relative">
-            {/* Badge NFT */}
             <div className="absolute top-2 right-2 z-10 bg-yellow-400 text-neutral text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
               <FaMedal className="w-3 h-3" />
               NFT
             </div>
 
-            {/* Imagem da trilha como arte do certificado */}
             <div className="relative w-full aspect-video">
               <Image
                 src={rewardData.icon}
@@ -126,7 +153,6 @@ export const RewardContainer = () => {
                 style={{ objectFit: "cover" }}
                 unoptimized={rewardData.icon.startsWith("/")}
               />
-              {/* Overlay com texto de certificado */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex flex-col justify-end p-3 gap-0.5">
                 <span className="text-white/60 text-[10px] uppercase tracking-widest font-semibold">
                   {t("certificateLabel")}
@@ -135,12 +161,11 @@ export const RewardContainer = () => {
                   {rewardData.name}
                 </span>
                 <span className="text-white/70 text-[10px]">
-                  {certificateName || userAccount[0]}
+                  {certificateName || effectiveAddress}
                 </span>
               </div>
             </div>
 
-            {/* Status do mint sobreposto ao certificado */}
             {mintStep === "success" && (
               <div className="bg-green/10 border-t border-green/30 px-3 py-2 flex items-center gap-2">
                 <FaCheck className="text-green w-3.5 h-3.5 shrink-0" />
@@ -159,11 +184,13 @@ export const RewardContainer = () => {
             )}
           </div>
         )}
-        {!hasWallet && mintStep === "idle" && (
+
+        {/* Aviso de carteira necessária — só aparece depois do check */}
+        {!hasWalletOrSession && !showWalletInput && mintStep === "idle" && !mintCheckLoading && (
           <p className="text-sm text-orange-500 font-medium">{t("connectWarning")}</p>
         )}
 
-        {/* Step-by-step progress */}
+        {/* Progress / status */}
         {mintStep !== "idle" && (
           <div className={`flex items-start gap-3 w-full rounded-box p-4 text-sm
             ${mintStep === "success" ? "bg-green/10 border border-green/30 text-green" :
@@ -179,7 +206,6 @@ export const RewardContainer = () => {
             <div className="flex flex-col gap-2 flex-1">
               <span className="font-semibold">{stepLabel}</span>
 
-              {/* Steps visual */}
               {isProcessing && (
                 <div className="flex flex-col gap-1 text-xs text-neutral/60 mt-1">
                   <div className={`flex items-center gap-2 ${mintStep === "uploading" ? "text-dblue font-semibold" : "line-through opacity-50"}`}>
@@ -197,9 +223,6 @@ export const RewardContainer = () => {
                 </div>
               )}
 
-              {/* Success: sem link duplicado (aparece no card do certificado) */}
-
-              {/* Error: suggest checking wallet */}
               {mintStep === "error" && (
                 <span className="text-xs font-normal">{t("mintTimeoutHint")}</span>
               )}
@@ -207,14 +230,48 @@ export const RewardContainer = () => {
           </div>
         )}
 
-        {/* Action buttons */}
+        {/* Botão de ação — escondido enquanto o pre-check roda */}
         {mintStep === "idle" && (
-          <button
-            onClick={handleClaim}
-            className="btn w-full h-12 bg-green text-neutral font-semibold border-0"
-          >
-            {!hasWallet ? tLearn("connectWallet") : t("claimNow")}
-          </button>
+          mintCheckLoading ? (
+            <div className="w-full flex justify-center py-3">
+              <span className="loading loading-spinner loading-sm text-neutral/40" />
+            </div>
+          ) : showWalletInput ? (
+            <div className="flex flex-col gap-2 w-full">
+              <p className="text-sm text-neutral/70">
+                Informe o endereço da sua carteira Solana para receber o certificado:
+              </p>
+              <input
+                value={walletInput}
+                onChange={(e) => { setWalletInput(e.target.value); setWalletInputError(""); }}
+                placeholder="Cole seu endereço Solana aqui..."
+                className="input input-bordered w-full h-10 text-sm bg-base-100 text-neutral"
+              />
+              {walletInputError && (
+                <p className="text-xs text-red-500">{walletInputError}</p>
+              )}
+              <button
+                onClick={handleWalletInputSubmit}
+                disabled={!walletInput.trim()}
+                className="btn w-full h-12 bg-green text-neutral font-semibold border-0 disabled:opacity-50"
+              >
+                {t("claimNow")}
+              </button>
+              <button
+                onClick={() => { setShowWalletInput(false); setWalletInputError(""); }}
+                className="btn w-full h-9 bg-transparent border border-neutral/20 text-neutral/60 text-sm font-medium"
+              >
+                Cancelar
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleClaim}
+              className="btn w-full h-12 bg-green text-neutral font-semibold border-0"
+            >
+              {!hasWalletOrSession ? tLearn("connectWallet") : t("claimNow")}
+            </button>
+          )
         )}
 
         {isProcessing && (
@@ -269,27 +326,34 @@ export const RewardContainer = () => {
         )}
 
         {isDone && mintStep === "error" && (
-          <div className="flex gap-2 w-full">
+          <div className="flex flex-col gap-2 w-full">
             <button
-              onClick={() => retryMintStatusCheck(
-                googleUserInfo?.uid || "",
-                rewardData?.id || "",
-                rewardData?.type || "trail"
-              )}
-              className="btn flex-1 h-12 border-2 border-dblue text-dblue bg-transparent font-semibold"
+              onClick={handleClaim}
+              className="btn w-full h-12 bg-green text-neutral font-semibold border-0"
             >
-              {t("retryCheck")}
+              Tentar novamente
             </button>
-            <button
-              onClick={() => handleRewardContainer()}
-              className="btn flex-1 h-12 bg-neutral/10 text-neutral font-semibold border-0"
-            >
-              {t("close")}
-            </button>
+            <div className="flex gap-2 w-full">
+              <button
+                onClick={() => retryMintStatusCheck(
+                  googleUserInfo?.uid || "",
+                  rewardData?.id || "",
+                  rewardData?.type || "trail"
+                )}
+                className="btn flex-1 h-10 border border-neutral/20 text-neutral/70 text-sm bg-transparent font-medium"
+              >
+                {t("retryCheck")}
+              </button>
+              <button
+                onClick={() => handleRewardContainer()}
+                className="btn flex-1 h-10 bg-neutral/10 text-neutral text-sm font-medium border-0"
+              >
+                {t("close")}
+              </button>
+            </div>
           </div>
         )}
       </div>
     </div>
   );
 };
-

@@ -98,14 +98,13 @@ export const UserSection = () => {
     }
   };
 
-  const effectiveAddress =
-    userAccount[0] || (googleUserInfo?.uid?.startsWith("0x") ? googleUserInfo.uid : "");
+  const _uid = googleUserInfo?.uid ?? "";
 
   useEffect(() => {
-    if (activeTab === "certificados" && effectiveAddress) {
-      fetchAchievedNfts(effectiveAddress);
+    if (activeTab === "certificados" && _uid) {
+      fetchAchievedNfts(_uid);
     }
-  }, [activeTab, effectiveAddress, fetchAchievedNfts]);
+  }, [activeTab, _uid, fetchAchievedNfts]);
 
   const linkedinRegex =
     /^(https?:\/\/)?(www\.|[\w]{2,3}\.)?linkedin\.com\/.+$/i;

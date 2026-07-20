@@ -24,16 +24,15 @@ export const Home = () => {
     }
   }, [userDbInfo, router]);
 
-  const effectiveAddress =
-    userAccount[0] || (googleUserInfo?.uid?.startsWith("0x") ? googleUserInfo.uid : "");
+  const uid = googleUserInfo?.uid ?? "";
 
   useEffect(() => {
-    if (!effectiveAddress) return;
+    if (!uid) return;
     if (userDbInfo && Object.keys(userDbInfo).length > 0 && !nftsFetchedRef.current) {
       nftsFetchedRef.current = true;
-      fetchAchievedNfts(effectiveAddress);
+      fetchAchievedNfts(uid);
     }
-  }, [userDbInfo, effectiveAddress, fetchAchievedNfts]);
+  }, [uid, userDbInfo, fetchAchievedNfts]);
 
   return (
     <div className="w-full grid items-start grid-cols-1 pb-6 lg:grid-cols-5 lg:[grid-template-rows:repeat(5,minmax(90px,auto))] lg:px-40 px-10 justify-center gap-6">

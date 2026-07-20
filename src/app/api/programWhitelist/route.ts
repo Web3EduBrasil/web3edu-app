@@ -59,15 +59,23 @@ export const GET = async (req: NextRequest) => {
 
     const onChainMinted = programId ? await readProgramMinted(programId) : null;
     if (onChainMinted) {
+      let savedTxHash: string | null = null;
+      let savedIpfsHash: string | null = null;
+      try {
+        const wlSnap = await adminDb.collection("programWhitelist").doc(uid).get();
+        const ps = wlSnap.data()?.status?.[programId];
+        savedTxHash = ps?.txHash || null;
+        savedIpfsHash = ps?.ipfsHash || null;
+      } catch { /* best-effort */ }
       return NextResponse.json(
         {
           eligible: false,
           pending: false,
-          txHash: null,
+          txHash: savedTxHash,
           terminalError: false,
-          errorCode: "ALREADY_MINTED",
-          errorMessage: "Certificado já foi resgatado para este programa",
-          ipfsHash: null,
+          errorCode: savedTxHash ? null : "ALREADY_MINTED",
+          errorMessage: savedTxHash ? null : "Certificado já foi resgatado para este programa",
+          ipfsHash: savedIpfsHash,
         },
         { status: 200 }
       );
@@ -114,7 +122,11 @@ export const GET = async (req: NextRequest) => {
     const hasTxHash = typeof programStatus.txHash === "string" && programStatus.txHash !== "";
     const hasTerminalError = programStatus.terminalError === true;
     const isEligible = isMarkedEligible && !alreadyMinted && !hasTxHash && !hasTerminalError;
-    const isPending = isEligible && !!programStatus;
+
+    const PENDING_TTL_MS = 10 * 60 * 1000;
+    const pendingAt = programStatus.pendingAt ? new Date(programStatus.pendingAt).getTime() : null;
+    const isFreshPending = pendingAt !== null && Date.now() - pendingAt < PENDING_TTL_MS;
+    const isPending = isEligible && isFreshPending;
 
     return NextResponse.json(
       {
@@ -180,6 +192,7 @@ export const POST = async (req: NextRequest) => {
       errorCode: null,
       errorMessage: null,
       errorAt: null,
+      pendingAt: new Date().toISOString(),
     };
 
     if (isUpdate) {
