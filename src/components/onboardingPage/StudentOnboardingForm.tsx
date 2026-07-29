@@ -125,14 +125,14 @@ export const StudentOnboardingForm = () => {
   };
 
   return (
-    <div className="w-full h-full flex items-center justify-center px-5 py-10">
-      <div className="w-full max-w-2xl bg-cgray border-2 border-gray rounded-2xl p-6 md:p-8">
+    <div className="w-full min-h-full flex items-start justify-center px-5 py-10">
+      <div className="w-full max-w-4xl bg-cgray border-2 border-gray rounded-2xl p-6 md:p-8">
         <h1 className="text-xl md:text-2xl font-semibold text-neutral">Complete seu cadastro</h1>
         <p className="text-sm text-neutral/70 mt-1">
           Precisamos desses dados para emitir certificados e personalizar sua experiencia.
         </p>
 
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-neutral/70">Nome para exibir</span>
             <input
@@ -153,7 +153,7 @@ export const StudentOnboardingForm = () => {
             />
           </label>
 
-          <label className="flex flex-col gap-1 text-sm md:col-span-2">
+          <label className="flex flex-col gap-1 text-sm md:col-span-3">
             <span className="text-neutral/70">Email</span>
             <input
               value={email}
@@ -227,7 +227,7 @@ export const StudentOnboardingForm = () => {
             </select>
           </label>
 
-          <label className="flex flex-col gap-1 text-sm md:col-span-2">
+          <label className="flex flex-col gap-1 text-sm md:col-span-3">
             <span className="text-neutral/70">Objetivos de aprendizado (separe por virgula)</span>
             <textarea
               value={learningGoals}
