@@ -93,7 +93,6 @@ export async function mintTrailCertificate(
     commitment: "confirmed",
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const program = new Program(IDL as any, provider);
 
   const trailHash = trailHashFor(trailId, walletAddress);
